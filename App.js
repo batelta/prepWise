@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
 // Define your custom theme
 const theme = {
   colors: {
-    primary: '#BFB4FF', // Button color
+    primary: '#BFB4FF', // Btton color
     accent: '#9FF9D5',  // Highlight color
     background: '#FDFCF5', // Light cream background
     text: '#003D5B',    // Text color
