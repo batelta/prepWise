@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Button, Provider as PaperProvider } from 'react-native-paper';
-import { Linking, Text, View } from 'react-native';
+import { Linking, Text, View,StyleSheet } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -10,9 +10,16 @@ const theme = {
   colors: {
     primary: '#BFB4FF', // Button color
     accent: '#9FF9D5',  // Highlight color
-    background: '#FDFCF5', // Light cream background
+    background: '#fff', //  background
     text: '#003D5B',    // Text color
+    placeholder:'#fff',
+    onSurfaceVariant: '#9C9BC2',
+    outline:'#f5f5f5',      
   },
+  roundness:20,
+
+}
+  const styles=StyleSheet.create({
   headline:{
 fontFamily:'Inter',
 color:'#003D5B',
@@ -35,7 +42,7 @@ marginBottom:40
         width: '80%',
     marginBottom: 15,
     backgroundColor: '#F2F2F2',
-    color:'#F2F2F2'
+
   },
       logo:{
         position:'absolute',
@@ -47,7 +54,7 @@ marginBottom:40
         textDecorationLine:'underline',
         color:'#003D5B',
       },
-};
+});
 
 
 export default function SignIn({navigation}) {
@@ -64,40 +71,40 @@ export default function SignIn({navigation}) {
          backgroundColor: theme.colors.background ,
          position:'relative'}}>
       <Image source={require('./assets/prepWise Logo.png')}
-      style={theme.logo}/>
-        <Text style={theme.headline}>Welcome to Prepwise!</Text>
-        <Text style={theme.SecHeadline}>Sign in</Text>
-  <TextInput 
+      style={styles.logo}/>
+        <Text style={styles.headline}>Welcome to Prepwise!</Text>
+        <Text style={styles.SecHeadline}>Sign in</Text>
+  
+  <View style={{width:'100%',alignItems:'center'}}><TextInput 
       label={"Enter Email Address"}
       value={Emailtext}
       onChangeText={Emailtext=>setEmailText(Emailtext)}
-      style={theme.textInput}
       mode="outlined"
-      theme={{roundness:20}}
+      style={styles.textInput} // Set text color here
 />
 
 <TextInput 
       label={"Enter Password"}
       value={Passwordtext}
       onChangeText={Passwordtext=>setPasswordText(Passwordtext)}
-      style={theme.textInput}
+      style={styles.textInput}
       mode="outlined"
-      theme={{roundness:20}}
       secureTextEntry
       right={<TextInput.Icon icon="eye"/>}
       />
+ </View>
+
       <View style={{alignItems:'flex-end',width:'80%'}}>
-     <Text style={theme.passwordtext}
+     <Text style={styles.passwordtext}
      //change the link below
      onPress={()=>Linking.openURL('https://google.com')}>
       Forgot Password?</Text>
       </View>
-
       <Button mode="contained" 
-      style={theme.button}>Sign in</Button>
+      style={styles.button}>Sign in</Button>
 <View style={{flexDirection:'row',marginTop:30}}>
-<Text style={theme.footer}>Don't have an account? </Text>
-<Text style={theme.passwordtext}
+<Text style={styles.footer}>Don't have an account? </Text>
+<Text style={styles.passwordtext}
 onPress={()=> navigation.navigate('SignUp')}>Create Account</Text>
 </View>
       </View>
