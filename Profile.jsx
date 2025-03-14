@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import CustomTabNavigator from './CustomTabNavigator'
+import NavBar from './NavBar'
 
 const Profile = () => {
   const navigation = useNavigation(); // מאפשר ניווט
@@ -72,7 +72,7 @@ const Profile = () => {
 
       {/* הוספתי את ה-CustomTabNavigator בתור רכיב עצמאי */}
       <View style={styles.tabContainer}>
-        <CustomTabNavigator />
+        <NavBar />
       </View>
     </SafeAreaView>
   );

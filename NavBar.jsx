@@ -37,7 +37,7 @@ const CalendarScreen = () => (
 
 const Tab = createBottomTabNavigator();
 
-const CustomTabNavigator = () => {
+const NavBar = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -97,4 +97,4 @@ const CustomTabNavigator = () => {
   );
 };
 
-export default CustomTabNavigator;
+export default NavBar;
