@@ -6,6 +6,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SignIn from './SignIn';
 import SignUp from './SignUp';
 import SignUpJob from './SignUpJob';
+import HomePage from './HomePage';
+
 // Define your custom theme
 const theme = {
   colors: {
@@ -23,10 +25,11 @@ export default function App() {
   return (
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='SignUpJob'>
+     <Stack.Navigator initialRouteName='HomePage'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="SignUpJob" component={SignUpJob}/>
+      <Stack.Screen name="HomePage" component={HomePage}/>
 
      </Stack.Navigator>
     </PaperProvider>

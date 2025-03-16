@@ -87,6 +87,7 @@ const NavBar = () => {
           },
       })}
     >
+      
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Add Job" component={JobScreen} />
@@ -94,6 +95,7 @@ const NavBar = () => {
       <Tab.Screen name="Profile" component={ProfileScreen} />
       <Tab.Screen name="Menu" component={MenuScreen} />
     </Tab.Navigator>
+  
   );
 };
 
