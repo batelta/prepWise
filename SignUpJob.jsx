@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import LanguageSelector from './LanguageSelector';
+import UploadPage from './UploadPage'; // ייבוא הקומפוננטה של העלאת התמונה
+
 
 const theme = {
   colors: {
@@ -35,6 +37,8 @@ const styles = StyleSheet.create({
     width: '80%',
     marginBottom: 15,
     backgroundColor: '#F2F2F2',
+    cursor: 'pointer'
+
   },
   logo: {
     position: 'relative',
@@ -56,6 +60,7 @@ const styles = StyleSheet.create({
 });
 
 export default function SignUpJob({ navigation }) {
+
   const [FirstNametext, setFirstNameText] = React.useState("");
   const [FirstNameError, setFirstNameError] = React.useState(""); //for validating the first name
 
@@ -71,7 +76,6 @@ export default function SignUpJob({ navigation }) {
       setFirstNameError(""); // Clear error if input becomes valid
     }
   };
-
 
   const [LastNametext, setLastNameText] = React.useState("");
   const [LastNameError, setLastNameError] = React.useState(""); //for validating the Last name
@@ -118,7 +122,8 @@ const [secureText, setSecureText] = React.useState(true); // State to toggle pas
   }
 };
 
-  const [selectedLanguage, setSelectedLanguage] = React.useState("");
+//this is sent as a prop to language selector component
+const [selectedLanguages, setSelectedLanguages] = React.useState([]);
 
   const [FacebookLink, setFacebookLink] = React.useState("");
   const [FacebookLinkError, setFacebookLinkError] = React.useState(""); 
@@ -166,15 +171,21 @@ const [secureText, setSecureText] = React.useState(true); // State to toggle pas
   const [base64Image, setBase64Image] = React.useState(null);//chat idea for storing images
 
   const pickImage = async () => {
+          {/* Image Upload Component */}
+                    <View style={styles.section}>
+                        <UploadPage />  {/* הצגת הקומפוננטה של העלאת תמונה */}
+                    </View>
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
-      base64: true, // Convert image to base64
+      base64: true, // Add this line
+
     });
 
     if (!result.canceled) {
+      console.log(result);
       setImage(result.assets[0].uri);
       setBase64Image(`data:image/jpeg;base64,${result.assets[0].base64}`); // Convert to base64 format
     }
@@ -191,14 +202,15 @@ const [secureText, setSecureText] = React.useState(true); // State to toggle pas
   };
 
   const addNewUser=async (FirstNametext,LastNametext,Emailtext,Passwordtext,selectedFields,
-    selectedStatuses,selectedLanguage,
+    selectedStatuses,selectedLanguages,
     FacebookLink,LinkedInLink )=>{
       try{
         console.log("Sending request to API...");
-         // Dummy values for language and links
-   // const dummyLanguage = 'English';  // Default language
     const isMentor=false;
-        const response =await fetch ('http://localhost:5062/api/Users', {
+    const API_URL = Platform.OS === 'web'  //changed the url for web and phone
+  ? "http://localhost:5062/api/Users" 
+  : "http://192.168.30.157:5062/api/Users";
+        const response =await fetch (API_URL, { 
           method: 'POST', // Specify that this is a POST request
           headers: {
             'Content-Type': 'application/json' // Indicate that you're sending JSON data
@@ -211,14 +223,19 @@ const [secureText, setSecureText] = React.useState(true); // State to toggle pas
             CareerField: selectedFields, // Assuming this is an array
             Experience: selectedStatuses[0] ,// Send only one status
             Picture: base64Image, // Save the base64 image in 
-            Language: selectedLanguage,  // Send the dummy language
+            Language: selectedLanguages,  // Send the dummy language
             FacebookLink: FacebookLink,  // Send the dummy Facebook link
             LinkedInLink: LinkedInLink,  // Send the dummy LinkedIn link
             IsMentor:isMentor
           })
         });
+        console.log(base64Image)
+
         const responseBody = await response.text();  // Use text() instead of json() to handle any response format
         console.log("Response Body:", responseBody);
+        if(response.ok)
+          console.log('user added!',selectedLanguages)
+        //  navigation.navigate('HomePage')
     
     if(!response.ok){
       throw new Error('failed to post new user')
@@ -322,11 +339,11 @@ const [secureText, setSecureText] = React.useState(true); // State to toggle pas
               <Button onPress={() => setStatusModalVisible(false)}>Done</Button>
             </Modal>
           </Portal>
+          <LanguageSelector
+           selectedLanguages={selectedLanguages} 
+           setSelectedLanguages={setSelectedLanguages}  />
 
-              <LanguageSelector
-                selectedLanguage={selectedLanguage}
-                setSelectedLanguage={setSelectedLanguage}
-              />
+             
               <TextInput label={"Facebook Link (Optional)"} value={FacebookLink} 
                 onChangeText={handleFacebookLinkChange}
                 style={styles.textInput} 
@@ -343,7 +360,7 @@ const [secureText, setSecureText] = React.useState(true); // State to toggle pas
 
               <Button mode="contained" style={styles.button}
                 onPress={()=>{addNewUser(FirstNametext,LastNametext,Emailtext,Passwordtext,selectedFields,
-                  selectedStatuses,selectedLanguage,
+                  selectedStatuses,selectedLanguages,
                   FacebookLink,LinkedInLink
                 )}}>Sign Up</Button>
 
