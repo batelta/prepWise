@@ -42,9 +42,7 @@ export default function HomePage() {
             setError("לא הצלחנו לטעון את התמונה");
             setLoading(false);
         });
-        if(data.name){
-            setName(`${data.name}`)
-        }
+  
 }, []);
 
     return (

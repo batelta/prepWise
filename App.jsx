@@ -7,6 +7,7 @@ import SignIn from './SignIn';
 import SignUp from './SignUp';
 import SignUpJob from './SignUpJob';
 import HomePage from './HomePage';
+import GeminiChat from './GeminiChat';
 
 // Define your custom theme
 const theme = {
@@ -25,11 +26,13 @@ export default function App() {
   return (
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='HomePage'>
+     <Stack.Navigator initialRouteName='GeminiChat'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="SignUpJob" component={SignUpJob}/>
       <Stack.Screen name="HomePage" component={HomePage}/>
+      <Stack.Screen name="GeminiChat" component={GeminiChat}/>
+
 
      </Stack.Navigator>
     </PaperProvider>
