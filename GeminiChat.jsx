@@ -1,208 +1,103 @@
-import React, { useState, useEffect } from "react";
-import * as GoogleGenerativeAI from "@google/generative-ai";
-import { View, Text, TextInput, Button, FlatList, StyleSheet,TouchableOpacity  } from "react-native";
-import * as Speech from "expo-speech";
-import { FontAwesome } from "@expo/vector-icons";
-import { Entypo } from "@expo/vector-icons";
-import FlashMessage, { showMessage } from "react-native-flash-message";
-import axios from "axios";
+import React, { useState } from "react";
+import { View, FlatList, StyleSheet } from "react-native";
+import { TextInput, Button, Card, Text, ActivityIndicator } from "react-native-paper";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import AntDesign from '@expo/vector-icons/AntDesign';
+
+const API_KEY = "AIzaSyChUXRg1ZyJOG1mxzqVuhnZE3vN89V3YSY"; 
 
 const GeminiChat = () => {
-  const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState("");
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [showStopIcon, setShowStopIcon] = useState(false);
-  const [apiError, setApiError] = useState(null);
 
-  const API_KEY = "AIzaSyDtX7_UXPgZWz-nDuZFApKJvPk_AyV9-D4";  // Replace with your actual API key
-
-  // Initialize the model when the component is first mounted
-  useEffect(() => {
-    const initChat = async () => {
-      try {
-        const genAI = new GoogleGenerativeAI.GoogleGenerativeAI(API_KEY);
-        const model = await genAI.getGenerativeModel({
-          model: "models/text-bison-001", // Specify the model variant here
-        });
-        
-        if (model) {
-          console.log("Model initialized successfully:", model);
-          // Send a greeting message when the chat is initialized
-          const result = await model.generateText({ prompt: "hello!" });
-          const response = result.response;
-          showMessage({
-            message: "Welcome to Gemini Chat 🤖",
-            description: response,
-            type: "info",
-            icon: "info",
-            duration: 2000,
-          });
-          setMessages([
-            { text: response, user: false },
-          ]);
-        } else {
-          console.log("Model initialization failed.");
-        }
-      } catch (error) {
-        setApiError("Error initializing model: " + error.message);
-        console.error("Error initializing model:", error);
-      }
-    };
-
-    initChat();
-  }, []); // Only run once when the component is mounted
-
-  // Function to send the user's message to the model and get a response
   const sendMessage = async () => {
+    if (!userInput.trim()) return;
     setLoading(true);
+
+    const newMessages = [...messages, { text: userInput, sender: "user" }];
+    setMessages(newMessages);
+    setUserInput("");
+
     try {
-      const genAI = new GoogleGenerativeAI.GoogleGenerativeAI(API_KEY);
-      const model = await genAI.getGenerativeModel({
-        model: "models/text-bison-001", // Specify the model variant here
-      });
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp-image-generation" });
+      const result = await model.generateContent(userInput);
+      const generatedText = await result.response.text();
 
-      const userMessage = { text: userInput, user: true };
-      setMessages([...messages, userMessage]);
-
-      const result = await model.generateText({ prompt: userInput });
-      const response = result.response;
-
-      setMessages([...messages, { text: userInput, user: true }, { text: response, user: false }]);
-      setLoading(false);
-      setUserInput("");  // Clear the input field
-
-      // Speak the bot's response if not already speaking
-      if (response && !isSpeaking) {
-        Speech.speak(response);
-        setIsSpeaking(true);
-        setShowStopIcon(true);
-      }
+      setMessages([...newMessages, { text: generatedText, sender: "bot" }]);
     } catch (error) {
-      setApiError("Error generating message: " + error.message);
-      console.error("Error generating message:", error);
+      console.error("Error:", error);
+      setMessages([...newMessages, { text: "Error sending message", sender: "bot" }]);
+    } finally {
       setLoading(false);
     }
   };
 
-  // Function to toggle speech (stop or continue speaking)
-  const toggleSpeech = () => {
-    if (isSpeaking) {
-      Speech.stop();
-      setIsSpeaking(false);
-    } else {
-      Speech.speak(messages[messages.length - 1].text);
-      setIsSpeaking(true);
-    }
-  };
-
-  // Function to clear the chat
-  const ClearMessage = () => {
-    setMessages([]);
-    setIsSpeaking(false);
-    setShowStopIcon(false);
-  };
-
-  // Render the message list
   const renderMessage = ({ item }) => (
-    <View style={styles.messageContainer}>
-      <Text style={[styles.messageText, item.user && styles.userMessage]}>
-        {item.text}
-      </Text>
+    <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5, alignSelf: item.sender === "user" ? "flex-end" : "flex-start" }}>
+      {item.sender === "bot" && <MaterialCommunityIcons name="robot" size={24} color="#003D5B" style={{ marginRight: 5 }} />}
+      <Card style={{
+        backgroundColor: item.sender === "user" ? "#gray" : "#9FF9D5",
+        padding: 10,
+        borderRadius: 10,
+        maxWidth: "80%",
+      }}>
+        <Text>{item.text}</Text>
+      </Card>
+      {item.sender === "user" && <Ionicons name="person-circle-outline" size={24} color="#003D5B" style={{ marginLeft: 5 }} />}
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {/* Display FlashMessage if there's an error */}
-      {apiError && <Text style={{ color: "red" }}>{apiError}</Text>}
-      
-      {/* Display the chat messages */}
       <FlatList
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item, index) => index.toString()}
-        inverted
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "flex-end" }}
       />
-
-      {/* Input section for the user */}
+      {loading && <ActivityIndicator animating={true} style={{ marginBottom: 10 }} />}
       <View style={styles.inputContainer}>
-        <TouchableOpacity style={styles.micIcon} onPress={toggleSpeech}>
-          {isSpeaking ? (
-            <FontAwesome
-              name="microphone-slash"
-              size={24}
-              color="white"
-              style={{ justifyContent: "center", alignItems: "center" }}
-            />
-          ) : (
-            <FontAwesome
-              name="microphone"
-              size={24}
-              color="white"
-              style={{ justifyContent: "center", alignItems: "center" }}
-            />
-          )}
-        </TouchableOpacity>
-
         <TextInput
-          placeholder="Type a message"
-          onChangeText={setUserInput}
+         mode="outlined"
+          style={styles.textInput}
+          placeholder="Message Gemini Chat"
+          placeholderTextColor="gray"
           value={userInput}
-          onSubmitEditing={sendMessage}
-          style={styles.input}
-          placeholderTextColor="#fff"
-        />
-
-        {/* Show stop icon only when speaking */}
-        {showStopIcon && (
-          <TouchableOpacity style={styles.stopIcon} onPress={ClearMessage}>
-            <Entypo name="controller-stop" size={24} color="white" />
-          </TouchableOpacity>
-        )}
-
-        {loading && <Text>Loading...</Text>}
+          onChangeText={setUserInput}
+          activeOutlineColor="#BFB4FF"
+          outlineColor="white"
+          />
+        <Button mode="contained" onPress={sendMessage} disabled={loading}>
+        <AntDesign name="upcircleo" size={20} color="black" />
+        </Button>
       </View>
-
-      {/* FlashMessage to display success/error messages */}
-      <FlashMessage position="top" />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#ffff", marginTop: 50 },
-  messageContainer: { padding: 10, marginVertical: 5 },
-  messageText: { fontSize: 16 },
-  userMessage: { textAlign: "right" }, // User's messages are aligned to the right
-  inputContainer: { flexDirection: "row", alignItems: "center", padding: 10 },
-  input: {
+  container: {
     flex: 1,
-    padding: 10,
-    backgroundColor: "#131314",
+    padding: 20,
+    backgroundColor: "#fff",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  textInput: {
+    flex: 1,
+    marginRight: 10,
+    backgroundColor: "#F2F2F2",
     borderRadius: 10,
-    height: 50,
-    color: "white",
-  },
-  micIcon: {
-    padding: 10,
-    backgroundColor: "#131314",
-    borderRadius: 25,
-    height: 50,
-    width: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 5,
-  },
-  stopIcon: {
-    padding: 10,
-    backgroundColor: "#131314",
-    borderRadius: 25,
-    height: 50,
-    width: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
 });
 

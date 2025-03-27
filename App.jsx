@@ -8,6 +8,9 @@ import SignUp from './SignUp';
 import SignUpJob from './SignUpJob';
 import HomePage from './HomePage';
 import GeminiChat from './GeminiChat';
+import LandingPage from './LandingPage';
+import JobForm from './JobForm';
+import AddApplication from './AddApplication';
 
 // Define your custom theme
 const theme = {
@@ -26,12 +29,15 @@ export default function App() {
   return (
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='GeminiChat'>
+     <Stack.Navigator initialRouteName='LandingPage'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="SignUpJob" component={SignUpJob}/>
       <Stack.Screen name="HomePage" component={HomePage}/>
       <Stack.Screen name="GeminiChat" component={GeminiChat}/>
+      <Stack.Screen name="LandingPage" component={LandingPage}/>
+      <Stack.Screen name="JobForm" component={JobForm}/>
+      <Stack.Screen name="AddApplication" component={AddApplication}/>
 
 
      </Stack.Navigator>

@@ -1,162 +1,183 @@
-import { View, Text,ImageEditor ,ScrollView, Image, TouchableOpacity, Platform,StyleSheet, SafeAreaView, Alert } from "react-native";
+import { View, Text, ImageEditor, ScrollView, Image, TouchableOpacity, Platform, StyleSheet, SafeAreaView, Alert } from "react-native";
 import { PlusCircle } from "lucide-react-native";
 import NavBar from "./NavBar";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
-import { FAB } from "react-native-paper";
+import { FAB,Card } from "react-native-paper";
 import { useEffect, useState } from "react";
+import { useFonts } from 'expo-font';
+import { Inter_400Regular,
+  Inter_300Light, Inter_700Bold,Inter_100Thin,
+  Inter_200ExtraLight } from '@expo-google-fonts/inter';
+import AnimatedArrow from './AnimatedArrow'
+import AnimatedPlusIcon from "./AnimatedPlusIcon";
+
 
 const progress = 0; // 75% completed
-const handlePress = () => {
-    Alert.alert("Button Pressed", "You clicked the plus button!");
-};
+
 
 export default function HomePage() {
+
+    const [fontsLoaded] = useFonts({
+        Inter_400Regular,
+        Inter_700Bold,
+        Inter_100Thin,
+        Inter_200ExtraLight,
+        Inter_300Light
+      });
     const [profileImage, setProfileImage] = useState(null);
     const [Name, setName] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-  const API_URL = Platform.OS === 'web'  //changed the url for web and phone
-  ? "http://localhost:5062/api/Users" 
-  : "http://192.168.30.157:5062/api/Users";
-    useEffect(() => {
-        fetch(`${API_URL}?userId=30`) // Use your actual API URL
-        .then(response => {
-            console.log("Raw Response:", response);
-            return response.text(); // Read as plain text first
-        })
-        .then(text => {
-            console.log("Response Text:", text);
-            return text ? JSON.parse(text) : {}; // Convert to JSON only if not empty
-        })
-        .then(data => {
-            console.log("Parsed Data:", data);
-
-            if (data.picture) {
-                setProfileImage(`${data.picture}`);
-                
-            }
-            setLoading(false);
-        })
-        .catch(error => {
-            console.error("Error fetching image:", error);
-            setError("לא הצלחנו לטעון את התמונה");
-            setLoading(false);
-        });
+    const API_URL = Platform.OS === 'web'  
+        ? "http://localhost:5062/api/Users" 
+        : "http://192.168.30.157:5062/api/Users";
   
-}, []);
+        //this is the real pic from the server 
+        {/* 
+    useEffect(() => {
+        fetch(`${API_URL}?userId=30`)
+            .then(response => response.text())
+            .then(text => text ? JSON.parse(text) : {})
+            .then(data => {
+                if (data.picture) {
+                    setProfileImage(`${data.picture}`);
+                }
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error("Error fetching image:", error);
+                setError("לא הצלחנו לטעון את התמונה");
+                setLoading(false);
+            });
+    }, []);
+*/}
+    const LogoImage = () => {
+        if (Platform.OS === "ios") {
+            return <Image source={require('./assets/prepWise Logo.png')} style={appliedStyles.logo} />;
+        }
+    };
+   
+    const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={appliedStyles.container}>
             <ScrollView>
-            <Image source={require('./assets/prepWise Logo.png')} style={styles.logo} />
-            <View style={styles.container}>
-                {/* Header */}
-                <View style={styles.header}>
-                {loading ? (
-                    <Text>Loading image...</Text>
-                ) : error ? (
-                    <Text>{error}</Text>
-                ) : profileImage ? (
-                    <Image source={{ uri: profileImage }} 
-                    style={{ height: 100, width: 100 }}
-                    resizeMode={"contain"} />
-                ) : (
-                    <Text>אין תמונה זמינה</Text>
-                )}
+                {/** logo component is here only for mobile*/}
+                <LogoImage />
+                <View style={appliedStyles.container}>
+                    <View style={appliedStyles.header}>
+                       {/*  {loading ? (
+                            <Text>Loading image...</Text>
+                        ) : error ? (
+                            <Text>{error}</Text>
+                        ) : profileImage ? (
+                            <Image source={{ uri: profileImage }} 
+                                style={{ height: 100, width: 100 }}
+                                resizeMode={"contain"} />
+                        ) : (
+                            <Text>אין תמונה זמינה</Text>
+                        )}
+                            */}
 
-                    <Text style={styles.title}>Welcome {Name} , to your Home page!</Text>
-                    <Text style={styles.subtitle}>What to do next?</Text>
-                </View>
+                        {/*this is for now only */}
+                        <View style={[appliedStyles.profileImageContainer]}>
 
-          
-
-                {/* To-Do List */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Your To-Do List</Text>
-                    <View style={styles.toDoList}>
-                        <View style={styles.toDoItem}>
-                            <AnimatedCircularProgress
-                                size={50}
-                                width={10}
-                                fill={progress} // The progress percentage (0 - 100)
-                                tintColor="#9FF9D5" // Primary color
-                                backgroundColor="#e0e0e0" // Background circle color
-                            />
-                            <Text style={styles.toDoText}>0/0</Text>
-                            <Text style={styles.toDoLabel}>Weekly Wins</Text>
-                        </View>
-                        <View style={styles.toDoItem}>
-                            <AnimatedCircularProgress
-                                size={50}
-                                width={10}
-                                fill={progress} // The progress percentage (0 - 100)
-                                tintColor="#9FF9D5" // Primary color
-                                backgroundColor="#e0e0e0" // Background circle color
-                            />
-                            <Text style={styles.toDoText}>0/0</Text>
-                            <Text style={styles.toDoLabel}>Personal Goals</Text>
-                        </View>
+                        <View  style={appliedStyles.profileImage}>
+                        <Image source={require('./assets/womanImage.jpg')} 
+                               style={{  width: '100%',
+                                height: '100%',
+                                resizeMode: 'cover'}}
+                                 />
+                                </View>
+                                </View>
+                                <View style={{ flex: 1}}>
+     
+                        <Text style={appliedStyles.title}>Welcome {Name}, to your Home page!</Text>
+                        <Text style={appliedStyles.subtitle}>What to do next?</Text> <AnimatedArrow/>
+                    </View>
                     </View>
                 </View>
-
+                {/* To-Do List */}
+                <View style={appliedStyles.ToDoAndApplications}>
+                <View style={appliedStyles.section}>
+                    <Text style={appliedStyles.sectionTitle}>Your To-Do List 📃</Text>
+                    <View style={appliedStyles.toDoList}>
+                        <Card style={appliedStyles.ToDocard}>
+                        <Card.Content style={appliedStyles.Cardcontent}>
+                        <View style={appliedStyles.toDoItem}>
+                            <AnimatedCircularProgress
+                                size={50}
+                                width={10}
+                                fill={progress}
+                                tintColor="#9FF9D5"
+                                backgroundColor="#e0e0e0"
+                            />
+                            <Text style={appliedStyles.toDoText}>0/0</Text>
+                            <Text style={appliedStyles.toDoLabel}>Weekly Wins</Text>
+                        </View>
+                        </Card.Content>
+                        </Card>
+                        <Card style={appliedStyles.ToDocard}>
+                        <Card.Content style={appliedStyles.Cardcontent}>
+                        <View style={appliedStyles.toDoItem}>
+                            <AnimatedCircularProgress
+                                size={50}
+                                width={10}
+                                fill={progress}
+                                tintColor="#9FF9D5"
+                                backgroundColor="#e0e0e0"
+                            />
+                            <Text style={appliedStyles.toDoText}>0/0</Text>
+                            <Text style={appliedStyles.toDoLabel}>Personal Goals</Text>
+                        </View>
+                        </Card.Content>
+                        </Card>
+                    </View>
+                </View>
                 {/* Applications Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>All Applications</Text>
-                    <Text style={styles.sectionDescription}>
+                <View style={appliedStyles.Applicationsection}> 
+                    <Text style={appliedStyles.ApplicationsectionTitle}>All Applications 💻</Text>
+                    <Card style={appliedStyles.Applicationcard}>
+                    <Card.Content style={appliedStyles.ApplicationCardcontent}>
+                    <Text style={appliedStyles.sectionDescription}>
                         You haven’t started yet—let’s add your first application and kick off your adventure! ✨
                     </Text>
-                    <View style={{ alignItems: "center" }}>
-                        <View style={styles.button}>
-                            <Text style={styles.buttonText}>
-                                Press
-                                <View style={{ padding: '5' }}>
-                                    <TouchableOpacity onPress={handlePress}>
-                                        <FAB
-                                            icon="plus" // React Native Paper uses Material icons
-                                            color="#003D5B" // Icon color
-                                            style={{
-                                                backgroundColor: "#9FF9D5", // Circle fill
-                                                width: 25, // Adjust to your preferred size
-                                                height: 25,
-                                                borderRadius: 35 / 2, // Ensures it's a perfect circle
-                                                justifyContent: "center",
-                                                alignItems: "center",
-                                            }}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                                to add {'\n'} your first Job Application
-                            </Text>
-                        </View>
-
-                        <View style={styles.button}>
-                            <Text style={styles.buttonText}>
-                                Press
-                                <View style={{ padding: '5' }}>
-                                    <TouchableOpacity>
-                                        <FAB
-                                            icon="plus" // React Native Paper uses Material icons
-                                            color="#003D5B" // Icon color
-                                            style={{
-                                                backgroundColor: "#9FF9D5", // Circle fill
-                                                width: 25, // Adjust to your preferred size
-                                                height: 25,
-                                                borderRadius: 35 / 2, // Ensures it's a perfect circle
-                                                justifyContent: "center",
-                                                alignItems: "center",
-                                            }}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                                to Open {'\n'} your first mentor match request
-                            </Text>
-                        </View>
+                    </Card.Content>
+                    </Card>
                     </View>
+                    </View>
+{/* new user section*/}
+                    <Text style={appliedStyles.sectionTitle}>Get Started 💫</Text>
+
+                    <Card style={appliedStyles.pressCard}>
+                    <Card.Content style={appliedStyles.pressCardcontent}>
+
+                         <Text style={appliedStyles.pressText}>
+                          Press 
+                          <Text style={{ marginRight: 10 }}> </Text>
+                          <AnimatedPlusIcon />
+                          <Text style={{  marginHorizontal: 10}}>
+                           to add your first Job Application
+                           </Text>
+                            </Text>
+                            </Card.Content>
+                            </Card>
+                            <Card style={appliedStyles.pressCard}>
+                            <Card.Content style={appliedStyles.pressCardcontent}>
+                            <Text style={appliedStyles.pressText}>
+                           Press 
+                           <Text style={{ marginRight: 10 }}> </Text>
+                           <AnimatedPlusIcon />
+                           <Text style={{  marginHorizontal: 10}}>
+                           to Open your first mentor match request
+                           </Text>
+                           </Text>
+                            </Card.Content>
+                            </Card>
+
+                <View>
+                    <NavBar />
                 </View>
-            </View>
-            <View>
-                <NavBar />
-            </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -170,7 +191,7 @@ const styles = StyleSheet.create({
     },
     logo: {
         position: 'relative',
-        width: '15%',
+        width: '23%',
         resizeMode: 'contain',
         height: 100,
     },
@@ -185,27 +206,36 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 20,
-        fontWeight: "bold",
+       fontWeight: "bold",
         marginTop: 8,
+        fontFamily:"Inter_400Regular"
     },
     subtitle: {
         color: "gray",
+        fontFamily:"Inter_200ExtraLight"
     },
-    section: {
+    Applicationsection: {
         marginTop: 24,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: "600",
+        fontFamily:"Inter_300Light",
+        left:9,
+
     },
     sectionDescription: {
         color: "gray",
         marginTop: 8,
+        fontFamily:"Inter_200ExtraLight",
+        left:9,
+
     },
     toDoList: {
         flexDirection: "row",
         justifyContent: "space-between",
         marginTop: 16,
+
     },
     toDoItem: {
         width: "48%",
@@ -213,6 +243,105 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
         alignItems: "center",
+
+    },
+    toDoText: {
+        color: "gray",
+
+    },
+    toDoLabel: {
+        marginTop: 8,
+        fontWeight: "500",
+        fontFamily:"Inter_200ExtraLight"
+
+    },
+    pressText: {
+        fontWeight: "500",
+        fontSize: 15,
+        fontFamily:"Inter_300Light",
+
+    },
+});
+
+const Webstyles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "#fff",
+        padding: 130,
+        flexDirection: 'row', // Ensures text and image are side by side
+        //justifyContent:'space-evenly',
+
+    },
+    header: {
+        alignItems: "center",
+        marginTop: 16,
+        flexDirection: "row-reverse", // הופך את הסדר של התמונה והטקסט(הוספה)
+        justifyContent: "space-between",////(הוספה)
+        width: "90%",////(הוספה)
+    },
+    profileImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+
+ },
+    title: {
+        fontSize: 20,
+       // fontWeight: "bold",
+        marginTop: 8,
+        fontFamily:"Inter_400Regular"
+
+    },
+    subtitle: {
+        color: "gray",
+        fontFamily:"Inter_300Light"
+
+    },
+    Applicationsection: {
+        marginTop: 3,
+        paddingRight:10
+    },
+    sectionTitle: {
+        fontSize: 18,
+      //  fontWeight: "600",
+        position:'relative',
+        fontFamily:"Inter_400Regular",
+     paddingHorizontal:25,
+
+    },
+    ApplicationsectionTitle:{
+        fontSize: 18,
+        //  fontWeight: "600",
+          position:'relative',
+          fontFamily:"Inter_400Regular",
+       paddingHorizontal:10,
+    },
+    sectionDescription: {
+        color: "gray",
+        fontFamily:"Inter_300Light",
+       // paddingHorizontal:25,
+
+    },
+    toDoList: {
+        flexDirection: "row",
+        justifyContent: "flex-start",
+        marginTop: 16,
+    paddingHorizontal:25,
+    },
+    ToDocard:{
+     width:'70%',
+    height:130,
+    marginRight:15
+    },
+    Cardcontent:{
+        alignItems: 'center', // Centers items inside Card.Content
+        justifyContent: 'center',
+    },
+    toDoItem: {
+        width: "50%",
+        borderRadius: 12,
+        alignItems: "center",
+
     },
     toDoText: {
         color: "gray",
@@ -220,16 +349,49 @@ const styles = StyleSheet.create({
     toDoLabel: {
         marginTop: 8,
         fontWeight: "500",
+        fontFamily:"Inter_300Light",
+        textAlign:'center'
+
+
     },
-    button: {
-        backgroundColor: "#e5e7eb",
-        padding: 15,
-        borderRadius: 12,
-        width: 250,
+    ToDoAndApplications:{
+flexDirection:'row',
+justifyContent:'space-between',
+marginBottom:90,
+    },
+    Applicationcard:{
+        width:'100%',
         marginTop: 16,
     },
-    buttonText: {
+    ApplicationCardcontent:{
+        alignItems: 'center', // Centers items inside Card.Content
+        justifyContent: 'center',
+    },
+
+    pressText: {
         fontWeight: "500",
         fontSize: 15,
+        fontFamily:"Inter_300Light",
+      },
+    pressCard:{
+        width:'35%',
+        margin:10,
+        marginLeft: 20, marginBottom: 30
     },
+    pressCardcontent:{
+    },
+    profileImageContainer: {
+        width: 300,
+        height: 300,
+        borderRadius: 60, // Ensures full circle
+        overflow: 'hidden', // Prevents image from going beyond border
+        alignSelf: 'flex-start', // גורם לתמונה להיצמד לימין  (הוספה) 
+},
+    profileImage: {
+        width: 300,
+        height: 300,
+        borderRadius: 150, // Half of width/height
+        overflow: 'hidden', // Ensures the content stays within the round shape
+      }
+      
 });

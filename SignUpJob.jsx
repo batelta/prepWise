@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
   Headline: {
     fontFamily: 'Inter',
     color: '#003D5B',
-    fontSize: 18,
+    fontSize: 48,
     fontWeight: 'regular',
   },
   button: {
