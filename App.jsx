@@ -15,17 +15,16 @@ import AddApplication from './AddApplication';
 // Define your custom theme
 const theme = {
   colors: {
-    primary: '#BFB4FF', // Button color
-    accent: '#9FF9D5',  // Highlight color
-    background: '#FDFCF5', // Light cream background
-    text: '#003D5B',    // Text color
-  }
+    primary: "#BFB4FF", // Button color
+    accent: "#9FF9D5", // Highlight color
+    background: "#FDFCF5", // Light cream background
+    text: "#003D5B", // Text color
+  },
 };
 
-const Stack=createNativeStackNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function App() {
-
   return (
     <NavigationContainer>
     <PaperProvider theme={theme}>
@@ -45,4 +44,3 @@ export default function App() {
     </NavigationContainer>
   );
 }
-

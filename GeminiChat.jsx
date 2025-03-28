@@ -80,6 +80,7 @@ const GeminiChat = () => {
 
 const styles = StyleSheet.create({
   container: {
+  container: {
     flex: 1,
     padding: 20,
     backgroundColor: "#fff",
@@ -87,6 +88,17 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  textInput: {
+    flex: 1,
+    marginRight: 10,
+    backgroundColor: "#F2F2F2",
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
   textInput: {
     flex: 1,
