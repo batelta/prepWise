@@ -11,6 +11,9 @@ import GeminiChat from './GeminiChat';
 import LandingPage from './LandingPage';
 import JobForm from './JobForm';
 import AddApplication from './AddApplication';
+import SignUpJobSeeker from './SignUpJobSeeker';
+import Profile from './Profile';
+import EditProfile from './EditProfile';
 
 // Define your custom theme
 const theme = {
@@ -38,6 +41,9 @@ export default function App() {
       <Stack.Screen name="LandingPage" component={LandingPage}/>
       <Stack.Screen name="JobForm" component={JobForm}/>
       <Stack.Screen name="AddApplication" component={AddApplication}/>
+      <Stack.Screen name="SignUpJobSeeker" component={SignUpJobSeeker}/>
+      <Stack.Screen name="Profile" component={Profile}/>
+      <Stack.Screen name="EditProfile" component={EditProfile}/>
 
 
      </Stack.Navigator>

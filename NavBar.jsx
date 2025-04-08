@@ -1,6 +1,6 @@
 /**
  * NavBar.js - A responsive navigation bar for web and mobile.
- * - Uses a top navbar for web.
+ * - Uses a top navbar for web with React Navigation.
  * - Uses bottom tab navigation for mobile.
  */
 
@@ -9,16 +9,17 @@ import { Platform, View, Text, StyleSheet, Image, TouchableOpacity } from "react
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useFonts } from 'expo-font';
-import { Inter_400Regular,
-  Inter_300Light, Inter_700Bold,Inter_100Thin,
-  Inter_200ExtraLight } from '@expo-google-fonts/inter';
+import {
+  Inter_400Regular,
+  Inter_300Light,
+  Inter_700Bold,
+  Inter_100Thin,
+  Inter_200ExtraLight,
+} from '@expo-google-fonts/inter';
+import { useNavigation } from "@react-navigation/native";
+import { useRoute } from "@react-navigation/native";
 
-
-/*
-if (!fontsLoaded) {
-  console.log('no fonts') // or a loading spinner
-}
-*/
+// Dummy placeholder screens for mobile
 const HomeScreen = () => <View style={styles.screen}><Text>Home</Text></View>;
 const ChatScreen = () => <View style={styles.screen}><Text>Chat</Text></View>;
 const JobScreen = () => <View style={styles.screen}><Text>Add Job</Text></View>;
@@ -42,7 +43,7 @@ const MobileNavBar = () => (
         else if (route.name === "Calendar") iconName = focused ? "calendar" : "calendar-outline";
         return <Ionicons name={iconName} size={size} color={iconColor} />;
       },
-      tabBarLabelStyle: { color: "#003D5B", fontSize: 9, textAlign: "center",  width: 60 },
+      tabBarLabelStyle: { color: "#003D5B", fontSize: 9, textAlign: "center", width: 60 },
       tabBarStyle: styles.tabBar,
     })}
   >
@@ -56,145 +57,126 @@ const MobileNavBar = () => (
 );
 
 const WebNavBar = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const [hovered, setHovered] = React.useState("");
 
-  const [Hovered, setHovered] = React.useState("");
-
-  //checking which page were on and highlighting it accordingly
-
-  const [currentPage, setCurrentPage] = React.useState("");
-
-  React.useEffect(() => {
-    setCurrentPage(window.location.pathname); // Gets the current URL path
-  }, []);
-///////////
   const navItems = [
-    { name: "Home", path: "/" },
-    { name: "Chat", path: "/chat" },
-    { name: "Add Job", path: "/add-job" },
-    { name: "Calendar", path: "/calendar" },
-    { name: "Profile", path: "/profile" },
-    { name: "Menu", path: "/menu" },
+    { name: "Home", screen: "HomePage" },
+    { name: "Chat", screen: "GeminiChat" },
+    { name: "Add Job", screen: "AddApplication" },
+    { name: "Calendar", screen: "LandingPage" },
+    { name: "Profile", screen: "Profile" },
+    { name: "Menu", screen: "LandingPage" },
   ];
 
-  return(
-
-  <View style={styles.webNavContainer}>
-    <View style={styles.webNav}>
-      <View style={styles.logoContainer}>
-        <Image source={require("./assets/prepWise Logo.png")} style={styles.logo} />
-   {/*  <Text style={styles.logoText}>prepWise</Text> */}
-      </View>
-      <View style={styles.navLinks}>
-      {navItems.map((item) => (
-         <TouchableOpacity
-         key={item.path}
-         onPress={() => (window.location.href = item.path)}
-         onMouseEnter={() => setHovered(item.path)}
-         onMouseLeave={() => setHovered(null)}
-       >
-         <Text
-           style={[
-             styles.link,
-             currentPage === item.path ? styles.activeLink : null, // Active styling
-             Hovered === item.path && currentPage !== item.path ? styles.linkHover : null, // Hover styling only if not active
-           ]}
-         >
-           {item.name}
-         </Text>
-       </TouchableOpacity>
-       
-          ))}
+  return (
+    <View style={styles.webNavContainer}>
+      <View style={styles.webNav}>
+        <View style={styles.logoContainer}>
+          <Image source={require("./assets/prepWise Logo.png")} style={styles.logo} />
+        </View>
+        <View style={styles.navLinks}>
+          {navItems.map((item) => {
+            const isActive = route.name === item.screen;
+            return (
+              <TouchableOpacity
+                key={item.screen}
+                onPress={() => navigation.navigate(item.screen)}
+                onMouseEnter={() => setHovered(item.screen)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                <Text
+                  style={[
+                    styles.link,
+                    (hovered === item.screen || isActive) && styles.linkHover,
+                  ]}
+                >
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
     </View>
-  </View>
-  
-        )
+  );
 };
 
-const NavBar = () =>{
-const [fontsLoaded] = useFonts({
-  Inter_400Regular,
-  Inter_700Bold,
-  Inter_100Thin,
-  Inter_200ExtraLight,
-  Inter_300Light
-});
+const NavBar = () => {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+    Inter_100Thin,
+    Inter_200ExtraLight,
+    Inter_300Light,
+  });
 
- return (Platform.OS === "web" ? <WebNavBar /> : <MobileNavBar />);
-}
+  if (!fontsLoaded) return null;
+  return Platform.OS === "web" ? <WebNavBar /> : <MobileNavBar />;
+};
+
 const styles = StyleSheet.create({
-
-///mobile design -tabBar
-tabBar:{
-  backgroundColor: "#BFB4FF",
-  height: 70,
-  borderTopLeftRadius: 20,
-  borderTopRightRadius: 20,
-  position: "absolute",
-  bottom: 0, 
-  left: 0,
-  right: 0,
-  width: "100%", 
-  shadowColor: "#000",
-  shadowOpacity: 0.1,
-  shadowRadius: 5,
-  shadowOffset: { width: 0, height: 5 },
-  elevation: 3,
-},
-  screen: { flex: 1, justifyContent: "center",
-     alignItems: "center" ,
-    },
-
+  // Mobile tabBar styling
+  tabBar: {
+    backgroundColor: "#BFB4FF",
+    height: 70,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
+  screen: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   webNavContainer: {
     width: "100%",
     backgroundColor: "#fff",
-    position: "absolute",
-    top: 0,
     position: "fixed",
+    top: 0,
     left: 0,
     zIndex: 1000,
-
   },
   webNav: {
     flexDirection: "row",
-    justifyContent:"space-between",
+    justifyContent: "space-between",
     alignItems: "center",
     marginHorizontal: "1%",
-
   },
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start", // Aligns items to the left
-  left:0
+    justifyContent: "flex-start",
   },
   logo: {
     height: 70,
     width: 120,
-    position: "relative",
     marginRight: 10,
     resizeMode: "contain",
   },
   navLinks: {
     flexDirection: "row",
     gap: 20,
-
   },
   link: {
     textDecorationLine: "none",
     color: "#003D5B",
-   // fontWeight: "500",
     fontSize: 16,
-    fontFamily: 'Inter_200ExtraLight' // Add fontFamily here
-  },
-  activeLink: {
-    borderBottomWidth: 3,
-    borderBottomColor: "#BFB4FF", // Purple underline for the active page
+    fontFamily: "Inter_200ExtraLight",
   },
   linkHover: {
     borderBottomWidth: 2,
-
-    borderBottomColor: "#BFB4FF", // Purple on hover
+    borderBottomColor: "#BFB4FF",
   },
 });
 

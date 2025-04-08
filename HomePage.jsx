@@ -11,11 +11,33 @@ import { Inter_400Regular,
 import AnimatedArrow from './AnimatedArrow'
 import AnimatedPlusIcon from "./AnimatedPlusIcon";
 
+import CustomPopup from "./CustomPopup"; // Import the custom popup
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const progress = 0; // 75% completed
 
 
 export default function HomePage() {
+
+    ////just checking
+   {/*    const [successPopupVisible, setSuccessPopupVisible] = useState(true);*/}
+   const [user, setUser] = useState(null);
+   const [profileImage, setProfileImage] = useState(null);
+
+   useEffect(() => {
+     const getUserData = async () => {
+       const storedUser = await AsyncStorage.getItem("user");
+       if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);      
+        setProfileImage(`${parsedUser.picture}`);
+
+     }
+     };
+     getUserData();
+    }, []);
+  
 
     const [fontsLoaded] = useFonts({
         Inter_400Regular,
@@ -24,7 +46,6 @@ export default function HomePage() {
         Inter_200ExtraLight,
         Inter_300Light
       });
-    const [profileImage, setProfileImage] = useState(null);
     const [Name, setName] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -65,6 +86,15 @@ export default function HomePage() {
                 {/** logo component is here only for mobile*/}
                 <LogoImage />
                 <View style={appliedStyles.container}>
+                     {/**Success popup */}
+                     {/*}
+              <CustomPopup
+          visible={successPopupVisible}
+          onDismiss={() => setSuccessPopupVisible(false)}
+          icon="check-circle" // Success icon
+          message="Action completed successfully!"
+        />
+        */}
                     <View style={appliedStyles.header}>
                        {/*  {loading ? (
                             <Text>Loading image...</Text>
@@ -80,19 +110,19 @@ export default function HomePage() {
                             */}
 
                         {/*this is for now only */}
-                        <View style={[appliedStyles.profileImageContainer]}>
+                        <View style={appliedStyles.profileImageContainer}>
 
                         <View  style={appliedStyles.profileImage}>
-                        <Image source={require('./assets/womanImage.jpg')} 
+                        <Image source={profileImage}
                                style={{  width: '100%',
                                 height: '100%',
                                 resizeMode: 'cover'}}
                                  />
                                 </View>
                                 </View>
-                                <View style={{ flex: 1}}>
+                          <View style={{flex:1}}>
      
-                        <Text style={appliedStyles.title}>Welcome {Name}, to your Home page!</Text>
+                        <Text style={appliedStyles.title}>Welcome {user ? user.firstName : "Guest"}, to your Home page!</Text>
                         <Text style={appliedStyles.subtitle}>What to do next?</Text> <AnimatedArrow/>
                     </View>
                     </View>
@@ -146,9 +176,9 @@ export default function HomePage() {
                     </Card>
                     </View>
                     </View>
-{/* new user section*/}
+                {/* new user section*/}
                     <Text style={appliedStyles.sectionTitle}>Get Started 💫</Text>
-
+                    <View style={appliedStyles.pressContainer}>
                     <Card style={appliedStyles.pressCard}>
                     <Card.Content style={appliedStyles.pressCardcontent}>
 
@@ -174,7 +204,7 @@ export default function HomePage() {
                            </Text>
                             </Card.Content>
                             </Card>
-
+                            </View>
                 <View>
                     <NavBar />
                 </View>
@@ -186,8 +216,10 @@ export default function HomePage() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "white",
-        padding: 16,
+        backgroundColor: "#fff",
+        padding: 50,
+        flexDirection: 'row', // Ensures text and image are side by side
+        //justifyContent:'space-evenly',
     },
     logo: {
         position: 'relative',
@@ -196,51 +228,87 @@ const styles = StyleSheet.create({
         height: 100,
     },
     header: {
-        alignItems: "center",
-        marginTop: 16,
+        flexDirection: "row-reverse",
+    alignItems: "center",
+    width: "130%",
+    left: "-15%", // Moves it left without relying on margins
+    paddingHorizontal: 16,
     },
+    profileImageContainer: {
+        width: 120,
+        height: 120,
+        borderRadius: 80, // Ensures full circle
+        overflow: 'hidden', // Prevents image from going beyond border
+        alignSelf: 'flex-start', // גורם לתמונה להיצמד לימין  (הוספה) 
+        marginRight:10
+},
     profileImage: {
-        width: 100,
-        height: 100,
+        width: 120,
+        height: 120,
         borderRadius: 50,
-    },
+
+ },
     title: {
         fontSize: 20,
-       fontWeight: "bold",
-        marginTop: 8,
-        fontFamily:"Inter_400Regular"
+        fontWeight: "bold",
+        fontFamily: "Inter_400Regular",
+        flex: 1, // Allows text to expand properly
     },
     subtitle: {
         color: "gray",
         fontFamily:"Inter_200ExtraLight"
+    },
+    section: {
+        flexDirection: "row",
+        justifyContent: "flex-start",
+        flexWrap: "wrap", // (Change) Allows wrapping if needed for responsiveness
+        alignItems: "center", // (Change) Ensures proper alignment
     },
     Applicationsection: {
         marginTop: 24,
     },
     sectionTitle: {
         fontSize: 15,
-        fontWeight: "600",
-        fontFamily:"Inter_300Light",
-        left:9,
+        fontFamily: "Inter_300Light",
+        left: 9,
+        marginBottom: 10, // (Change) Added margin to space out title from the cards
 
+    },
+    ApplicationsectionTitle:{
+        fontSize: 15,
+        fontFamily: "Inter_300Light",
+        left: 9,
+        marginBottom: 10, // (Change) Added margin to space out title from the cards
     },
     sectionDescription: {
-        color: "gray",
-        marginTop: 8,
+          color: "gray",
         fontFamily:"Inter_200ExtraLight",
-        left:9,
-
+      
     },
+    ToDoAndApplications:{
+        flexDirection:'column',
+        justifyContent:'flex-start',
+        marginBottom:30,
+            },
     toDoList: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 16,
-
+        justifyContent: "space-between", // (Change) Ensures even spacing between cards
+        paddingHorizontal: 10,
+        flexWrap: "nowrap", // (Change) Prevents wrapping so both cards stay in one row
     },
+    ToDocard:{
+        width: "48%", // (Change) Adjusted width so both cards fit in one row
+       height:120,
+       },
+       Cardcontent:{
+           alignItems: 'center', // Centers items inside Card.Content
+           justifyContent: 'center',
+       },
     toDoItem: {
-        width: "48%",
+        width: "80%",
+        height:"130%",
         backgroundColor: "#f3f4f6",
-        padding: 16,
+        padding: 10,
         borderRadius: 12,
         alignItems: "center",
 
@@ -255,12 +323,35 @@ const styles = StyleSheet.create({
         fontFamily:"Inter_200ExtraLight"
 
     },
+    Applicationcard:{
+     width:'100%',
+    },
+    ApplicationCardcontent:{
+        alignItems: 'center', // Centers items inside Card.Content
+        justifyContent: 'flex-start',
+    },
+
     pressText: {
         fontWeight: "500",
         fontSize: 15,
         fontFamily:"Inter_300Light",
-
+      },
+    pressCard:{
+        width: "90%", // (Change) Increased width to make it look more like a card
+        margin: 10,
+        alignSelf: "center", // (Change) Centered the card
+        padding: 15, // (Change) Added padding to make it visually distinct
+        backgroundColor: "#f3f4f6", // (Change) Ensures it looks like a card
+        borderRadius: 12, // (Change) Gives a card-like appearance
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2, // (Change) Adds shadow effect for Android
     },
+    pressContainer:{
+        marginBottom:80
+    }
 });
 
 const Webstyles = StyleSheet.create({
@@ -322,6 +413,11 @@ const Webstyles = StyleSheet.create({
        // paddingHorizontal:25,
 
     },
+    ToDoAndApplications:{
+        flexDirection:'column',
+        justifyContent:'space-between',
+        marginBottom:90,
+            },
     toDoList: {
         flexDirection: "row",
         justifyContent: "flex-start",

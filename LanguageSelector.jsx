@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+
+import React, { useState,useEffect  } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MultiSelect from 'react-native-multiple-select';
 import languages from './languages.json';
+import { useFonts } from 'expo-font';
+import { Inter_400Regular,
+  Inter_300Light, Inter_700Bold,Inter_100Thin,
+  Inter_200ExtraLight } from '@expo-google-fonts/inter';
 
-const LanguageSelector = ({ selectedLanguages, setSelectedLanguages }) => {
-    const [selectedItems, setSelectedItems] = useState([]);
+
+const LanguageSelector = ({ selectedLanguages, setSelectedLanguages,style }) => {
+
+  const [selectedItems, setSelectedItems] = useState([]);
   const onSelectedItemsChange = (selectedItems) => {
     setSelectedItems(selectedItems);
     handleSelectedLanguages(selectedItems)
@@ -16,81 +23,102 @@ const handleSelectedLanguages = (selectedItems) => {
       .filter(lang => lang !== undefined);
     setSelectedLanguages(selectedLanguages.map(lang => lang.name)); // Store names instead of objects
   };
+////התוספת
+  useEffect(() => {
+    if (selectedLanguages && selectedLanguages.length > 0) {
+      const codes = selectedLanguages
+        .map(name => {
+          const lang = languages.find(lang => lang.name === name);
+          return lang ? lang.code : null;
+        })
+        .filter(code => code !== null);
+  
+      setSelectedItems(codes);
+    }
+  }, [selectedLanguages]);
+//////התוספת
+
+  const [fontsLoaded] = useFonts({
+        Inter_400Regular,
+        Inter_700Bold,
+        Inter_100Thin,
+        Inter_200ExtraLight,
+        Inter_300Light
+      });
+    
   return (
-    <View style={{ flex: 1 }}>
-      <MultiSelect
-        hideTags={false} // Make sure tags are not hidden
-        items={languages}
-        uniqueKey="code"
-        onSelectedItemsChange={onSelectedItemsChange}
-        selectedItems={selectedItems}
-        selectText="Pick Items"
-        searchInputPlaceholderText="Search Items..."
-        tagRemoveIconColor="#black" // Color of the "x" icon
-        tagBorderColor="#CCC" // Border color of the tags
-        tagTextColor="#000" // Text color inside the tag
-        selectedItemTextColor="#000"
-        displayKey="name" // Use name for displaying the item
-        submitButtonColor="#CCC"
-        submitButtonText="Submit"
-        styleMainWrapper={styles.multiSelectWrapper} // Style the main container
-        styleRowList={styles.multiSelectRow} // Style the row for items in the dropdown
-        styleDropdownMenuSubsection={styles.dropdownMenuSubsection} // Style the dropdown
-        tagContainerStyle={styles.tagContainer} // Style the container of each selected item
+    
+    <View style={[styles.multiSelectWrapper, style]}>
+<MultiSelect
+         hideTags={false}
+         items={languages}
+         uniqueKey="code"
+         onSelectedItemsChange={onSelectedItemsChange}
+         selectedItems={selectedItems}
+         selectText="Pick Languages"
+         searchInputPlaceholderText="Search Languages..."
+         displayKey="name"
+         fontSize={13}
+         tagRemoveIconColor="#BFB4FF"
+         tagBorderColor="#f9f9f9"
+         tagTextColor="#888"
+         altFontFamily="Inter_200ExtraLight"
+         fontFamily='Inter_200ExtraLight'
+         itemFontFamily='Inter_200ExtraLight'
+         itemFontSize={13}
+         selectedItemTextColor="#888"
+         selectedItemIconColor="#BFB4FF"
+         itemTextColor="#888"
+         searchInputStyle={{ color: '#CCC',fontSize:13,fontFamily:'Inter_200ExtraLight' }}
+         submitButtonColor="#BFB4FF"
+         submitButtonText="Submit"
+         styleListContainer={styles.listContainer}
+         styleDropdownMenuSubsection={styles.dropdownMenuSubsection}
+         styleSelectorContainer={styles.selectorContainer}
+         styleInputGroup={styles.inputGroup}
+         styleMainWrapper={styles.mainWrapper} // Custom text styling
+         styleItemsContainer={styles.itemsContainer}
       />
       {/* Display selected items in a row */}
-      <View style={styles.selectedItemsContainer}>
-      {/*
-      {selectedItems.map((item, index) => {
-          // Find the language object based on the selected code
-          const language = languages.find(lang => lang.code === item);
-          return language ? (
-            <View >
-              <Text style={styles.selectedItemText}>{language.name}</Text>
-               You can remove the selected item when the "x" icon is clicked 
-            </View>
-          ) : null;
-        })}  */}
-     </View>
+      <View style={styles.selectedItemsContainer}></View>
+
     </View>
+ 
+   
   );
 };
 
 const styles = StyleSheet.create({
   multiSelectWrapper: {
-    marginBottom: 10,
+    width: '100%',
+    //paddingHorizontal: 10,
   },
-  multiSelectRow: {
-    flexDirection: 'row', // Make sure the dropdown items appear horizontally
-    flexWrap: 'wrap', // Allow wrapping of items if they don't fit in one row
+  listContainer: {
+    maxHeight: 150,
+    backgroundColor: 'white',
   },
   dropdownMenuSubsection: {
-    borderRadius: 5, // Style for the dropdown menu
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
   },
-  tagContainer: {
-    flexDirection: 'row', // Display tags in a row
-    flexWrap: 'wrap', // Allow wrapping of tags
-    padding: 5,
+  selectorContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
-  selectedItemsContainer: {
-    flexDirection: 'row', // Display selected items in a row
-    flexWrap: 'wrap', // Allow items to wrap to the next line if needed
-    marginTop: 10,
+  inputGroup: {
+    backgroundColor: '#fff',
   },
-  selectedItemBox: {
-    backgroundColor: '#BFB4FF',
-    margin: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
+  mainWrapper: {
+    backgroundColor: '#fff',
   },
-  selectedItemText: {
-    color: '#003D5B',
-    fontSize: 14,
-    marginRight: 5,
+  itemsContainer: {
+    backgroundColor: '#fff',
   },
 });
+
+
 
 export default LanguageSelector;

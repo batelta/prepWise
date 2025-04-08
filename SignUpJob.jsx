@@ -1,32 +1,38 @@
 import * as React from 'react'; 
 import { TextInput, Button, Provider as PaperProvider, Modal, Portal, Checkbox, IconButton } from 'react-native-paper';
 import { ScrollView, Text ,TouchableOpacity, View, StyleSheet,Image ,KeyboardAvoidingView,Keyboard,Platform,TouchableWithoutFeedback } from 'react-native';
-import { useEffect } from 'react';
+import { useEffect,useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import LanguageSelector from './LanguageSelector';
-import UploadPage from './UploadPage'; // ייבוא הקומפוננטה של העלאת התמונה
-
-
+import CustomPopup from "./CustomPopup"; // Import the custom popup
+import { useFonts } from 'expo-font';
+import { Inter_400Regular,
+  Inter_300Light, Inter_700Bold,Inter_100Thin,
+  Inter_200ExtraLight } from '@expo-google-fonts/inter';
+  import Ionicons from '@expo/vector-icons/Ionicons';
+  
 const theme = {
+
+
   colors: {
     primary: '#BFB4FF',
     accent: '#9FF9D5',
     background: '#fff',
-    text: '#003D5B',
+    text: 'black',
     placeholder: '#fff',
     onSurfaceVariant: '#9C9BC2',
     outline: '#f5f5f5',
   },
-  roundness: 20,
+  roundness: 10,
+
 };
 
 const styles = StyleSheet.create({
 
   Headline: {
-    fontFamily: 'Inter',
+    fontFamily: 'Inter_200ExtraLight',
     color: '#003D5B',
-    fontSize: 48,
+    fontSize: 28,
     fontWeight: 'regular',
   },
   button: {
@@ -36,15 +42,15 @@ const styles = StyleSheet.create({
   textInput: {
     width: '80%',
     marginBottom: 15,
-    backgroundColor: '#F2F2F2',
     cursor: 'pointer'
 
   },
+ 
   logo: {
     position: 'relative',
     width: '30%',
     resizeMode: 'contain',
-    height:100
+    height:100,
   },
   passwordtext: {
     textDecorationLine: 'underline',
@@ -56,10 +62,206 @@ const styles = StyleSheet.create({
     marginHorizontal: 20, // Center horizontally
     borderRadius: 20,
   },
+  inputsContainer:{
+    flex:1,
+    width:"100%",
+    flexDirection:'column',
+    justifyContent:'center',
+    alignItems:'center',
+    marginTop:10
+  },
+  languageContainer:{
+ //   zIndex:3,
+    width:"70%",
+ },
+  footerText:{
+    flexDirection: 'row',
+     marginTop: 30, 
+     marginBottom: 100
+  },
+  profileImage:{
+    width: 100,
+     height: 100,
+      borderRadius: 50,
+       marginTop: 20,
+        borderWidth: 2,
+     borderColor: '#BFB4FF'
+  },
 
+
+  ///checking 
+  cameraButtonAfter:{
+    backgroundColor: '#fff', 
+  position:'absolute',
+  },
+  cameraIconAfter:{
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    backgroundColor: "#d6cbff",
+    width: 30, // Set width and height to the same value
+    height: 30, 
+    borderRadius: 15, // Should be half of width/height to make a perfect circle
+    justifyContent: "center", // Center the content
+    alignItems: "center",
+    display: "flex", // Ensures proper flex behavior,
+    color:"white"
+    },
+  imageAndIconContainer:{
+    flexDirection:'row',
+    alignSelf:'center',
+    marginLeft: 20,
+    marginBottom:20
+  }
+  
 });
 
+///web style 
+const Webstyles = StyleSheet.create({
+  Headline: {
+    fontFamily: "Inter_400Regular",
+    color: 'black',
+    fontSize: 20,
+    alignSelf:'center',
+    marginBottom: 20,  // Adding some space below the headline
+  },
+  button: {
+   // width: '80%',
+    marginTop: 40,
+
+  },
+  textInput: {
+    width: '100%', // Ensure it stretches in web view
+    marginBottom: 15,
+    backgroundColor: '#fff',
+    fontSize: 14, // Adjust font size
+    fontFamily: "Inter_400Regular",
+    color: '#003D5B',
+    borderRadius: 5, // Optional: rounded corners
+  },
+  logo: {
+    height: 70,
+    width: 120,
+    position: "relative",
+    marginRight: 10,
+    resizeMode: "contain",
+    alignSelf:'flex-start',
+    left:0
+
+  },
+  passwordtext: {
+    textDecorationLine: 'underline',
+    color: '#003D5B',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    marginHorizontal: 20,
+    borderRadius: 20,
+    width:"40%",
+    alignSelf:'flex-start',
+    marginLeft:60,
+
+  },
+  webContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    marginHorizontal: '5%',
+  },
+  webForm: {
+    flex: 1,
+    padding: 20,
+    maxWidth: '500px',  // Set a max width for form to make it look neat on big screens
+    marginRight: 20,    // Space between form and image
+  },
+  webImage: {
+    flex: 1,
+    height: '100%',
+    maxWidth: '50%',
+    marginLeft: 20,
+    backgroundColor: '#F2F2F2',
+    borderRadius: 10,  // Adding a slight border radius for aesthetics
+  },
+  // Adjusting for mobile to web switch
+
+  imageButton: {
+    backgroundColor: '#BFB4FF',
+    padding: 15,
+    borderRadius: 50,
+  },
+  inputsContainer:{
+    flex: 1,
+    width: "40%",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignSelf:'flex-start',
+    marginLeft:60,
+    marginBottom:50,
+    backgroundColor: "white", // רקע לבן כמו כרטיס
+    padding: 20, // מרווח פנימי נוח
+    borderRadius: 10, // פינות מעוגלות
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5, // הצללה באנדרואיד
+  },
+  footerText:{
+    flexDirection: 'row',
+    marginTop: 30, 
+    marginBottom: 30
+  },
+  profileImage:{
+    width: 100,
+     height: 100, 
+     borderRadius: 50,
+      marginTop: 20, 
+      borderWidth: 2,
+       borderColor: '#BFB4FF',
+       mode:"contained",
+
+  },
+  cameraButtonAfter:{
+    backgroundColor: '#fff', 
+
+  },
+  cameraIconAfter:{
+    position: "absolute",
+    bottom: 2,
+    right: 4,
+    backgroundColor: "#d6cbff",
+    width: 30, // Set width and height to the same value
+    height: 30, 
+    borderRadius: 15, // Should be half of width/height to make a perfect circle
+    justifyContent: "center", // Center the content
+    alignItems: "center",
+    display: "flex", // Ensures proper flex behavior,
+    color:"white"
+    },
+  imageAndIconContainer:{
+    flexDirection:'row',
+    alignSelf:'center',
+    marginLeft: 20,
+    marginBottom:20
+  }
+});
+
+
 export default function SignUpJob({ navigation }) {
+ 
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+    Inter_100Thin,
+    Inter_200ExtraLight,
+    Inter_300Light
+  });
+
+  const [successPopupVisible, setSuccessPopupVisible] = useState(false);
+  const [errorPopupVisible, setErrorPopupVisible] = useState(false); // for the popup 
+
 
   const [FirstNametext, setFirstNameText] = React.useState("");
   const [FirstNameError, setFirstNameError] = React.useState(""); //for validating the first name
@@ -172,9 +374,10 @@ const [selectedLanguages, setSelectedLanguages] = React.useState([]);
 
   const pickImage = async () => {
           {/* Image Upload Component */}
-                    <View style={styles.section}>
+                  {/** <View style={styles.section}>
                         <UploadPage />  {/* הצגת הקומפוננטה של העלאת תמונה */}
-                    </View>
+                  {/**   </View> 
+                   */}   
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -234,144 +437,166 @@ const [selectedLanguages, setSelectedLanguages] = React.useState([]);
         const responseBody = await response.text();  // Use text() instead of json() to handle any response format
         console.log("Response Body:", responseBody);
         if(response.ok)
-          console.log('user added!',selectedLanguages)
-        //  navigation.navigate('HomePage')
+         {
+          setSuccessPopupVisible(true)
+     
+          //  navigation.navigate('HomePage')
+
+         }
     
     if(!response.ok){
+      setErrorPopupVisible(true)
       throw new Error('failed to post new user')
     }
       }catch(error){
     console.log(error)
       }
   }
-  return (
-    <PaperProvider theme={theme}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        style={{ flex: 1 }}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView 
-            contentContainerStyle={{ flexGrow: 1, backgroundColor: theme.colors.background }}
-            keyboardShouldPersistTaps="handled" // Makes sure the input fields remain focused even after tapping outside
-          >
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background, position: 'relative' }}>
-              <Image source={require('./assets/prepWise Logo.png')} style={styles.logo} />
-              <Text style={styles.Headline}>Sign Up</Text>
 
-              {image ? (
-                <View style={{ position: 'relative' }}>
-                  <Image source={{ uri: image }} style={{ width: 100, height: 100, borderRadius: 50, marginTop: 20, borderWidth: 2, borderColor: '#BFB4FF' }} />
-                  <TouchableOpacity onPress={pickImage} style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: '#F5F5F5', padding: 5, borderRadius: 50 }}>
-                    <IconButton icon="camera-plus-outline" size={10} style={{ width: 10, height: 10 }} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity onPress={pickImage} style={{ marginTop: 20 }}>
-                  <IconButton icon="camera-plus-outline" size={20} style={{ backgroundColor: '#BFB4FF' }} />
-                </TouchableOpacity>
-              )}
 
-              <TextInput label={"Enter First Name"} value={FirstNametext} 
-                style={styles.textInput} 
-                onChangeText={handleFirstNameChange}
-                textColor={theme.colors.text}
-                mode="outlined" />
-              {FirstNameError ? <Text style={{ color: "red" }}>{FirstNameError}</Text> : null} 
+      const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
+  
+      return (
+          <PaperProvider theme={theme}>
+ <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
 
-              <TextInput label={"Enter Last Name"} value={LastNametext} 
-                style={styles.textInput} 
-                onChangeText={handleLastNameChange} 
-                textColor={theme.colors.text}
-                mode="outlined" />
-              {LastNameError ? <Text style={{ color: "red" }}>{LastNameError}</Text> : null}
+<ScrollView contentContainerStyle={{ flexGrow: 1}} keyboardShouldPersistTaps="handled">
 
-              <TextInput label={"Enter Email Address"} value={Emailtext} 
-                onChangeText={handleEmailChange}
-                style={styles.textInput} 
-                textColor={theme.colors.text}
-                mode="outlined" />
-              {EmailError ? <Text style={{ color: "red" }}>{EmailError}</Text> : null}
+<View style={{ flex: 1, alignItems: 'center', backgroundColor: theme.colors.background}}>
+                  <Image source={require('./assets/prepWise Logo.png')} style={appliedStyles.logo} />
 
-              <TextInput label={"Enter Password"} value={Passwordtext} 
-                 onChangeText={handlePasswordChange}
-                style={styles.textInput} 
-                textColor={theme.colors.text}
-                mode="outlined" secureTextEntry={secureText} 
-                right={<TextInput.Icon   icon={secureText ? 'eye' : 'eye-off'} // Toggle icon based on secureText state
-                onPress={() => setSecureText(!secureText)} // Toggle the secureText state
-                iconColor={theme.colors.primary} // Change the icon color
-                />} />
-              {PasswordError ? <Text style={{ color: "red" }}>{PasswordError}</Text> : null}
+                  <View style={appliedStyles.inputsContainer}>
 
-            {/* Fields Modal */}
-          <Button mode="outlined" onPress={() => setFieldModalVisible(true)} 
-          style={styles.textInput}  
-          contentStyle={{ justifyContent: 'left',height:45 }} // Ensures left alignment of content
-          labelStyle={{color: theme.colors.onSurfaceVariant, fontSize: 16,fontWeight:'regular'}}>
-      {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
-          </Button>
-          <Portal>
-            <Modal visible={fieldModalVisible} onDismiss={() => setFieldModalVisible(false)} contentContainerStyle={styles.modalContent}>
-              {Fields.map((field, index) => (
-                <Checkbox.Item 
-                key={index} 
-                label={field} 
-                status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
-                onPress={() => toggleField(field)} />
-              ))}
-              <Button onPress={() => setFieldModalVisible(false)}
-                >Done</Button>
-            </Modal>
-          </Portal>
+                  <Text style={appliedStyles.Headline}>Sign Up</Text>
+      
+                  {image ? (
+                    <View style={appliedStyles.imageAndIconContainer}>
+                      <Image source={{ uri: image }} style={appliedStyles.profileImage} />
+                      <TouchableOpacity onPress={pickImage} style={appliedStyles.cameraButtonAfter}>
+                      <Ionicons name="camera-outline" size={24} style={appliedStyles.cameraIconAfter}></Ionicons>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View style={appliedStyles.imageAndIconContainer}>
+                      <Image source={{ uri: image }} style={appliedStyles.profileImage} />
+                    <TouchableOpacity onPress={pickImage}>
+                    <Ionicons name="camera-outline" size={24} style={appliedStyles.cameraIconAfter}></Ionicons>
+                    </TouchableOpacity>
+                    </View>
 
-          {/* Statuses Modal */}
-          <Button mode="outlined" onPress={() => setStatusModalVisible(true)} 
-          style={styles.textInput}
-          contentStyle={{ justifyContent: 'left',height:45,borderRadius:10 }} // Ensures left alignment of content
-          labelStyle={{color: theme.colors.onSurfaceVariant, fontSize: 16,fontWeight:'regular'}} >
-            {selectedStatuses.length ? selectedStatuses.join(', ') : 'Select Your Professional Status'}
-          </Button>
-          <Portal>
-            <Modal visible={statusModalVisible} onDismiss={() => setStatusModalVisible(false)} contentContainerStyle={styles.modalContent}>
-              {statuses.map((status, index) => (
-                <Checkbox.Item key={index} label={status} status={selectedStatuses.includes(status) ? 'checked' : 'unchecked'} onPress={() => toggleStatus(status)} />
-              ))}
-              <Button onPress={() => setStatusModalVisible(false)}>Done</Button>
-            </Modal>
-          </Portal>
-          <LanguageSelector
-           selectedLanguages={selectedLanguages} 
-           setSelectedLanguages={setSelectedLanguages}  />
+                  )}
+      
+      
+                  <TextInput label={"Enter First Name"} value={FirstNametext} 
+                    style={appliedStyles.textInput} 
+                    onChangeText={handleFirstNameChange}
+                    textColor={theme.colors.text}
 
-             
-              <TextInput label={"Facebook Link (Optional)"} value={FacebookLink} 
-                onChangeText={handleFacebookLinkChange}
-                style={styles.textInput} 
-                textColor={theme.colors.text}
-                mode="outlined" />
-              {FacebookLinkError ? <Text style={{ color: "red" }}>{FacebookLinkError}</Text> : null}
-
-              <TextInput label={"LinkedIn Link (Optional)"} value={LinkedInLink} 
-              onChangeText={handleLinkedInLinkChange} 
-                style={styles.textInput} 
-                textColor={theme.colors.text}
-                mode="outlined" />
-               {LinkedInLinkError ? <Text style={{ color: "red" }}>{LinkedInLinkError}</Text> : null}
-
-              <Button mode="contained" style={styles.button}
-                onPress={()=>{addNewUser(FirstNametext,LastNametext,Emailtext,Passwordtext,selectedFields,
-                  selectedStatuses,selectedLanguages,
-                  FacebookLink,LinkedInLink
-                )}}>Sign Up</Button>
-
-              <View style={{ flexDirection: 'row', marginTop: 30 ,marginBottom: 100}}>
-                <Text>Already have an account? </Text>
-                <Text style={styles.passwordtext} onPress={() => navigation.navigate('SignIn')}>Sign In</Text>
-              </View>
+                    mode="outlined" />
+                  {FirstNameError ? <Text style={{ color: "red" }}>{FirstNameError}</Text> : null} 
+      
+                  <TextInput label={"Enter Last Name"} value={LastNametext} 
+                    style={appliedStyles.textInput} 
+                    onChangeText={handleLastNameChange} 
+                    textColor={theme.colors.text}
+                    mode="outlined" />
+                  {LastNameError ? <Text style={{ color: "red" }}>{LastNameError}</Text> : null}
+      
+                  <TextInput label={"Enter Email Address"} value={Emailtext} 
+                    onChangeText={handleEmailChange}
+                    style={appliedStyles.textInput} 
+                    textColor={theme.colors.text}
+                    mode="outlined" />
+                  {EmailError ? <Text style={{ color: "red" }}>{EmailError}</Text> : null}
+      
+                  <TextInput label={"Enter Password"} value={Passwordtext} 
+                    onChangeText={handlePasswordChange}
+                    style={appliedStyles.textInput} 
+                    textColor={theme.colors.text}
+                    mode="outlined" secureTextEntry={secureText} 
+                    right={<TextInput.Icon icon={secureText ? 'eye' : 'eye-off'} 
+                      onPress={() => setSecureText(!secureText)} 
+                      iconColor={theme.colors.primary} />} />
+                  {PasswordError ? <Text style={{ color: "red" }}>{PasswordError}</Text> : null}
+      
+                  {/* Fields Modal */}
+                  <Button mode="outlined" onPress={() => setFieldModalVisible(true)} 
+                    style={appliedStyles.textInput}  
+                    contentStyle={{ justifyContent: 'left', height: 40 }} 
+                    labelStyle={{color: theme.colors.onSurfaceVariant, fontSize: 14, fontFamily: 'Inter_400Regular'}}>
+                    {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
+                  </Button>
+                  <Portal>
+                    <Modal visible={fieldModalVisible} onDismiss={() => setFieldModalVisible(false)} contentContainerStyle={appliedStyles.modalContent}>
+                      {Fields.map((field, index) => (
+                        <Checkbox.Item 
+                          key={index} 
+                          label={field} 
+                          status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
+                          onPress={() => toggleField(field)} />
+                      ))}
+                      <Button onPress={() => setFieldModalVisible(false)}>Done</Button>
+                    </Modal>
+                  </Portal>
+      
+                  {/* Statuses Modal */}
+                  <Button mode="outlined" onPress={() => setStatusModalVisible(true)} 
+                    style={appliedStyles.textInput}
+                    contentStyle={{ justifyContent: 'left', height: 40, borderRadius: 10 }} 
+                    labelStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 14, fontFamily: 'Inter_400Regular' }}>
+                    {selectedStatuses.length ? selectedStatuses.join(', ') : 'Select Your Professional Status'}
+                  </Button>
+                  <Portal>
+                    <Modal visible={statusModalVisible} onDismiss={() => setStatusModalVisible(false)} contentContainerStyle={appliedStyles.modalContent}>
+                      {statuses.map((status, index) => (
+                        <Checkbox.Item key={index} label={status} status={selectedStatuses.includes(status) ? 'checked' : 'unchecked'} onPress={() => toggleStatus(status)} />
+                      ))}
+                      <Button onPress={() => setStatusModalVisible(false)}>Done</Button>
+                    </Modal>
+                  </Portal>
+                  <View style={appliedStyles.languageContainer}>
+              
+              <LanguageSelector
+                selectedLanguages={selectedLanguages} 
+                setSelectedLanguages={setSelectedLanguages}
+              />
             </View>
-          </ScrollView>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </PaperProvider>
-  );
-}
+                  <TextInput label={"Facebook Link (Optional)"} value={FacebookLink} 
+                    onChangeText={handleFacebookLinkChange}
+                    style={appliedStyles.textInput} 
+                    textColor={theme.colors.text}
+                    mode="outlined" />
+                  {FacebookLinkError ? <Text style={{ color: "red" }}>{FacebookLinkError}</Text> : null}
+      
+                  <TextInput label={"LinkedIn Link (Optional)"} value={LinkedInLink} 
+                    onChangeText={handleLinkedInLinkChange} 
+                    style={appliedStyles.textInput} 
+                    textColor={theme.colors.text}
+                    mode="outlined" />
+                  {LinkedInLinkError ? <Text style={{ color: "red" }}>{LinkedInLinkError}</Text> : null}
+      
+                  <Button mode="contained" style={appliedStyles.button}
+                    onPress={() => { addNewUser(FirstNametext, LastNametext, Emailtext, Passwordtext, selectedFields, 
+                      selectedStatuses, selectedLanguages, FacebookLink, LinkedInLink) }}>Sign Up</Button>
+      
+                  <CustomPopup visible={successPopupVisible}
+                    onDismiss={() => setSuccessPopupVisible(false)}
+                    icon="check-circle" message="Action completed successfully!" />
+      
+                  <CustomPopup visible={errorPopupVisible}
+                    onDismiss={() => setErrorPopupVisible(false)}
+                    icon="alert-circle" message="{errorMessage}" />
+      
+                  <View style={appliedStyles.footerText}>
+                    <Text>Already have an account? </Text>
+                    <Text style={appliedStyles.passwordtext} onPress={() => navigation.navigate('SignIn')}>Sign In</Text>
+                  </View>
+          </View>
+        
+                </View>
+              </ScrollView>
+              </KeyboardAvoidingView>
+  </PaperProvider>
+);
+    
+ }      

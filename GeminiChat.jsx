@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-const API_KEY = "AIzaSyChUXRg1ZyJOG1mxzqVuhnZE3vN89V3YSY"; 
+const API_KEY = "AIzaSyDtX7_UXPgZWz-nDuZFApKJvPk_AyV9-D4"; 
 
 const GeminiChat = () => {
   const [userInput, setUserInput] = useState("");
