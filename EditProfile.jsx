@@ -1,13 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView,Platform  } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, Modal, Portal, Checkbox, Provider as PaperProvider } from 'react-native-paper';
+import LanguageSelector from './LanguageSelector';
+import { useFonts } from 'expo-font';
+import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
+import NavBar from "./NavBar";
+import CustomPopup from "./CustomPopup"; 
+
+
 
 const EditProfile = () => {
-  const navigation = useNavigation();
+const [popupVisible, setPopupVisible] = useState(false);
+ 
+const navigation = useNavigation();
+//fonts
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+    Inter_100Thin,
+    Inter_200ExtraLight,
+    Inter_300Light
+  });
+
   const [user, setUser] = useState({
     firstName: "",
     lastName: "",
@@ -16,9 +34,100 @@ const EditProfile = () => {
     facebookLink: "",
     linkedinLink: "",
     picture: "",
-    experience: ""
+    experience: "",
+    language:[],
+    careerField:[],
   });
 
+
+//בדיקות התאמה לתבנית של השדות
+const [errors, setErrors] = useState({
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  facebookLink: "",
+  linkedinLink: "",
+});
+
+
+const handleChange = (field, value) => {
+setUser(prevUser => ({ ...prevUser, [field]: value }));
+
+  // בדיקות שדה לפי השם של השדה
+  if (field === "firstName") {
+    if (!value.trim()) {
+      setErrors(prevErrors => ({ ...prevErrors, firstName: "" }));
+    } else if (!/^[A-Za-z]{1,15}$/.test(value)) {
+      setErrors(prevErrors => ({ ...prevErrors, firstName: "Only letters, up to 15 characters." }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, firstName: "" }));
+    }
+  }
+
+  if (field === "lastName") {
+    if (!value.trim()) {
+      setErrors(prevErrors => ({ ...prevErrors, lastName: "" }));
+    } else if (!/^[A-Za-z]{1,15}$/.test(value)) {
+      setErrors(prevErrors => ({ ...prevErrors, lastName: "Only letters, up to 15 characters." }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, lastName: "" }));
+    }
+  }
+
+  if (field === "email") {
+    if (!value.trim()) {
+      setErrors(prevErrors => ({ ...prevErrors, email: "" }));
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) {
+      setErrors(prevErrors => ({ ...prevErrors, email: "Enter a valid email address." }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, email: "" }));
+    }
+  }
+
+  if (field === "password") {
+    if (!value.trim()) {
+      setErrors(prevErrors => ({ ...prevErrors, password: "" }));
+    } else if (!/[A-Za-z0-9]{5,10}$/.test(value)) {
+      setErrors(prevErrors => ({ ...prevErrors, password: "Password must be 5-10 characters (Numbers/Letters)." }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, password: "" }));
+    }
+  }
+
+  if (field === "facebookLink") {
+    if (!value.trim()) {
+      setErrors(prevErrors => ({ ...prevErrors, facebookLink: "" }));
+    } else if (!/^(https?:\/\/)?(www\.)?facebook\.com\/[a-zA-Z0-9(\.\?)?(\#)?&%=+_\-\/]+$/.test(value)) {
+      setErrors(prevErrors => ({ ...prevErrors, facebookLink: "Enter a valid Facebook URL." }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, facebookLink: "" }));
+    }
+  }
+
+  if (field === "linkedinLink") {
+    if (!value.trim()) {
+      setErrors(prevErrors => ({ ...prevErrors, linkedinLink: "" }));
+    } else if (!/^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-_]+$/.test(value)) {
+      setErrors(prevErrors => ({ ...prevErrors, linkedinLink: "Enter a valid LinkedIn URL." }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, linkedinLink: "" }));
+    }
+  }
+};
+
+  
+  //const theme = useTheme();  // הגדרת ה-theme
+  const [fieldModalVisible, setFieldModalVisible] = React.useState(false);
+  const [selectedFields, setSelectedFields] = React.useState([]);
+  const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
+  ///
+  const toggleField = (field) => {
+    setSelectedFields((prev) =>
+      prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
+    );
+  };
+  ////
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [experienceModalVisible, setExperienceModalVisible] = useState(false);
   const experiences = [
@@ -29,15 +138,14 @@ const EditProfile = () => {
     "I have extensive experience and lead projects. (8+ years)",
     "I'm a seasoned expert in my area. (10+ years)"
   ];
-
+  const [selectedLanguages, setSelectedLanguages] = useState([]);
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const response = await fetch("https://localhost:7137/api/Users?userId=30"); 
+        const response = await fetch("http://localhost:5062/api/Users?userId=42"); 
         const data = await response.json(); 
         console.log("Fetched Data:", data); //בדיקה- הדפסת הנתונים של המשתמש המחובר
 
-        
         setUser({
           firstName: data.firstName || "",
           lastName: data.lastName || "",
@@ -47,8 +155,10 @@ const EditProfile = () => {
           linkedinLink: data.linkedinLink || "",
           picture: data.picture || "",
           experience: data.experience || "",
+          language:data.language ||[],
+          careerField:data.careerField||[],
         });
-     
+        setSelectedFields(data.careerField || []);
 
       } catch (error) {
         console.error("Error fetching user details:", error);
@@ -57,6 +167,11 @@ const EditProfile = () => {
 
     fetchUserDetails();
   }, []);
+  useEffect(() => {
+    if (user.language.length > 0) {
+        setSelectedLanguages(user.language);
+    }
+}, [user.language]);
 
 const [base64Image, setBase64Image] = useState(null);
 const pickImage = async () => {
@@ -65,7 +180,7 @@ const pickImage = async () => {
     allowsEditing: true,
     aspect: [1, 1],
     quality: 1,
-    base64: true, // הוספת Base64
+    base64: true, 
   });
 
   if (!result.canceled) {
@@ -76,6 +191,7 @@ const pickImage = async () => {
     setBase64Image(`data:image/jpeg;base64,${result.assets[0].base64}`);
   }
 };
+//עדכון הפרטים לאחר כפתור השמירה
   const saveChanges = async () => {
     const updatedUser = {
       firstName: user.firstName,
@@ -85,13 +201,13 @@ const pickImage = async () => {
       experience: user.experience,
       facebookLink: user.facebookLink,
       linkedinLink: user.linkedinLink,
-      careerField: [], 
-      language: "", 
+      careerField: selectedFields, 
+      language: selectedLanguages, 
       picture: base64Image || user.picture 
     };
   
     try {
-      const response = await fetch("https://localhost:7137/api/Users/30", {
+      const response = await fetch("http://localhost:5062/api/Users/42", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -102,192 +218,288 @@ const pickImage = async () => {
       if (response.ok) {
         const responseData = await response.json();
         console.log("User updated successfully:", responseData);
+        setPopupVisible(true);
+
         
-        // הוספת הודעה למשתמש שהשינויים נשמרו בהצלחה
       } else {
         const errorData = await response.json();
-        console.log("Error updating user:", errorData); // טיפול בשגיאות במידה ויש
+        console.log("Error updating user:", errorData); 
       }
     } catch (error) {
       console.error("Error:", error);
-      // טיפול בשגיאות אם לא ניתן לשלוח את הבקשה
     }
   };
+
   
-  
-  
+  const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
   return (
-    <PaperProvider>
+      <PaperProvider>
+        <ScrollView contentContainerStyle={appliedStyles.container} >{/*גלילה של הדף */}
+           {/* קומפוננטת הפופאפ */}
+           {popupVisible && (
+            <View style={styles.overlay}>
+            <CustomPopup
+        visible={popupVisible}
+        onDismiss={() => setPopupVisible(false)}
+        icon="check-circle-outline" // ניתן לשנות לאייקון אחר
+        message="Your changes have been saved successfully!"
+      />
+      </View>
+      )}     
     
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.headerBackground} />
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <AntDesign name="arrowleft" size={24} color="black" />
-        </TouchableOpacity>
-        
-        <Text style={styles.title}>Edit Profile</Text>
-        {/**image */}
-        <View style={styles.imageContainer}>
-  <TouchableOpacity onPress={pickImage} style={styles.imageWrapper}>
-    <Image source={{ uri: user.picture || "" }} style={styles.profileImage} />
-    <TouchableOpacity onPress={pickImage} style={styles.editIcon}>
-      <AntDesign name="edit" size={20} color="white" />
-    </TouchableOpacity>
-  </TouchableOpacity>
-</View>
+          <Image source={require("../prepWise/assets/backgroundProfileImage2.jpg")} style={appliedStyles.headerBackground} />
+          {/**image */}
 
-        {/* First Name */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>First Name</Text>
-          <TextInput
-            style={styles.input}
-            value={user.firstName}
-            onChangeText={(text) => setUser({ ...user, firstName: text })}
-            placeholder="First Name"
-          />
-        </View>
-
-        {/* Last Name */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Last Name</Text>
-          <TextInput
-            style={styles.input}
-            value={user.lastName}
-            onChangeText={(text) => setUser({ ...user, lastName: text })}
-            placeholder="Last Name"
-          />
-        </View>
-
-        {/* Email */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email Address</Text>
-          <TextInput
-            style={styles.input}
-            value={user.email}
-            onChangeText={(text) => setUser({ ...user, email: text })}
-            placeholder="Email Address"
-          />
-        </View>
-
-        {/* Password */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.input}
-              secureTextEntry={secureTextEntry}
-              value={user.password}
-              onChangeText={(text) => setUser({ ...user, password: text })}
-              placeholder="Password"
-            />
-            <TouchableOpacity onPress={() => setSecureTextEntry(!secureTextEntry)} style={styles.eyeIcon}>
-              <Ionicons name={secureTextEntry ? "eye-off" : "eye"} size={24} color="gray" />
+          <View style={appliedStyles.imageContainer}>
+            <TouchableOpacity onPress={pickImage} style={appliedStyles.imageWrapper}>
+              <Image source={{ uri: user.picture || "" }} style={appliedStyles.profileImage} />
+              <TouchableOpacity onPress={pickImage} style={appliedStyles.editIcon}>
+                <AntDesign name="edit" size={20} color="white" />
+              </TouchableOpacity>
             </TouchableOpacity>
           </View>
-        </View>
+  
+          <Text style={appliedStyles.title}>Edit Profile</Text>
 
-        {/* Experience */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Years of Experience</Text>
-          <Button
-            mode="contained"
-            onPress={() => setExperienceModalVisible(true)}
-            style={[styles.input, { backgroundColor: "#F2F2F2" }]}
-            labelStyle={{ color: "#A9A9A9" }}
-          >
-            {user.experience || "Select Your Experience Level"}
-          </Button>
-          <Portal>
-            <Modal visible={experienceModalVisible} onDismiss={() => setExperienceModalVisible(false)} contentContainerStyle={[styles.modalContent, { backgroundColor: 'white' }]}>
-              {experiences.map((exp, index) => (
-                <Checkbox.Item key={index} label={exp} status={user.experience === exp ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, experience: exp })} />
-              ))}
-              <Button onPress={() => setExperienceModalVisible(false)}>Done</Button>
-            </Modal>
-          </Portal>
-        </View>
-        {/* Facebook Link */}
-<View style={styles.inputContainer}>
-  <Text style={styles.label}>Facebook Link</Text>
-  <TextInput
-    style={styles.input}
-    value={user.facebookLink}
-    onChangeText={(text) => setUser({ ...user, facebookLink: text })}
-    placeholder="Facebook link"
-  />
-</View>
+  
+            {/* First Name */}
+            <View style={appliedStyles.cardContainer}>
+            <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>First Name</Text>
+              <TextInput
+                style={appliedStyles.input}
+                value={user.firstName}
+                onChangeText={(text) => {
+                  setUser({ ...user, firstName: text });  // עדכון ה-state של firstName
+                  handleChange("firstName", text);  // קריאה לפונקציה handleChange לביצוע הבדיקה
+                }}
+                placeholder="First Name"
+                placeholderText={appliedStyles.placeholderText}
 
-{/* LinkedIn Link */}
-<View style={styles.inputContainer}>
-  <Text style={styles.label}>LinkedIn Link</Text>
-  <TextInput
-    style={styles.input}
-    value={user.linkedinLink}
-    onChangeText={(text) => setUser({ ...user, linkedinLink: text })}
-    placeholder="LinkedIn link"
-  />
-</View>
+              />
+              {errors.firstName ? <Text style={appliedStyles.errorText}>{errors.firstName}</Text> : null}
+            </View>
+    
+            {/* Last Name */}
+            <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Last Name</Text>
+              <TextInput
+                style={appliedStyles.input}
+                value={user.lastName}
+                onChangeText={(text) => {
+                  setUser({ ...user, lastName: text });
+                  handleChange("lastName", text);
+                }}
+                placeholder="Last Name"
 
-        {/* Save Button */}
-        <View style={styles.footerContainer}>
-          <TouchableOpacity style={styles.saveButton} onPress={saveChanges}>
-            <Text style={styles.saveText}>Save Changes</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </PaperProvider>
-  );
+              />
+              {errors.lastName ? <Text style={appliedStyles.errorText}>{errors.lastName}</Text> : null}
+            </View>
+    
+            {/* Email */}
+            <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Email Address</Text>
+              <TextInput
+                style={appliedStyles.input}
+                value={user.email}
+                onChangeText={(text) => {
+                  setUser({ ...user, email: text });
+                  handleChange("email", text);
+                }}
+                placeholder="Email Address"
+
+              />
+              
+              {errors.email ? <Text style={appliedStyles.errorText}>{errors.email}</Text> : null}
+            </View>
+ 
+            {/* Password */}
+            <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Password</Text>
+              <View style={appliedStyles.passwordContainer}>
+                <TextInput
+                  style={appliedStyles.input}
+                  secureTextEntry={secureTextEntry}
+                  value={user.password}
+                  onChangeText={(text) => {
+                    setUser({ ...user, password: text });
+                    handleChange("password", text);
+                  }}
+                  placeholder="Password"
+                />
+                   <TouchableOpacity onPress={() => setSecureTextEntry(!secureTextEntry)} style={appliedStyles.eyeIcon}>
+                  <Ionicons name={secureTextEntry ? "eye-off" : "eye"} size={24} color="#d6cbff" />
+                </TouchableOpacity>
+                </View>
+
+                {errors.password ? <Text style={appliedStyles.errorText}>{errors.password}</Text> : null}
+             
+              
+            </View>
+    
+            {/* Fields Modal */}
+            <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Career Fields</Text>
+              <Button
+                mode="contained"
+                onPress={() => setFieldModalVisible(true)}
+                style={appliedStyles.input}
+                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
+              >
+                {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
+              </Button>
+              <Portal>
+                <Modal visible={fieldModalVisible} onDismiss={() => setFieldModalVisible(false)} contentContainerStyle={appliedStyles.modalContent}>
+                  {Fields.map((field, index) => (
+                    <Checkbox.Item 
+                      key={index} 
+                      label={field} 
+                      status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
+                      onPress={() => toggleField(field)} 
+                    />
+                  ))}
+                  <Button onPress={() => setFieldModalVisible(false)}>Done</Button>
+                </Modal>
+              </Portal>
+            </View>
+    
+            {/* Experience */}
+            <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Years of Experience</Text>
+              <Button 
+                mode="contained"
+                onPress={() => setExperienceModalVisible(true)}
+                style={appliedStyles.input}
+                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight' }}
+              >
+                {user.experience || "Select Your Experience Level"}
+              </Button>
+              <Portal>
+                <Modal visible={experienceModalVisible} onDismiss={() => setExperienceModalVisible(false)} contentContainerStyle={[appliedStyles.modalContent, { backgroundColor: 'white' }]}>
+                  {experiences.map((exp, index) => (
+                    <Checkbox.Item key={index} label={exp} status={user.experience === exp ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, experience: exp })} />
+                  ))}
+                  <Button onPress={() => setExperienceModalVisible(false)}>Done</Button>
+                </Modal>
+              </Portal>
+            </View>
+    
+            {/* Languages */}
+            <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Languages</Text>
+             {/* <Text style={ { backgroundColor: "#FFFFF", padding: 10, borderRadius: 5 }}>
+                {selectedLanguages.length > 0 ? selectedLanguages.join(", ") : "Pick Items (0 selected)"}
+              </Text>*/}
+              
+              <LanguageSelector 
+                selectedLanguages={selectedLanguages} 
+                setSelectedLanguages={setSelectedLanguages}
+                
+              /></View>
+            
+            
+    
+            {/* Facebook Link */}
+            <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Facebook Link</Text>
+              <TextInput
+                style={appliedStyles.input}
+                value={user.facebookLink}
+                onChangeText={(text) => {
+                  setUser({ ...user, facebookLink: text });
+                  handleChange("facebookLink", text);
+                }}
+                placeholder="Facebook link"
+
+              />
+              {errors.facebookLink ? <Text style={appliedStyles.errorText}>{errors.facebookLink}</Text> : null}
+            </View>
+    
+            {/* LinkedIn Link */}
+            <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>LinkedIn Link</Text>
+              <TextInput
+                style={appliedStyles.input}
+                value={user.linkedinLink}
+                onChangeText={(text) => {
+                  setUser({ ...user, linkedinLink: text });
+                  handleChange("linkedinLink", text);
+                }}
+                placeholder="LinkedIn link"
+
+              />
+              {errors.linkedinLink ? <Text style={appliedStyles.errorText}>{errors.linkedinLink}</Text> : null}
+            </View>
+    
+          {/* Save Button */}
+          <View style={appliedStyles.footerContainer}>
+            <TouchableOpacity style={appliedStyles.saveButton} onPress={saveChanges}>
+              <Text style={appliedStyles.saveText}>Save Changes</Text>
+            </TouchableOpacity>
+          </View>
+         
+
+          <View style={{ flex: 1 }}>
+          {Platform.OS === "web" && <NavBar />} {/* מציג רק ב-Web */}
+          </View>
+          </View>
+        </ScrollView>
+      </PaperProvider>
+    );
+    
 };
 
 const styles = StyleSheet.create({
-  placeholderTextColor:{color:"#A9A9A9"},
-  container: { flexGrow: 1, backgroundColor: "#FFFFFF", alignItems: "center", paddingTop: 210 },
-  backButton: { position: "absolute", top: 60, left: 20 },
-  title: { fontSize: 22, fontWeight: "bold", color: "#003D5B",marginBottom:60 },
-  //imageContainer: { alignItems: "center" },
-  imageWrapper: { position: "relative" },
-  profileImage: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: "white" },
-  cameraIcon: { position: "absolute", bottom: 5, right: 5, backgroundColor: "white", borderRadius: 50, padding: 5 },
-  inputContainer: { width: "80%", marginBottom: 10 },
-  input: { backgroundColor: "#F2F2F2", padding: 15, borderRadius: 20, width: "100%", color: "#A9A9A9" },
-  label: { fontSize: 14, color: "#003D5B", marginBottom: 5 },
+  placeholderText:{color:"#A9A9A9",fontFamily:"Inter_300Light", },
+  container: { flexGrow: 1, backgroundColor: "#FFFFFF", alignItems: "center", paddingTop: 190 },
+  title: { fontSize: 22,  color: "#003D5B",fontFamily:"Inter_300Light",marginBottom:8,marginRight:233,},
+  imageContainer: {flexDirection:'row',alignSelf:'flex-start',marginLeft: 15,marginBottom:20},
+  profileImage: {width: 150,height:  150,
+  borderRadius:  80,borderWidth: 3,borderColor: "white",},
+  inputContainer: { width: "80%", marginBottom: 10, },
+  //input: { backgroundColor: "#F2F2F2", padding: 15, borderRadius: 20, width: "100%", color: "#A9A9A9",fontFamily:"Inter_300Light", },
+  input:{width: '100%',padding:1,marginVertical: 8,borderWidth: 1,fontFamily:'Inter_200ExtraLight',borderColor: '#ccc',
+  borderRadius: 6,backgroundColor: '#f9f9f9',paddingLeft:0,height: 50,  paddingLeft: 10,},
+  label: { fontSize: 14, color: "#003D5B", marginBottom: 5,fontFamily:"Inter_300Light",},
+  passwordContainer: { flexDirection: "row", alignItems: "center", },
+  eyeIcon: { position: "absolute", right: 15 },
+  saveButton: { backgroundColor: "#BFB4FF", padding: 15, borderRadius: 20, marginTop: 20,fontFamily:"Inter_300Light",marginBottom:60,width:"80%" },
+  saveText: { color: "#003D5B", fontSize: 16, textAlign: "center", },
+  editIcon: {position: "absolute",bottom: 5,right: 5,backgroundColor: "#d6cbff",borderRadius: 15,width: 30,
+  height: 30,alignItems: "center",justifyContent: "center",borderWidth: 2,borderColor: "white"},
+  headerBackground: {position: "absolute",top: 0,width: "100%",height: Platform.OS === "web" ? 420 : 220,
+  borderBottomLeftRadius: 10,borderBottomRightRadius: 10,alignSelf: "center",resizeMode: "cover", },
+  modalContent: {backgroundColor: "white",},//חלונית מודאל של התחומי קריירה
+  cardContainer:{width:"100%",marginLeft:95},
+  overlay: {position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
+  justifyContent: "center",alignItems: "center",zIndex: 9999,},
+});
+
+const Webstyles = StyleSheet.create({
+  overlay: {position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
+  justifyContent: "center",alignItems: "center",zIndex: 9999,},
+  //placeholderText:{color:"#A9A9A9",fontFamily:"Inter_300Light"},
+  container: { flexGrow: 1, backgroundColor: "#FFFFFF", alignItems: "center", paddingTop: 190, },
+  title: { fontSize: 22,  color: "#003D5B",fontFamily:"Inter_400Regular",marginBottom:8,},
+  imageContainer: {flexDirection:'row',marginLeft: 20,marginBottom:20},
+  profileImage: {width:200 ,height:  200 ,
+  borderRadius:  130 ,borderWidth: 3,borderColor: "white",},
+  inputContainer: { width: "80%", marginBottom: 10},
+  input:{width: '100%',padding:1,marginVertical: 8,borderWidth: 1,fontFamily:'Inter_200ExtraLight',borderColor: '#ccc',
+  borderRadius: 6,backgroundColor: '#f9f9f9',paddingLeft:0,height: 50,  paddingLeft: 10,color: "#A9A9A9",},
+  label: { fontSize: 14, color: "#003D5B", marginBottom: 5,fontFamily:"Inter_300Light", },
   passwordContainer: { flexDirection: "row", alignItems: "center" },
   eyeIcon: { position: "absolute", right: 15 },
-  saveButton: { backgroundColor: "#BFB4FF", padding: 15, borderRadius: 20, marginTop: 20 },
+  saveButton: { backgroundColor: "#BFB4FF", padding: 15, borderRadius: 20, marginTop: 20,fontFamily:"Inter_300Light", },
   saveText: { color: "#003D5B", fontSize: 16, textAlign: "center" },
-  editIcon: {
-    position: "absolute",
-    bottom: 5,
-    right: 5,
-    backgroundColor: "#BFB4FF",
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "white"
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 3,
-    borderColor: "#BFB4FF",
-    marginTop: -50,
-  },
-  headerBackground: {
-    position: "absolute",
-    top: 0,
-    width: "150%",
-    height: 300,
-    backgroundColor: "#EDEDED",
-    borderBottomLeftRadius: 200,
-    borderBottomRightRadius: 200,
-    alignSelf: "center",
-  },
-  
-  
+  editIcon: {position: "absolute",bottom: 5,right: 5,backgroundColor: "#d6cbff",borderRadius: 15,width: 30,
+  height: 30,alignItems: "center",justifyContent: "center",borderWidth: 2,borderColor: "white"},
+  headerBackground: {position: "absolute",top: 0,left: 0,height: "100%", opacity: 0.5, resizeMode: "cover",zIndex: -1,},
+  modalContent: {backgroundColor: "white",width:"35%",marginLeft:580,borderRadius:15},//חלונית מודל של התחומי קריירה
+  cardContainer:{width:"35%",backgroundColor: "white",borderRadius: "12px",boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+  padding: "20px",alignItems:"center",position: "relative",zIndex:1,},
 });
+
+
 
 export default EditProfile;
