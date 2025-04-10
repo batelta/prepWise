@@ -17,7 +17,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useFonts } from "expo-font";
+import { useFonts } from "expo-font"; 
 import {
   Inter_400Regular,
   Inter_300Light,
@@ -26,7 +26,7 @@ import {
   Inter_200ExtraLight,
 } from "@expo-google-fonts/inter";
 
-export default function AddApplication({ onSuccess }) {
+export default function TestAddApp({ onSuccess }) {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_700Bold,

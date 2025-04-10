@@ -4,7 +4,7 @@ import NavBar from "./NavBar";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { FAB,Card } from "react-native-paper";
 import { useEffect, useState } from "react";
-import { useFonts } from 'expo-font';
+import { useFonts } from 'expo-font'; //take that + line 8-10
 import { Inter_400Regular,
   Inter_300Light, Inter_700Bold,Inter_100Thin,
   Inter_200ExtraLight } from '@expo-google-fonts/inter';
@@ -24,6 +24,7 @@ export default function HomePage() {
         Inter_200ExtraLight,
         Inter_300Light
       });
+      
     const [profileImage, setProfileImage] = useState(null);
     const [Name, setName] = useState(null);
     const [loading, setLoading] = useState(true);

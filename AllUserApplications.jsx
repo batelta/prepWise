@@ -7,17 +7,27 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Platform,
+  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Provider as PaperProvider, Button } from "react-native-paper";
+import NavBar from "./NavBar";
 
 export default function AllUserApplications() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
-  const userId = 5;
+  const userId = 1;
+
+  /*const sampleApplication = {
+    applicationID: 1,
+    title: "Software Engineer",
+    companyName: "TechCorp",
+    location: "New York, NY",
+    jobType: "Full Time",
+  };*/
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -25,9 +35,10 @@ export default function AllUserApplications() {
         const API_URL =
           Platform.OS === "web"
             ? `https://localhost:7137/api/JobSeekers/${userId}/applications`
-            : `http://192.168.1.92:7137/api/JobSeekers/${userId}/applications`;
+            : `http://10.0.0.18:7137/api/JobSeekers/${userId}/applications`;
 
         /*192.168.1.64/92*/
+        /*10.0.0.18:7137*/
 
         const response = await fetch(API_URL);
         const data = await response.json();
@@ -52,59 +63,87 @@ export default function AllUserApplications() {
     );
   }
 
+  const handleDelete = async (applicationID) => {
+    try {
+      const API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/JobSeekers/deleteById/${userId}/${applicationID}`
+          : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${userId}/${applicationID}`;
+
+      console.log("🔍 Deleting application at URL:", API_URL);
+
+      const response = await fetch(API_URL, { method: "DELETE" });
+
+      if (!response.ok) throw new Error("Failed to delete");
+
+      setApplications((prev) =>
+        prev.filter((app) => app.applicationID !== applicationID)
+      );
+    } catch (error) {
+      console.error(" Error deleting:", error);
+      Alert.alert("Error", "Could not delete application.");
+    }
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>All Applications</Text>
-      {applications.map((app) => (
-        <View key={app.applicationID} style={styles.cardContainer}>
-          {/* Delete Icon */}
-          <TouchableOpacity style={styles.deleteIcon}>
-            <Text style={{ fontSize: 16, color: "#2EC4B6" }}>X</Text>
-          </TouchableOpacity>
+    <View style={styles.wrapper}>
+      {/* התוכן הגולל */}
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.header}>All Applications</Text>
+        {applications.map((app) => (
+          <View key={app.applicationID} style={styles.cardContainer}>
+            <TouchableOpacity
+              style={styles.deleteIcon}
+              onPress={() => handleDelete(app.applicationID)}
+            >
+              <Text style={{ fontSize: 16, color: "#9FF9D5" }}>X</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => {
-              console.log("Navigating to:", app.applicationID);
-              navigation.navigate("Application", {
-                applicationID: app.applicationID,
-              });
-            }} //  navigation.navigate("Application", {
-          >
-            {/* Icon + Job Info */}
-            <View style={styles.row}>
-              <MaterialIcons
-                name="work-outline"
-                size={36}
-                color="#94b4c4"
-                style={{ marginRight: 12 }}
-              />
-              <View>
-                <Text style={styles.title}>{app.title}</Text>
-                <Text style={styles.company}>{app.companyName}</Text>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => {
+                console.log("Navigating to:", app.applicationID);
+                navigation.navigate("Application", {
+                  applicationID: app.applicationID,
+                });
+              }}
+            >
+              <View style={styles.row}>
+                <MaterialIcons
+                  name="work-outline"
+                  size={36}
+                  color="#9FF9D5"
+                  style={{ marginRight: 12 }}
+                />
+                <View>
+                  <Text style={styles.title}>{app.title}</Text>
+                  <Text style={styles.company}>{app.companyName}</Text>
+                </View>
               </View>
-            </View>
 
-            {/* › Arrow */}
-            <MaterialIcons name="chevron-right" size={24} color="#94b4c4" />
-          </TouchableOpacity>
-        </View>
-      ))}
-      <Button
-        mode="contained"
-        onPress={() => navigation.navigate("AddApplication")}
-        style={{ marginTop: 30 }}
-      >
-        Add New Application
-      </Button>
-    </ScrollView>
+              <MaterialIcons name="chevron-right" size={24} color="#9FF9D5" />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate("AddApplication")}
+          style={{ marginTop: 30 }}
+        >
+          Add New Application
+        </Button>
+      </ScrollView>
+
+      <NavBar />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: "#E7F5F3",
+    backgroundColor: "white",
     minHeight: "100%",
   },
   header: {
@@ -116,6 +155,10 @@ const styles = StyleSheet.create({
   cardContainer: {
     marginBottom: 15,
     position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   deleteIcon: {
     position: "absolute",
@@ -154,5 +197,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  wrapper: {
+    flex: 1,
+    backgroundColor: "white",
+    justifyContent: "space-between",
   },
 });
