@@ -19,7 +19,9 @@ export default function SignUp({ navigation }) {
           Sign Up as a Wise Job Seeker
         </Button>
 
-        <Button mode="contained" style={styles.loginButton}>
+        <Button mode="contained" style={styles.loginButton}
+        onPress={() => navigation.navigate('SignUpMentor')}
+>
           Sign Up as a Mentor
         </Button>
 

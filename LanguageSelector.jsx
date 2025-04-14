@@ -69,7 +69,7 @@ const handleSelectedLanguages = (selectedItems) => {
          selectedItemTextColor="#888"
          selectedItemIconColor="#BFB4FF"
          itemTextColor="#888"
-         searchInputStyle={{ color: '#CCC',fontSize:13,fontFamily:'Inter_200ExtraLight' }}
+         searchInputStyle={{ color: '#888',fontSize:13,fontFamily:'Inter_200ExtraLight' }}
          submitButtonColor="#BFB4FF"
          submitButtonText="Submit"
          styleListContainer={styles.listContainer}
@@ -78,6 +78,8 @@ const handleSelectedLanguages = (selectedItems) => {
          styleInputGroup={styles.inputGroup}
          styleMainWrapper={styles.mainWrapper} // Custom text styling
          styleItemsContainer={styles.itemsContainer}
+         styleTextDropdown={styles.dropdownText}
+         styleTextDropdownSelected={styles.dropdownTextSelected}
       />
       {/* Display selected items in a row */}
       <View style={styles.selectedItemsContainer}></View>
@@ -101,6 +103,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 10,
+    paddingLeft: 10, // 👈 Add this
+
   },
   selectorContainer: {
     backgroundColor: '#fff',
@@ -116,6 +120,16 @@ const styles = StyleSheet.create({
   },
   itemsContainer: {
     backgroundColor: '#fff',
+  },
+  dropdownText: {
+    color: '#888', // Customize the text color
+    fontSize: 13,
+    fontFamily: 'Inter_200ExtraLight',
+  },
+  dropdownTextSelected: {
+    color: '#888', // Customize the selected text color
+    fontSize: 13,
+    fontFamily: 'Inter_200ExtraLight',
   },
 });
 

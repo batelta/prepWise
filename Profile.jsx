@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { View, Text, Image, Switch, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView,Platform,Alert} from "react-native";
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -7,18 +6,24 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import NavBar from './NavBar';
+import NavBarMentor from './NavBarMentor';
+
 import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
 import CustomPopup from "./CustomPopup"; 
 import AsyncStorage from '@react-native-async-storage/async-storage';//
 
-
+import { useContext } from 'react';
+import { UserContext } from './UserContext'; // adjust the path
 
 
 //
 const defaultImage = require('../prepWise/assets/womanImage.jpg'); // תמונה קבועה לאפליקציה (בדיקה בטלפון)
 
 const Profile = () => {
+    const { Loggeduser } = useContext(UserContext);
+  
+  const [isMentor, setIsMentor]=useState(false)
 
 
  const [fontsLoaded] = useFonts({
@@ -42,61 +47,48 @@ const Profile = () => {
     email: "",
     picture:""
   });
-{/** 
-  useEffect(() => {
-    const fetchUserDetails = async () => {
-      try {
-        const userId = await AsyncStorage.getItem('userId');
-        if (userId) {
-        const response = await fetch(`https://localhost:7137/api/Users?userId=${userId}`);
-        const data = await response.json();
-        console.log("User details:", data);
-        setUser(data);
-        }
-        else {
-          console.log("User ID not found in AsyncStorage");}}
-       catch (error) {
-        console.error("Error fetching user details:", error);
-      }
-    };
-   */}
-    useEffect(() => {
-      const fetchUserDetails = async () => {
-        try {
-          const response = await fetch("http://localhost:5062/api/Users?userId=21");
-          const data = await response.json();
-          console.log("User details:", data);
-          setUser(data);
-  
-        } catch (error) {
-          console.error("Error fetching user details:", error);
-        }
-      };
-  
-   
 
-    fetchUserDetails();
-  }, []);
+  const [userID, setUserID] = useState(null); // To store userID
+  useEffect(() => {
+    if (Loggeduser) {
+      setUser(Loggeduser);
+      setIsMentor(Loggeduser.isMentor);
+      setUserID(Loggeduser.userID); // if needed elsewhere
+      console.log("Logged user:", Loggeduser);
+    }
+  }, [Loggeduser]);
+
   console.log("Profile Image URL:", user.picture);
-  const deleteUserProfile = async () => {
+  const handleConfirmDelete = async () => {
     try {
-      const userId = await AsyncStorage.getItem('userId');
-      if (userId) {
-      const response = await fetch(`http://localhost:5062/api/Users/Deletebyid?userid=${userId}`, {
+    
+    
+
+      const response = await fetch(`https://localhost:5062/api/Users/Deletebyid?userid=${userID}`, {
         method: "DELETE",
       });
   
       if (response.ok) {
         Alert.alert("Success", "Your profile has been deleted.");
-        setPopupVisible(true);
+  
+        await AsyncStorage.removeItem('user');//מחיקת המשתמש מהלוקל סטורג
+        //setPopupVisible(true);
       } else {
         Alert.alert("Error", "Failed to delete your profile.");
-      }}
-    } catch (error) {
+      }
+    
+    } 
+    catch (error) {
       Alert.alert("Error", "Something went wrong. Please try again.");
       console.error("Delete error:", error);
     }
   };
+  const deleteUserProfile = () => {
+    setPopupVisible(true); // רק פותח את הפופאפ, לא מוחק
+  };
+  
+  console.log("isMentor:", isMentor);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}> 
@@ -130,7 +122,11 @@ const Profile = () => {
         <View style={styles.boxContainer}>
         {/* תיבה ראשונה - הגדרות */}
         <View style={styles.box}> 
-          <TouchableOpacity style={styles.option} onPress={() => navigation.navigate("EditProfile")}>
+          <TouchableOpacity style={styles.option} onPress={() => 
+            { if(isMentor)
+              navigation.navigate("EditProfileMentor")
+              else
+              navigation.navigate("EditProfile")}}>
             <Text style={styles.optionText}>
               <AntDesign name="edit" size={20} color="black" /> Edit profile information
             </Text>
@@ -181,7 +177,8 @@ visible={popupVisible}
   icon="alert-circle-outline"
   message="Are you sure?"
   onConfirm={() => {
-    setPopupVisible(false);
+    //setPopupVisible(false);
+    handleConfirmDelete()
     navigation.navigate("SignIn"); 
   }}
   onCancel={() => setPopupVisible(false)}
@@ -191,7 +188,7 @@ visible={popupVisible}
 
         {/* סרגל הניווט */}
         <View style={styles.tabContainer}>
-          <NavBar />
+        {isMentor ? <NavBarMentor /> : <NavBar />}
         </View>
       </ScrollView>
     </SafeAreaView>

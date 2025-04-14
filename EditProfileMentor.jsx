@@ -11,13 +11,10 @@ import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200Ex
 import NavBar from "./NavBar";
 import CustomPopup from "./CustomPopup"; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useContext } from 'react';
-import { UserContext } from './UserContext'; // adjust the path
+
 
 
 const EditProfile = () => {
-  const { Loggeduser } = useContext(UserContext);
-
 const [popupVisible, setPopupVisible] = useState(false);
  
 const navigation = useNavigation();
@@ -41,6 +38,8 @@ const navigation = useNavigation();
     experience: "",
     language:[],
     careerField:[],
+    company:"",
+    mentoringType:""
   });
 
 
@@ -52,6 +51,7 @@ const [errors, setErrors] = useState({
   password: "",
   facebookLink: "",
   linkedinLink: "",
+  company:""
 });
 
 
@@ -118,9 +118,26 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
       setErrors(prevErrors => ({ ...prevErrors, linkedinLink: "" }));
     }
   }
+  if (field === "company") {
+    if (!value.trim()) {
+        setErrors(prevErrors => ({ ...prevErrors, company: "" }));
+    } else if (!/^[A-Za-z]{1,15}$/.test(value)) {
+      setErrors(prevErrors => ({ ...prevErrors, company: "Only letters, up to 15 characters." }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, company: "" }));
+    }
+  }
 };
 
+    
   
+     const [mentoringModalVisible, setMentoringModalVisible] = React.useState(false);
+       const [selectedMentoring, setSelectedMentoring] = React.useState([]);
+       const mentoringtypes = [
+         "Journey ",
+         "One-time Session",
+         "All-in-One"
+       ];
   //const theme = useTheme();  // הגדרת ה-theme
   const [fieldModalVisible, setFieldModalVisible] = React.useState(false);
   const [selectedFields, setSelectedFields] = React.useState([]);
@@ -143,21 +160,30 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
     "I'm a seasoned expert in my area. (10+ years)"
   ];
   const [selectedLanguages, setSelectedLanguages] = useState([]);
-  const [userID, setUserID] = useState(null); // To store userID
-
-  useEffect(() => {
-    if (Loggeduser) {
-      setUserID(Loggeduser.userID);
-        console.log(Loggeduser);
-      }
-    }, [Loggeduser]);
-
+ 
 useEffect(() => {
   const fetchUserDetails = async () => {
     try {
+      // קבלת הנתונים מתוך AsyncStorage
+      const userData = await AsyncStorage.getItem('user');
+      if (!userData) {
+        console.log("No user data found in AsyncStorage.");
+        return;
+      }
+
+      const parsedUser = JSON.parse(userData);
+      console.log("Parsed user from AsyncStorage:", parsedUser);
+
+      const userId = parsedUser.userID || parsedUser.userId;
+      console.log("User ID:", userId);
+
+      if (!userId) {
+        console.error("User ID is undefined. Cannot fetch user data.");
+        return;
+      }
 
       // קריאה ל-API לפי ID כדי לקבל את כל הנתונים (כולל תחומים ושפות)
-      const response = await fetch(`http://localhost:5062/api/Users?userId=${userID}`);
+      const response = await fetch(`http://localhost:5062/api/Mentors/${userId}`);
       if (!response.ok) {
         console.error("Failed to fetch full user data from API.");
         return;
@@ -178,19 +204,20 @@ useEffect(() => {
         experience: fullUserData.experience || "",
         language: fullUserData.language || [],
         careerField: fullUserData.careerField || [],
+        company:fullUserData.company||"",
+        mentoringType:fullUserData.mentoringType||""
       });
 
       // עדכון התחומים והשפות לתצוגה
       setSelectedFields(fullUserData.careerField || []);
       setSelectedLanguages(fullUserData.language || []);
-
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
   };
 
   fetchUserDetails();
-}, [userID]);
+}, []);
 
 useEffect(() => {
   if (user.language.length > 0) {
@@ -218,10 +245,23 @@ const pickImage = async () => {
   }
 };
 
-  
   const saveChanges = async () => {
     try {
-    
+      // 1. קבלת ה-User ID מתוך AsyncStorage
+      const userData = await AsyncStorage.getItem('user');
+      if (!userData) {
+        console.error("No user data found in AsyncStorage.");
+        return;
+      }
+  
+      const parsedUser = JSON.parse(userData);
+      const userId = parsedUser.userID || parsedUser.userId; // מחפש את ה- userID בתוך המשתמש
+      console.log("User ID from AsyncStorage:", userId);
+  
+      if (!userId) {
+        console.error("User ID is undefined. Cannot update user data.");
+        return;
+      }
   
       // 2. יצירת אובייקט עדכון המשתמש
       const updatedUser = {
@@ -235,11 +275,14 @@ const pickImage = async () => {
         careerField: selectedFields,
         language: selectedLanguages,
         picture: base64Image || user.picture,
+        company:user.company,
+        mentoringType:user.mentoringType,
+        isMentor:true
       };
-  
+      console.log('Sending updated user:', updatedUser); // ← Log before sending
+
       // 3. ביצוע קריאת PUT עם ה- userId מתוך AsyncStorage
-      const response = await fetch(`http://localhost:5062/api/Users/${userID}`, 
-        {
+      const response = await fetch(`http://localhost:5062/api/Mentors/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -464,6 +507,42 @@ const pickImage = async () => {
               {errors.linkedinLink ? <Text style={appliedStyles.errorText}>{errors.linkedinLink}</Text> : null}
             </View>
     
+      {/* Company */}
+      <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Company</Text>
+              <TextInput
+                style={appliedStyles.input}
+                value={user.company}
+                onChangeText={(text) => {
+                  setUser({ ...user, company: text });  // עדכון ה-state של firstName
+                  handleChange("company", text);  // קריאה לפונקציה handleChange לביצוע הבדיקה
+                }}
+                placeholder="Company"
+                placeholderText={appliedStyles.placeholderText}
+
+              />
+              {errors.company ? <Text style={appliedStyles.errorText}>{errors.company}</Text> : null}
+            </View>
+              {/* mentoringType Modal */}
+              <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Mentoring Type</Text>
+              <Button 
+                mode="contained"
+                onPress={() => setMentoringModalVisible(true)}
+                style={appliedStyles.input}
+                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight' }}
+              >
+                {user.mentoringType || "Select Your Mentoring Type"}
+              </Button>
+              <Portal>
+                <Modal visible={mentoringModalVisible} onDismiss={() => setMentoringModalVisible(false)} contentContainerStyle={[appliedStyles.modalContent, { backgroundColor: 'white' }]}>
+                  {mentoringtypes.map((type, index) => (
+                    <Checkbox.Item key={index} label={type} status={user.mentoringType === type ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, mentoringType: type })} />
+                  ))}
+                  <Button onPress={() => setMentoringModalVisible(false)}>Done</Button>
+                </Modal>
+              </Portal>
+            </View>
           {/* Save Button */}
           <View style={appliedStyles.footerContainer}>
             <TouchableOpacity style={appliedStyles.saveButton} onPress={saveChanges}>
@@ -471,6 +550,7 @@ const pickImage = async () => {
             </TouchableOpacity>
           </View>
          
+          
 
           <View style={{ flex: 1 }}>
           {Platform.OS === "web" && <NavBar />} {/* מציג רק ב-Web */}

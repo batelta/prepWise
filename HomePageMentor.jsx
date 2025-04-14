@@ -1,6 +1,6 @@
-import { View, Text,ActivityIndicator, ImageEditor, ScrollView, Image, TouchableOpacity, Platform, StyleSheet, SafeAreaView, Alert } from "react-native";
+import { View, Text, ImageEditor, ScrollView, Image, TouchableOpacity, Platform, StyleSheet, SafeAreaView, Alert } from "react-native";
 import { PlusCircle } from "lucide-react-native";
-import NavBar from "./NavBar";
+import NavBarMentor from "./NavBarMentor";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { FAB,Card } from "react-native-paper";
 import { useEffect, useState } from "react";
@@ -13,90 +13,32 @@ import AnimatedPlusIcon from "./AnimatedPlusIcon";
 
 import CustomPopup from "./CustomPopup"; // Import the custom popup
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import GeminiChat from './GeminiChat';
-import { MaterialIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; // adjust the path
 
 const progress = 0; // 75% completed
 
-export default function HomePage() {
+
+export default function HomePageMentor() {
     const { Loggeduser } = useContext(UserContext);
 
-    const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
-  const navigation = useNavigation();
-
     const [showChat, setShowChat] = useState(false);
- const [applications, setApplications] = useState([]);
-  const [loadingApp, setLoadingApp] = useState(true);
+
     ////just checking
    {/*    const [successPopupVisible, setSuccessPopupVisible] = useState(true);*/}
+   const [user, setUser] = useState(null);
    const [profileImage, setProfileImage] = useState(null);
-   const [userID, setUserID] = useState(null); // To store userID
 
    useEffect(() => {
     if (Loggeduser) {
         setProfileImage(Loggeduser.picture); // use user directly from context
-        setUserID(Loggeduser.userID);
+        setUser(Loggeduser);
         console.log(Loggeduser);
       }
     }, [Loggeduser]);
   
-      // Debugging: Check if userID is set after fetching user data
-      useEffect(() => {
-        if (userID !== null) { // Ensure userID is available before making the request
-            console.log("Fetching applications for userID:", userID);
-    
-            const fetchApplications = async () => {
-                try {
-                    const API_URL =
-                        Platform.OS === "web"
-                            ? `http://localhost:5062/api/JobSeekers/${userID}/applications`
-                            : `http://10.0.0.18:5062/api/JobSeekers/${userID}/applications`;
-    
-                    const response = await fetch(API_URL);
-                    const data = await response.json();
-                    console.log("Applications from API:", data);
-                    setApplications(data);
-                } catch (error) {
-                    console.error("Failed to fetch applications", error);
-                } finally {
-                    setLoadingApp(false);
-                }
-            };
-    
-            fetchApplications();
-        }
-    }, [userID]); // Fetch applications whenever userID changes
-    
-      
-
-      const handleDelete = async (applicationID) => {
-          try {
-            console.log(applicationID)
-            const API_URL =
-              Platform.OS === "web"
-                ? `http://localhost:5062/api/JobSeekers/deleteById/${userID}/${applicationID}`
-                : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${userID}/${applicationID}`;
-      
-            console.log("🔍 Deleting application at URL:", API_URL);
-      
-            const response = await fetch(API_URL, { method: "DELETE" });
-      
-            if (!response.ok) throw new Error("Failed to delete");
-      
-            setApplications((prev) =>
-              prev.filter((app) => app.applicationID !== applicationID)
-            );
-          } catch (error) {
-            console.error(" Error deleting:", error);
-            Alert.alert("Error", "Could not delete application.");
-          }
-        };
-      ///
 
     const [fontsLoaded] = useFonts({
         Inter_400Regular,
@@ -137,6 +79,7 @@ export default function HomePage() {
         }
     };
    
+    const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
 
     return (
         <SafeAreaView style={appliedStyles.container}>
@@ -188,107 +131,31 @@ export default function HomePage() {
                 {/* To-Do List */}
                 <View style={appliedStyles.ToDoAndApplications}>
                 <View style={appliedStyles.section}>
-                    <Text style={appliedStyles.sectionTitle}>Your To-Do List 📃</Text>
+                    <Text style={appliedStyles.sectionTitle}>Mentorship Journeys 📃</Text>
                     <View style={appliedStyles.toDoList}>
-                        <Card style={appliedStyles.ToDocard}>
-                        <Card.Content style={appliedStyles.Cardcontent}>
-                        <View style={appliedStyles.toDoItem}>
-                            <AnimatedCircularProgress
-                                size={50}
-                                width={10}
-                                fill={progress}
-                                tintColor="#9FF9D5"
-                                backgroundColor="#e0e0e0"
-                            />
-                            <Text style={appliedStyles.toDoText}>0/0</Text>
-                            <Text style={appliedStyles.toDoLabel}>Weekly Wins</Text>
-                        </View>
-                        </Card.Content>
-                        </Card>
-                        <Card style={appliedStyles.ToDocard}>
-                        <Card.Content style={appliedStyles.Cardcontent}>
-                        <View style={appliedStyles.toDoItem}>
-                            <AnimatedCircularProgress
-                                size={50}
-                                width={10}
-                                fill={progress}
-                                tintColor="#9FF9D5"
-                                backgroundColor="#e0e0e0"
-                            />
-                            <Text style={appliedStyles.toDoText}>0/0</Text>
-                            <Text style={appliedStyles.toDoLabel}>Personal Goals</Text>
-                        </View>
-                        </Card.Content>
-                        </Card>
+                    <Card style={appliedStyles.Applicationcard}>
+                    <Card.Content style={appliedStyles.ApplicationCardcontent}>
+                    <Text style={appliedStyles.sectionDescription}>
+                        You have no Journeys yet 
+                    </Text>
+                    </Card.Content>
+                    </Card>
                     </View>
                 </View>
-       
-{/**trying to display jobs */}
-{/* Applications Section */}
-{/* Applications Section */}
-<View style={appliedStyles.Applicationsection}>
-    <Text style={appliedStyles.ApplicationsectionTitle}>All Applications 💻</Text>
-    <Card style={appliedStyles.Applicationcard}>
-        <Card.Content style={appliedStyles.ApplicationCardcontent}>
-            {/* Show the "no applications" message only if the applications array is empty */}
-            {applications.length === 0 ? (
-                <Text style={appliedStyles.sectionDescription}>
-                    You haven’t started yet—let’s add your first application and kick off your adventure! ✨
-                </Text>
-            ) : (
-                <>
-                    {/* Show loading spinner if loadingApp is true */}
-                    {loadingApp ? (
-                        <View style={appliedStyles.centered}>
-                            <ActivityIndicator size="small" color="#666" />
-                            <Text>Loading applications...</Text>
-                        </View>
-                    ) : (
-                        <View style={appliedStyles.applicationsList}>
-                            {/* Display applications */}
-                            {applications.map((app) => (
-                                <View key={app.applicationID} style={appliedStyles.ApplicationcardContainer}>
-                                    <TouchableOpacity
-                                        style={appliedStyles.deleteIcon}
-                                        onPress={() => handleDelete(app.applicationID)}
-                                    >
-                                        <Text style={{ fontSize: 16, color: "#9FF9D5" }}>X</Text>
-                                    </TouchableOpacity>
+                {/* Applications Section */}
+                <View style={appliedStyles.Applicationsection}> 
+                    <Text style={appliedStyles.ApplicationsectionTitle}>Upcoming Sessions💻</Text>
+                    <Card style={appliedStyles.Applicationcard}>
+                    <Card.Content style={appliedStyles.ApplicationCardcontent}>
+                    <Text style={appliedStyles.sectionDescription}>
+                        You have no Upcoming sessions yet 
+                    </Text>
+                    </Card.Content>
+                    </Card>
+                    </View>
+                    </View>
 
-                                    <TouchableOpacity
-                                        style={appliedStyles.Applicationcard}
-                                        onPress={() => {
-                                            console.log("Navigating to:", app.applicationID);
-                                            navigation.navigate("Application", {
-                                                applicationID: app.applicationID,
-                                            });
-                                        }}
-                                    >
-                                        <View style={appliedStyles.Applicationrow}>
-                                            <MaterialIcons
-                                                name="work-outline"
-                                                size={36}
-                                                color="#9FF9D5"
-                                                style={{ marginRight: 12 }}
-                                            />
-                                            <View>
-                                                <Text style={appliedStyles.Applicationtitle}>{app.title}</Text>
-                                                <Text style={appliedStyles.Applicationcompany}>{app.companyName}</Text>
-                                            </View>
-                                        </View>
-                                        <MaterialIcons name="chevron-right" size={24} color="#9FF9D5" />
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
-                        </View>
-                    )}
-                </>
-            )}
-        </Card.Content>
-    </Card>
-</View>
-</View>
-                       {/* Bot Icon (can be placed wherever you want) */}
+    {/* Bot Icon (can be placed wherever you want) */}
      <TouchableOpacity
   style={appliedStyles.chatIcon}
   onPress={() => setShowChat(!showChat)}
@@ -299,19 +166,7 @@ export default function HomePage() {
                 {/* new user section*/}
                     <Text style={appliedStyles.sectionTitle}>Get Started 💫</Text>
                     <View style={appliedStyles.pressContainer}>
-                    <Card style={appliedStyles.pressCard}>
-                    <Card.Content style={appliedStyles.pressCardcontent}>
-
-                         <Text style={appliedStyles.pressText}>
-                          Press 
-                          <Text style={{ marginRight: 10 }}> </Text>
-                          <AnimatedPlusIcon />
-                          <Text style={{  marginHorizontal: 10}}>
-                           to add your first Job Application
-                           </Text>
-                            </Text>
-                            </Card.Content>
-                            </Card>
+                  
                             <Card style={appliedStyles.pressCard}>
                             <Card.Content style={appliedStyles.pressCardcontent}>
                             <Text style={appliedStyles.pressText}>
@@ -319,7 +174,7 @@ export default function HomePage() {
                            <Text style={{ marginRight: 10 }}> </Text>
                            <AnimatedPlusIcon />
                            <Text style={{  marginHorizontal: 10}}>
-                           to Open your first mentor match request
+                           to Open your first Offer
                            </Text>
                            </Text>
                             </Card.Content>
@@ -327,7 +182,7 @@ export default function HomePage() {
                             </View>
                 <View>
 
-                    <NavBar />
+                    <NavBarMentor />
                 </View>
 
                 {showChat && (
@@ -341,6 +196,7 @@ export default function HomePage() {
 
   </View>
 )}
+
             </ScrollView>
         </SafeAreaView>
     );
@@ -395,7 +251,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-start",
         flexWrap: "wrap", // (Change) Allows wrapping if needed for responsiveness
-        alignItems: "center", // (Change) Ensures proper alignment
+       // alignItems: "center", // (Change) Ensures proper alignment
     },
     Applicationsection: {
         marginTop: 24,
@@ -412,11 +268,13 @@ const styles = StyleSheet.create({
         fontFamily: "Inter_300Light",
         left: 9,
         marginBottom: 10, // (Change) Added margin to space out title from the cards
+
     },
     sectionDescription: {
           color: "gray",
         fontFamily:"Inter_200ExtraLight",
-      
+        //marginTop: 10, // (Change) Added margin to space out title from the cards
+
     },
     ToDoAndApplications:{
         flexDirection:'column',
@@ -460,7 +318,7 @@ const styles = StyleSheet.create({
      width:'100%',
     },
     ApplicationCardcontent:{
-        alignItems: 'center', // Centers items inside Card.Content
+//alignItems: 'center', // Centers items inside Card.Content
         justifyContent: 'flex-start',
     },
 
@@ -513,52 +371,7 @@ const styles = StyleSheet.create({
         position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",alignItems: "center",zIndex: 9999,
       },
-      ApplicationcardContainer:{
-        marginBottom: 15,
-        position: "relative",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      deleteIcon: {
-        position: "absolute",
-        left: 10,
-        top: 10,
-        zIndex: 2,
-      },
-      Applicationcard: {
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 15,
-        paddingLeft: 40,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-        elevation: 2,
-      },
-      Applicationrow: {
-        flexDirection: "row",
-        alignItems: "center",
-      },
-      Applicationtitle: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#163349",
-      },
-      Applicationcompany: {
-        fontSize: 14,
-        color: "#555",
-      },
-      centered: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      },
+      
 });
 
 const Webstyles = StyleSheet.create({
@@ -595,9 +408,15 @@ const Webstyles = StyleSheet.create({
         fontFamily:"Inter_300Light"
 
     },
+    section: {
+        marginTop: 3,
+        width:'30%',
+        //paddingLeft:100
+    },
     Applicationsection: {
         marginTop: 3,
-        paddingRight:40
+        width:'35%',
+        paddingRight:100
     },
     sectionTitle: {
         fontSize: 18,
@@ -613,7 +432,6 @@ const Webstyles = StyleSheet.create({
           position:'relative',
           fontFamily:"Inter_400Regular",
        paddingHorizontal:10,
-    marginBottom:10
     },
     sectionDescription: {
         color: "gray",
@@ -664,13 +482,12 @@ justifyContent:'space-between',
 marginBottom:90,
     },
     Applicationcard:{
-        width:'100%',
+        width:'120%',
         marginTop: 16,
     },
     ApplicationCardcontent:{
         alignItems: 'center', // Centers items inside Card.Content
         justifyContent: 'center',
-        padding:0
     },
 
     pressText: {
@@ -726,53 +543,6 @@ marginBottom:90,
         position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",alignItems: "center",zIndex: 9999,
       },
-      ApplicationcardContainer: {
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: "#E0E0E0",
-      },
-
-      deleteIcon: {
-        position: "absolute",
-        left: 10,
-        top: 10,
-        zIndex: 2,
-      },
-      Applicationcard: {
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 10,
-        paddingLeft: 20,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-       
-        elevation: 2,
-      },
-      Applicationrow: {
-        flexDirection: "row",
-        alignItems: "center",
-      },
-      Applicationtitle: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#163349",
-      },
-      Applicationcompany: {
-        fontSize: 14,
-        color: "#555",
-      },
-      centered: {
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20, // Optional
-      }
-,      
-      applicationsList: {
-        marginTop: 10,
-        gap: 12, // spacing between cards
-      },
+      
+      
 });

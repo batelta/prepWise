@@ -17,7 +17,7 @@ import { Button, Checkbox } from 'react-native-paper';
   const { width,height } = Dimensions.get('window');
 
 
-const SignUpJobSeeker = ({navigation}) => {
+const SignUpMentor = ({navigation}) => {
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
   const [errorPopupVisible, setErrorPopupVisible] = useState(false);
 
@@ -128,7 +128,28 @@ const SignUpJobSeeker = ({navigation}) => {
        "I have extensive experience and lead projects. (8+ years)",
        "I'm a seasoned expert in my area. (10+ years)"
      ];
+     const [Companytext, setCompanyText] = React.useState("");
+     const [CompanyError, setCompanyError] = React.useState(""); //for validating the Last name
    
+     const handleCompanyChange = (text) => {
+        setCompanyText(text);
+      // If input is empty, clear the error message
+     if (!text.trim()) {
+        setCompanyError(""); // Clear error if input is empty// .test() checks if the input matches the regex pattern
+     } else if (!/^[A-Za-z]{1,15}$/.test(text)) {
+        setCompanyError("Only letters, up to 15 characters.");
+     } else {
+        setCompanyError(""); // Clear error if input becomes valid
+     }
+   };
+
+   const [mentoringModalVisible, setMentoringModalVisible] = React.useState(false);
+     const [selectedMentoring, setSelectedMentoring] = React.useState([]);
+     const mentoringtypes = [
+       "Journey ",
+       "One-time Session",
+       "All-in-One"
+     ];
      const [image, setImage] = React.useState(null);
      const [base64Image, setBase64Image] = React.useState(null);//chat idea for storing images
    
@@ -159,20 +180,22 @@ const SignUpJobSeeker = ({navigation}) => {
          prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
        );
      };
-   
+     const toggleMentoring = (mentoring) => {
+        setSelectedMentoring([mentoring])
+      };
      const toggleStatus = (status) => {
        setSelectedStatuses([status]); // Only allow one status at a time
      };
    
      const addNewUser=async (FirstNametext,LastNametext,Emailtext,Passwordtext,selectedFields,
        selectedStatuses,selectedLanguages,
-       FacebookLink,LinkedInLink )=>{
+       FacebookLink,LinkedInLink,Companytext ,selectedMentoring)=>{
          try{
            console.log("Sending request to API...");
-       const isMentor=false;
+       const isMentor=true;
        const API_URL = Platform.OS === 'web'  //changed the url for web and phone
-     ? "http://localhost:5062/api/Users" 
-     : "http://192.168.30.157:5062/api/Users";
+     ? "http://localhost:5062/api/Mentors" 
+     : "http://192.168.30.157:5062/api/Mentors";
            const response =await fetch (API_URL, { 
              method: 'POST', // Specify that this is a POST request
              headers: {
@@ -189,7 +212,9 @@ const SignUpJobSeeker = ({navigation}) => {
                Language: selectedLanguages,  // Send the dummy language
                FacebookLink: FacebookLink,  // Send the dummy Facebook link
                LinkedInLink: LinkedInLink,  // Send the dummy LinkedIn link
-               IsMentor:isMentor
+               IsMentor:isMentor,
+               Company:Companytext,
+               MentoringType:selectedMentoring[0]
              })
            });
            console.log(base64Image)
@@ -197,7 +222,6 @@ const SignUpJobSeeker = ({navigation}) => {
 
            if(response.ok)
             {
-             console.log('user found ')
              console.log('User successfully added');
              // Now login to get full user data and save it
              await loginAsUser(Emailtext, Passwordtext);
@@ -239,7 +263,7 @@ const loginAsUser = async (email, password) => {
           Language: ["String"], // Convert to an array
           FacebookLink: "String",
           LinkedInLink: "String",
-          IsMentor: false
+          IsMentor: true
         })
       });
   
@@ -249,7 +273,7 @@ const loginAsUser = async (email, password) => {
         console.log('User found');
         const userData = await response.json(); // Retrieve the full user details
   
-        //store the full user data if needed
+        // You can now store the full user data if needed
         await AsyncStorage.setItem("user", JSON.stringify(userData));
         setSuccessPopupVisible(true);
   
@@ -290,7 +314,7 @@ const loginAsUser = async (email, password) => {
                     <CustomPopup visible={successPopupVisible}
                   onDismiss={() => {
                     setSuccessPopupVisible(false);
-                    navigation.navigate("HomePage"); // Navigate after closing popup
+                    navigation.navigate("HomePageMentor"); // Navigate after closing popup
                   }}
                     icon="check-circle" message="User Signed Up successfully!"
                      />
@@ -315,9 +339,9 @@ const loginAsUser = async (email, password) => {
   </View>
 ) : (
   <View style={appliedStyles.imageAndIconContainer}>
-        <View style={appliedStyles.avatarContainer}>
+    <View style={appliedStyles.avatarContainer}>
       <Image source={require('./assets/defaultProfileImage.jpg')}style={appliedStyles.profileImage}></Image>
-   </View>
+    </View>
     <TouchableOpacity onPress={pickImage} style={appliedStyles.cameraButtonAfter}>
       <Ionicons name="camera-outline" size={24} color="white" />
     </TouchableOpacity>
@@ -488,8 +512,55 @@ const loginAsUser = async (email, password) => {
  {LinkedInLinkError ? <Text style={{ color: "#003D5B",marginBottom:'1%' }}>{LinkedInLinkError}</Text> : null}
                     </View>
   </View>
+  <View style={appliedStyles.rowPair}>
+  <View style={appliedStyles.inputBlock}>
+<Text style={appliedStyles.inputTitle}>Company</Text>
 
- <View style={appliedStyles.languageContainer}>
+<TextInput 
+                    onChangeText={handleCompanyChange}
+                    style={appliedStyles.halfInput} 
+                    placeholder="Company (Optional)"
+                    placeholderTextColor="#888"
+                    value={Companytext} />
+ {CompanyError ? <Text style={{ color: "#003D5B",marginBottom:'1%' }}>{CompanyError}</Text> : null}                 
+      </View>
+ 
+  {/* Mentoring type Modal */}
+  <View style={appliedStyles.inputBlock}>
+<Text style={appliedStyles.inputTitle}>Mentoring Type</Text>
+  <Button 
+    mode="outlined" 
+    onPress={() => setMentoringModalVisible(true)} 
+    style={appliedStyles.modalsInput}  
+    contentStyle={appliedStyles.modalText} 
+    labelStyle={appliedStyles.modalLabelText}
+  >
+
+    {selectedMentoring.length ? selectedMentoring.join(', ') : 'Select Your Mentoring Type'}
+  </Button>
+  </View>
+
+  <ModalRN 
+    isVisible={mentoringModalVisible} 
+    onBackdropPress={() => setMentoringModalVisible(false)} 
+    onBackButtonPress={() => setMentoringModalVisible(false)}
+    style={{ justifyContent: 'flex-end', margin: 0 }} // ⬅️ makes it appear from the bottom
+
+  >
+    <View style={appliedStyles.modalBox}>
+      {mentoringtypes.map((mentor, index) => (
+        <Checkbox.Item 
+          key={index} 
+          label={mentor} 
+          status={selectedMentoring.includes(mentor) ? 'checked' : 'unchecked'} 
+          onPress={() => toggleMentoring(mentor)} 
+        />
+      ))}
+      <Button onPress={() => setMentoringModalVisible(false)}>Done</Button>
+    </View>
+  </ModalRN>
+</View>
+<View style={appliedStyles.languageContainer}>
  <Text style={appliedStyles.inputTitle}>Language</Text>
     <LanguageSelector
                 selectedLanguages={selectedLanguages} 
@@ -507,7 +578,7 @@ const loginAsUser = async (email, password) => {
       </View>
         <TouchableOpacity style={appliedStyles.loginButton}>
           <Text style={appliedStyles.loginText} onPress={() => {addNewUser(FirstNametext, LastNametext, Emailtext, Passwordtext, selectedFields, 
-                      selectedStatuses, selectedLanguages, FacebookLink, LinkedInLink) }}>SIGN UP</Text>
+                      selectedStatuses, selectedLanguages, FacebookLink, LinkedInLink,Companytext,selectedMentoring) }}>SIGN UP</Text>
         </TouchableOpacity>
       </View>
 
@@ -622,6 +693,12 @@ const Webstyles = StyleSheet.create({
     flex: 1,
 
 },
+modalText:{
+  justifyContent: 'left', 
+  borderRadius: 10,
+  paddingLeft:10,
+
+},
 modalLabelText:{
   color: "#888", 
   fontSize:13,
@@ -629,11 +706,7 @@ modalLabelText:{
    marginLeft:1,
 
   },
-  modalText:{
-    justifyContent: 'left', 
-    paddingLeft:10,
-    borderRadius: 10
-  },
+ 
 inputBlock: {
   width: '50%', // adjust as necessary
 },
@@ -680,7 +753,7 @@ modalsInput:{
   eyeIcon: {
     position: 'absolute',
     right:0,
-    top: '74%',
+    top: '70%',
     transform: [{ translateY: -12 }],
     zIndex: 1
   },
@@ -699,7 +772,7 @@ modalsInput:{
     elevation: 5,
   },
   avatarContainer: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#fff',
     width: 100, // Set a fixed width
     height: 100, // Set a fixed height (same as width)
     borderRadius: 50, // Half of width/height to make it round
@@ -802,7 +875,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     width: '100%',
     marginTop: 5,
-    marginBottom: 30,
+    marginBottom: 40,
     zIndex:1,
   },
 
@@ -853,8 +926,8 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     position: 'absolute',
-    right: 20,
-    top: '60%',
+    right: 15,
+    top: '62%',
     transform: [{ translateY: -12 }],
     zIndex: 1,
   },
@@ -874,11 +947,12 @@ const styles = StyleSheet.create({
   },
   modalText:{
     justifyContent: 'left', 
+    borderRadius: 10,
     paddingLeft:10,
-    borderRadius: 10
+
   },
   avatarContainer: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#fff',
     width: 100, // Set a fixed width
     height: 100, // Set a fixed height (same as width)
     borderRadius: 50, // Half of width/height to make it round
@@ -887,4 +961,4 @@ const styles = StyleSheet.create({
     marginTop:10
   },
   });
-export default SignUpJobSeeker;
+export default SignUpMentor;

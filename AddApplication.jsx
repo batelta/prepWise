@@ -1,24 +1,42 @@
 import React, { useState } from "react";
 import {
-  ScrollView,
+  TextInput,
+  Button,
+  Snackbar,
   Text,
+  SegmentedButtons,
+  Switch,
+  ActivityIndicator,
+} from "react-native-paper";
+import {
+  ScrollView,
   View,
   KeyboardAvoidingView,
   Platform,
   Modal,
   TouchableOpacity,
+  StyleSheet,
 } from "react-native";
-import {
-  TextInput,
-  Provider as PaperProvider,
-  Button,
-  Snackbar,
-  Switch,
-} from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
+import { useFonts } from "expo-font";
+import {
+  Inter_400Regular,
+  Inter_300Light,
+  Inter_700Bold,
+  Inter_100Thin,
+  Inter_200ExtraLight,
+} from "@expo-google-fonts/inter";
 
-export default function AddApplication() {
+export default function AddApplication({ onSuccess }) {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+    Inter_100Thin,
+    Inter_200ExtraLight,
+    Inter_300Light,
+  });
   const navigation = useNavigation();
+
   const [application, setApplication] = useState({
     Title: "",
     CompanyName: "",
@@ -43,6 +61,10 @@ export default function AddApplication() {
 
   const [jobTypeModalVisible, setJobTypeModalVisible] = useState(false);
   const [showSnackbar, setShowSnackbar] = useState(false);
+  const [titleError, setTitleError] = useState(false);
+  const [mode, setMode] = useState("url");
+  const [imported, setImported] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const jobTypeList = [
     { label: "Full Time", value: "FullTime" },
@@ -52,8 +74,6 @@ export default function AddApplication() {
     { label: "Temporary", value: "Temporary" },
     { label: "Student", value: "Student" },
   ];
-
-  const [titleError, setTitleError] = useState(false); //for veristion that the user insert title
 
   const handleAppChange = (field, value) => {
     setApplication((prevApp) => ({ ...prevApp, [field]: value }));
@@ -64,345 +84,44 @@ export default function AddApplication() {
   };
 
   const addNewApplication = async () => {
+    console.log(" SUBMIT CLICKED");
+    console.log("hasContact:", hasContact);
+    console.log("Contacts field will be sent as:", hasContact ? [contact] : []);
+
     if (!application.Title.trim()) {
-      setTitleError(true); // הצג שגיאה
-      return; // עצור את השליחה
+      setTitleError(true);
+      return;
     } else {
-      setTitleError(false); // נקה את השגיאה אם יש טקסט
+      setTitleError(false);
     }
-    const userId = "5"; //wil adjust later to take the ID of the login user
 
+    const userID = 6;
+    setIsLoading(true); // הוספתי את זה - מפעיל את מצב הטעינה
     try {
       const API_URL =
         Platform.OS === "web"
-          ? `https://localhost:7137/api/JobSeekers/${userId}/applications`
-          : `http://192.168.1.92:7137/api/JobSeekers/${userId}/applications`;
+          ? `http://localhost:5062/api/JobSeekers/${userID}/applications`
+          : `http://192.168.1.92:7137/api/JobSeekers/${userID}/applications`;
 
-      const appToSend = {
-        ...application, // the app object that send in the reqest
-        Contacts: hasContact ? [contact] : [], //if the user add contact he will send in the call body, if no so will send empty arr
-      };
+      const isValidContact = //in case that the user open the contact switch but didn't add deatils.
+        contact.ContactName.trim() !== "" || contact.ContactEmail.trim() !== "";
 
-      console.log("Sending to API:", JSON.stringify(appToSend, null, 2));
-
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(appToSend),
-      });
-
-      const resText = await response.text();
-      console.log("Response:", resText);
-
-      if (response.ok) {
-        console.log("Application submitted!");
-        setShowSnackbar(true);
-        setTimeout(() => {
-          navigation.navigate("AllUserApplications");
-        }, 1700);
-      } else {
-        throw new Error("Failed to submit application");
+      if (hasContact && !isValidContact) {
+        alert("Please fill in at least a contact name or email.");
+        return;
       }
-    } catch (err) {
-      console.error("Error submitting:", err);
-    }
-  };
-
-  return (
-    <PaperProvider>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={{ padding: 20 }}>
-          <Text>Add New Application</Text>
-
-          <TextInput
-            label="Application Title"
-            value={application.Title}
-            onChangeText={(text) => {
-              handleAppChange("Title", text);
-              if (text.trim()) setTitleError(false); // נקה את השגיאה אם המשתמש כתב
-            }}
-          />
-          {titleError && (
-            <Text style={{ color: "red", marginBottom: 10 }}>
-              Title is required
-            </Text>
-          )}
-          <TextInput
-            label="Company Name"
-            value={application.CompanyName}
-            onChangeText={(text) => handleAppChange("CompanyName", text)}
-          />
-          <TextInput
-            label="Location"
-            value={application.Location}
-            onChangeText={(text) => handleAppChange("Location", text)}
-          />
-          <TextInput
-            label="URL"
-            value={application.Url}
-            onChangeText={(text) => handleAppChange("Url", text)}
-          />
-          <TextInput
-            label="Company Summary"
-            value={application.CompanySummary}
-            onChangeText={(text) => handleAppChange("CompanySummary", text)}
-            multiline
-          />
-          <TextInput
-            label="Job Description"
-            value={application.JobDescription}
-            onChangeText={(text) => handleAppChange("JobDescription", text)}
-            multiline
-          />
-          <TextInput
-            label="Notes"
-            value={application.Notes}
-            onChangeText={(text) => handleAppChange("Notes", text)}
-            multiline
-          />
-
-          {/* Job Type Dropdown */}
-          <TouchableOpacity
-            onPress={() => setJobTypeModalVisible(true)}
-            style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              padding: 12,
-              borderRadius: 4,
-              marginBottom: 10,
-              marginTop: 10,
-            }}
-          >
-            <Text style={{ color: application.JobType ? "#000" : "#999" }}>
-              {jobTypeList.find((j) => j.value === application.JobType)
-                ?.label || "Select Job Type"}
-            </Text>
-          </TouchableOpacity>
-
-          <Modal
-            visible={jobTypeModalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setJobTypeModalVisible(false)}
-          >
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.4)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-              activeOpacity={1}
-              onPressOut={() => setJobTypeModalVisible(false)}
-            >
-              <View
-                style={{
-                  backgroundColor: "white",
-                  width: "80%",
-                  borderRadius: 8,
-                  paddingVertical: 10,
-                }}
-              >
-                {jobTypeList.map((item) => (
-                  <TouchableOpacity
-                    key={item.value}
-                    onPress={() => {
-                      handleAppChange("JobType", item.value);
-                      setJobTypeModalVisible(false);
-                    }}
-                    style={{
-                      paddingVertical: 12,
-                      paddingHorizontal: 20,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#eee",
-                    }}
-                  >
-                    <Text style={{ fontSize: 16 }}>{item.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </TouchableOpacity>
-          </Modal>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginTop: 20,
-            }}
-          >
-            <Text style={{ marginRight: 10 }}>Is Hybrid?</Text>
-            <Switch
-              value={application.IsHybrid}
-              onValueChange={(val) => handleAppChange("IsHybrid", val)}
-            />
-          </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginTop: 20,
-            }}
-          >
-            <Text style={{ marginRight: 10 }}>Is Remote?</Text>
-            <Switch
-              value={application.IsRemote}
-              onValueChange={(val) => handleAppChange("IsRemote", val)}
-            />
-          </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginTop: 30,
-            }}
-          >
-            <Text style={{ marginRight: 10 }}>
-              Do you have a contact person?
-            </Text>
-            <Switch value={hasContact} onValueChange={setHasContact} />
-          </View>
-
-          {hasContact && (
-            <>
-              <TextInput
-                label="Contact Name"
-                value={contact.ContactName}
-                onChangeText={(text) =>
-                  handleContactChange("ContactName", text)
-                }
-              />
-              <TextInput
-                label="Contact Email"
-                value={contact.ContactEmail}
-                onChangeText={(text) =>
-                  handleContactChange("ContactEmail", text)
-                }
-                keyboardType="email-address"
-              />
-              <TextInput
-                label="Contact Phone"
-                value={contact.ContactPhone}
-                onChangeText={(text) =>
-                  handleContactChange("ContactPhone", text)
-                }
-                keyboardType="phone-pad"
-              />
-              <TextInput
-                label="Contact Notes"
-                value={contact.ContactNotes}
-                onChangeText={(text) =>
-                  handleContactChange("ContactNotes", text)
-                }
-                multiline
-              />
-            </>
-          )}
-
-          <Button
-            mode="contained"
-            onPress={addNewApplication}
-            style={{ marginTop: 30 }}
-          >
-            Submit Application
-          </Button>
-
-          <Snackbar
-            visible={showSnackbar}
-            onDismiss={() => setShowSnackbar(false)}
-            duration={3000}
-          >
-            Application submitted successfully!
-          </Snackbar>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </PaperProvider>
-  );
-}
-
-/*import React, { useState } from "react";
-import {
-  ScrollView,
-  Text,
-  View,
-  KeyboardAvoidingView,
-  Platform,
-  Modal,
-  TouchableOpacity,
-} from "react-native";
-import {
-  TextInput,
-  Provider as PaperProvider,
-  Button,
-  Snackbar,
-  Switch,
-} from "react-native-paper";
-
-export default function AddApplication() {
-  const [application, setApplication] = useState({
-    Title: "",
-    CompanyName: "",
-    Location: "",
-    Url: "",
-    CompanySummary: "",
-    JobDescription: "",
-    Notes: "",
-    JobType: "",
-    IsHybrid: false,
-    IsRemote: false,
-    Contacts: [],
-  });
-
-  const [hasContact, setHasContact] = useState(false);
-  const [contact, setContact] = useState({
-    ContactName: "",
-    ContactEmail: "",
-    ContactPhone: "",
-    ContactNotes: "",
-  });
-
-  const [jobTypeModalVisible, setJobTypeModalVisible] = useState(false);
-  const [showSnackbar, setShowSnackbar] = useState(false);
-
-  const jobTypeList = [
-    { label: "Full Time", value: "FullTime" },
-    { label: "Part Time", value: "PartTime" },
-    { label: "Internship", value: "Internship" },
-    { label: "Freelance", value: "Freelance" },
-    { label: "Temporary", value: "Temporary" },
-    { label: "Student", value: "Student" },
-  ];
-
-  const handleAppChange = (field, value) => {
-    setApplication((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleContactChange = (field, value) => {
-    setContact((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const addNewApplication = async () => {
-    const userId = "5";
-
-    try {
-      const API_URL =
-        Platform.OS === "web"
-          ? `https://localhost:7137/api/JobSeekers/${userId}/applications`
-          : `http://192.168.1.92:7137/api/JobSeekers/${userId}/applications`;
 
       const appToSend = {
         ...application,
         Contacts: hasContact ? [contact] : [],
       };
 
-      console.log(" Sending to API:", JSON.stringify(appToSend, null, 2));
+      console.log(" appToSend object before sending:", appToSend);
+      console.log(" typeof contacts:", typeof appToSend.Contacts);
+      console.log(" contacts value:", appToSend.Contacts);
+
+      const finalJSON = JSON.stringify(appToSend, null, 2);
+      console.log(" Final JSON string:", finalJSON);
 
       const response = await fetch(API_URL, {
         method: "POST",
@@ -412,197 +131,414 @@ export default function AddApplication() {
         body: JSON.stringify(appToSend),
       });
 
-      const resText = await response.text();
-      console.log("Response:", resText);
+      console.log(" Response status:", response.status);
+
+      setIsLoading(false); // ה מבטל את מצב הטעינה אחרי תגובת השרת
 
       if (response.ok) {
-        console.log("Application submitted!");
         setShowSnackbar(true);
+        setTimeout(() => {
+          if (Platform.OS === "web") {
+            onSuccess?.(); // לרענן את רשימת המשרות בווב
+          } else {
+            navigation.navigate("AllUserApplications"); // נווט לעמוד המתאים במובייל
+          }
+        }, 1700);
       } else {
-        throw new Error("Failed to submit application");
+        const errorText = await response.text(); // תקבל את הודעת השגיאה מהשרת
+        console.error(" Server response text:", errorText);
+        throw new Error("Failed to submit application" + errorText);
       }
     } catch (err) {
-      console.error(" Error submitting:", err);
+      console.error("Error submitting:", err);
+      setIsLoading(false); // ה מבטל את מצב הטעינה במקרה של שגיאה
     }
   };
 
-  return (
-    <PaperProvider>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
+  const importFromUrl = async () => {
+    if (!application.Url.trim()) {
+      alert("Please enter a valid job URL.");
+      return;
+    }
+    setIsLoading(true); // ה מפעיל את מצב הטעינה
+
+    try {
+      const API_URL =
+        Platform.OS === "web"
+          ? "https://localhost:5062/api/Application/fetch-job"
+          : "http://192.168.1.92:7137/api/Application/fetch-job";
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ URL: application.Url }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch job data");
+      }
+
+      const data = await response.json();
+      console.log(" Gemini Result:", data);
+
+      setApplication((prev) => ({
+        ...prev,
+        Title: data.title || prev.Title,
+        CompanyName: data.companyName || prev.CompanyName,
+        CompanySummary: data.companySummary || prev.CompanySummary,
+        JobDescription: data.jobDescription || prev.JobDescription,
+      }));
+
+      //  מעבר אוטומטי למצב עריכה
+      //setMode("manual");
+      setImported(true);
+      setShowSnackbar(true);
+
+      setIsLoading(false); // מבטל את מצב הטעינה אחרי הצלחה
+    } catch (error) {
+      console.error(" Error importing job data:", error);
+      alert("Failed to import job details. Please try again.");
+      setIsLoading(false); // הוספתי את זה - מבטל את מצב הטעינה במקרה של שגיאה
+    }
+  };
+
+  const renderUrlForm = () => (
+    //auto fill application
+    <>
+      <TextInput
+        label="Job URL"
+        value={application.Url}
+        onChangeText={(text) => handleAppChange("Url", text)}
+        style={styles.input}
+        disabled={isLoading}
+        placeholder="https://example.com/job/..."
+      />
+
+      <Button
+        mode="outlined"
+        onPress={importFromUrl}
+        icon={isLoading ? null : "download"} // ה מסתיר את האייקון בזמן טעינה
+        //icon="download"
+        style={{ marginBottom: 20 }}
+        disabled={isLoading} // ה משבית את הכפתור בזמן טעינה
       >
-        <ScrollView contentContainerStyle={{ padding: 20 }}>
-          <Text>Add New Application</Text>
-
-          <TextInput
-            label="Application Title"
-            value={application.Title}
-            onChangeText={(text) => handleAppChange("Title", text)}
-          />
-          <TextInput
-            label="Company Name"
-            value={application.CompanyName}
-            onChangeText={(text) => handleAppChange("CompanyName", text)}
-          />
-          <TextInput
-            label="Location"
-            value={application.Location}
-            onChangeText={(text) => handleAppChange("Location", text)}
-          />
-          <TextInput
-            label="URL"
-            value={application.Url}
-            onChangeText={(text) => handleAppChange("Url", text)}
-          />
-          <TextInput
-            label="Company Summary"
-            value={application.CompanySummary}
-            onChangeText={(text) => handleAppChange("CompanySummary", text)}
-            multiline
-          />
-          <TextInput
-            label="Job Description"
-            value={application.JobDescription}
-            onChangeText={(text) => handleAppChange("JobDescription", text)}
-            multiline
-          />
-          <TextInput
-            label="Notes"
-            value={application.Notes}
-            onChangeText={(text) => handleAppChange("Notes", text)}
-            multiline
-          />
-
-   
-          <TouchableOpacity
-            onPress={() => setJobTypeModalVisible(true)}
-            style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              padding: 12,
-              borderRadius: 4,
-              marginBottom: 10,
-              marginTop: 10,
-            }}
-          >
-            <Text style={{ color: application.JobType ? "#000" : "#999" }}>
-              {jobTypeList.find((j) => j.value === application.JobType)?.label ||
-                "Select Job Type"}
-            </Text>
-          </TouchableOpacity>
-
-          <Modal
-            visible={jobTypeModalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setJobTypeModalVisible(false)}
-          >
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.4)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-              activeOpacity={1}
-              onPressOut={() => setJobTypeModalVisible(false)}
-            >
-              <View
-                style={{
-                  backgroundColor: "white",
-                  width: "80%",
-                  borderRadius: 8,
-                  paddingVertical: 10,
-                }}
-              >
-                {jobTypeList.map((item) => (
-                  <TouchableOpacity
-                    key={item.value}
-                    onPress={() => {
-                      handleAppChange("JobType", item.value);
-                      setJobTypeModalVisible(false);
-                    }}
-                    style={{
-                      paddingVertical: 12,
-                      paddingHorizontal: 20,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#eee",
-                    }}
-                  >
-                    <Text style={{ fontSize: 16 }}>{item.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </TouchableOpacity>
-          </Modal>
-
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
-            <Text style={{ marginRight: 10 }}>Is Hybrid?</Text>
-            <Switch
-              value={application.IsHybrid}
-              onValueChange={(val) => handleAppChange("IsHybrid", val)}
-            />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator animating={true} color="#BFB4FF" size="small" />
+            <Text style={styles.loadingText}>Importing job details...</Text>
           </View>
-
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
-            <Text style={{ marginRight: 10 }}>Is Remote?</Text>
-            <Switch
-              value={application.IsRemote}
-              onValueChange={(val) => handleAppChange("IsRemote", val)}
-            />
-          </View>
-
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 30 }}>
-            <Text style={{ marginRight: 10 }}>Do you have a contact person?</Text>
-            <Switch value={hasContact} onValueChange={setHasContact} />
-          </View>
-
-          {hasContact && (
-            <>
-              <TextInput
-                label="Contact Name"
-                value={contact.ContactName}
-                onChangeText={(text) => handleContactChange("ContactName", text)}
-              />
-              <TextInput
-                label="Contact Email"
-                value={contact.ContactEmail}
-                onChangeText={(text) => handleContactChange("ContactEmail", text)}
-                keyboardType="email-address"
-              />
-              <TextInput
-                label="Contact Phone"
-                value={contact.ContactPhone}
-                onChangeText={(text) => handleContactChange("ContactPhone", text)}
-                keyboardType="phone-pad"
-              />
-              <TextInput
-                label="Contact Notes"
-                value={contact.ContactNotes}
-                onChangeText={(text) => handleContactChange("ContactNotes", text)}
-                multiline
-              />
-            </>
-          )}
-
-          <Button
-            mode="contained"
-            onPress={addNewApplication}
-            style={{ marginTop: 30 }}
-          >
-            Submit Application
-          </Button>
-
-          <Snackbar
-            visible={showSnackbar}
-            onDismiss={() => setShowSnackbar(false)}
-            duration={3000}
-          >
-            Application submitted successfully!
-          </Snackbar>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </PaperProvider>
+        ) : (
+          "Import Job Details"
+        )}
+      </Button>
+    </>
   );
-}*/
+
+  const renderManualForm = () => (
+    <>
+      <TextInput
+        label="Application Title"
+        value={application.Title}
+        onChangeText={(text) => {
+          handleAppChange("Title", text);
+          if (text.trim()) setTitleError(false);
+        }}
+        style={styles.input}
+        disabled={isLoading}
+      />
+      {titleError && <Text style={styles.errorText}>Title is required</Text>}
+
+      <TextInput
+        label="Company Name"
+        value={application.CompanyName}
+        onChangeText={(text) => handleAppChange("CompanyName", text)}
+        style={styles.input}
+        disabled={isLoading}
+      />
+      <TextInput
+        label="Location"
+        value={application.Location}
+        onChangeText={(text) => handleAppChange("Location", text)}
+        style={styles.input}
+        disabled={isLoading}
+      />
+      <TextInput
+        label="Company Summary"
+        value={application.CompanySummary}
+        onChangeText={(text) => handleAppChange("CompanySummary", text)}
+        style={styles.input}
+        disabled={isLoading}
+      />
+      <TextInput
+        label="Job Description"
+        value={application.JobDescription}
+        onChangeText={(text) => handleAppChange("JobDescription", text)}
+        style={styles.input}
+        disabled={isLoading}
+      />
+      <TextInput
+        label="Notes"
+        value={application.Notes}
+        onChangeText={(text) => handleAppChange("Notes", text)}
+        style={styles.input}
+        disabled={isLoading}
+      />
+    </>
+  );
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          Platform.OS === "web" && { paddingTop: 90 },
+        ]}
+      >
+        <Text style={styles.header}>Add New Application</Text>
+
+        <SegmentedButtons //מאפשר את הבחירה בין המצבים של מילוי אוטומטי וידני
+          value={mode}
+          onValueChange={setMode}
+          buttons={[
+            { value: "url", label: "Paste Job URL", icon: "link" },
+            {
+              value: "manual",
+              label: "Manualy Job Application", //will change that words later
+              icon: "file-document-edit",
+            },
+          ]}
+          style={{ marginBottom: 20 }}
+          disabled={isLoading}
+        />
+
+        {mode === "url" && renderUrlForm()}
+        {mode === "url" && imported && renderManualForm()}
+        {mode === "manual" && renderManualForm()}
+
+        <TouchableOpacity
+          onPress={() => setJobTypeModalVisible(true)}
+          style={styles.dropdown}
+        >
+          <Text style={{ color: application.JobType ? "#000" : "#999" }}>
+            {jobTypeList.find((j) => j.value === application.JobType)?.label ||
+              "Select Job Type"}
+          </Text>
+        </TouchableOpacity>
+
+        <Modal
+          visible={jobTypeModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setJobTypeModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPressOut={() => setJobTypeModalVisible(false)}
+          >
+            <View style={styles.modalContent}>
+              {jobTypeList.map((item) => (
+                <TouchableOpacity
+                  key={item.value}
+                  onPress={() => {
+                    handleAppChange("JobType", item.value);
+                    setJobTypeModalVisible(false);
+                  }}
+                  style={styles.modalItem}
+                >
+                  <Text style={{ fontSize: 16 }}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        <View style={styles.switchRow}>
+          <Text>Is Hybrid?</Text>
+          <Switch
+            value={application.IsHybrid}
+            onValueChange={(val) => handleAppChange("IsHybrid", val)}
+            color="#9FF9D5"
+            disabled={isLoading}
+          />
+        </View>
+
+        <View style={styles.switchRow}>
+          <Text>Is Remote?</Text>
+          <Switch
+            value={application.IsRemote}
+            onValueChange={(val) => handleAppChange("IsRemote", val)}
+            color="#9FF9D5"
+            disabled={isLoading}
+          />
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.switchRow}>
+          <Text>Do you have a contact person?</Text>
+          <Switch
+            value={hasContact}
+            onValueChange={setHasContact}
+            color="#9FF9D5"
+            disabled={isLoading}
+          />
+        </View>
+
+        {hasContact && (
+          <View style={styles.contactBox}>
+            <Text style={styles.sectionTitle}>Contact Information</Text>
+            <TextInput
+              label="Contact Name"
+              value={contact.ContactName}
+              onChangeText={(text) => handleContactChange("ContactName", text)}
+              style={styles.input}
+              disabled={isLoading}
+            />
+            <TextInput
+              label="Contact Email"
+              value={contact.ContactEmail}
+              onChangeText={(text) => handleContactChange("ContactEmail", text)}
+              keyboardType="email-address"
+              style={styles.input}
+              disabled={isLoading}
+            />
+            <TextInput
+              label="Contact Phone"
+              value={contact.ContactPhone}
+              onChangeText={(text) => handleContactChange("ContactPhone", text)}
+              keyboardType="phone-pad"
+              style={styles.input}
+              disabled={isLoading}
+            />
+            <TextInput
+              label="Contact Notes"
+              value={contact.ContactNotes}
+              onChangeText={(text) => handleContactChange("ContactNotes", text)}
+              multiline
+              style={styles.input}
+              disabled={isLoading}
+            />
+          </View>
+        )}
+
+        <Button
+          mode="contained"
+          onPress={addNewApplication}
+          style={{ marginTop: 30 }}
+          icon={isLoading ? null : "check"} // ה מסתיר את האייקון בזמן טעינה
+          disabled={isLoading} // ה משבית את הכפתור בזמן טעינה
+          //icon="check"
+        >
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator animating={true} color="#fff" size="small" />
+              <Text style={[styles.loadingText, { color: "#fff" }]}>
+                Submitting...
+              </Text>
+            </View>
+          ) : (
+            "Submit Application"
+          )}
+        </Button>
+
+        <Snackbar
+          visible={showSnackbar}
+          onDismiss={() => setShowSnackbar(false)}
+          duration={3000}
+        >
+          Application details imported successfully!
+        </Snackbar>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    backgroundColor: "white",
+  },
+  header: {
+    fontSize: 24,
+    //fontWeight: "bold",
+    marginBottom: 20,
+    color: "#163349",
+    fontFamily: "Inter_700Bold",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 25,
+    marginBottom: 10,
+    color: "#2C3E50",
+    fontFamily: "Inter_700Bold",
+  },
+  input: {
+    marginBottom: 12,
+    backgroundColor: "#fff",
+    fontFamily: "Inter_300Light",
+    color: "#003D5B",
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 10,
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 10,
+    backgroundColor: "#fff",
+  },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 15,
+  },
+  divider: {
+    borderBottomColor: "#ccc",
+    borderBottomWidth: 1,
+    marginVertical: 25,
+  },
+  contactBox: {
+    backgroundColor: "rgba(252, 248, 248, 0.91)",
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 15,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    width: "80%",
+    borderRadius: 8,
+    paddingVertical: 10,
+  },
+  modalItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "rgba(0,0,0,0.4)",
+  },
+});

@@ -34,12 +34,12 @@ const createRedirectScreen = (screenName) => {
   };
 };
 const mobileNavItems = [
-  { name: "Home", screen: "HomePage" },
-  { name: "Chat", screen: "GeminiChat", disabled: true },
-  { name: "Add Job", screen: "AddApplication" },
+  { name: "Home", screen: "HomePageMentor" },
+  { name: "Chat", screen: "LandingPage", disabled: true },
+  { name: "Add Offer", screen: "LandingPage" , disabled: true},
   { name: "Calendar", screen: "LandingPage", disabled: true },
   { name: "Profile", screen: "Profile" },
-  { name: "Menu", screen: "LandingPage", disabled: true },
+  { name: "Menu", screen: "LandingPage", disabled: true},
 ];
 
 const Tab = createBottomTabNavigator();
@@ -55,7 +55,7 @@ const MobileNavBar = () => {
         let iconName;
         if (route.name === "Home") iconName = focused ? "home" : "home-outline";
         else if (route.name === "Chat") iconName = focused ? "chatbubble" : "chatbubble-outline";
-        else if (route.name === "Add Job") iconName = focused ? "add-circle" : "add-circle-outline";
+        else if (route.name === "Add Offer") iconName = focused ? "add-circle" : "add-circle-outline";
         else if (route.name === "Calendar") iconName = focused ? "calendar" : "calendar-outline";
         else if (route.name === "Profile") iconName = focused ? "person" : "person-outline";
         else if (route.name === "Menu") iconName = focused ? "menu" : "menu-outline";
@@ -72,20 +72,20 @@ const MobileNavBar = () => {
     })}
   >
     {mobileNavItems.map((item) => (
-     <Tab.Screen
-     key={item.name}
-     name={item.name}
-     component={item.disabled ? () => null : createRedirectScreen(item.screen)}
-     listeners={{
-       tabPress: e => {
-         if (item.disabled) {
-           e.preventDefault(); // block navigation
-           alert("This feature is coming soon!");
-         }
-       }
-     }}
-   />
-   
+      <Tab.Screen
+      key={item.name}
+      name={item.name}
+      component={item.disabled ? () => null : createRedirectScreen(item.screen)}
+      listeners={{
+        tabPress: e => {
+          if (item.disabled) {
+            e.preventDefault(); // block navigation
+            alert("This feature is coming soon!");
+          }
+        }
+      }}
+    />
+    
     ))}
   </Tab.Navigator>
   
@@ -99,12 +99,12 @@ const WebNavBar = () => {
   const [hovered, setHovered] = React.useState("");
 
   const navItems = [
-    { name: "Home", screen: "HomePage" },
-    { name: "Chat", screen: "GeminiChat", disabled: true },
-    { name: "Add Job", screen: "AddApplication" },
+    { name: "Home", screen: "HomePageMentor" },
+    { name: "Chat", screen: "LandingPage", disabled: true },
+    { name: "Add Offer", screen: "LandingPage", disabled: true },
     { name: "Calendar", screen: "LandingPage" , disabled: true},
     { name: "Profile", screen: "Profile" },
-    { name: "Menu", screen: "LandingPage", disabled: true },
+    { name: "Menu", screen: "LandingPage" , disabled: true},
   ];
 
   return (
@@ -120,12 +120,12 @@ const WebNavBar = () => {
               <TouchableOpacity
                 key={item.screen}
                 onPress={() => {
-                  if (item.disabled) {
-                    alert("This page is under construction!");
-                  } else {
-                    navigation.navigate(item.screen);
-                  }
-                }}                
+                    if (item.disabled) {
+                      alert("This page is under construction!");
+                    } else {
+                      navigation.navigate(item.screen);
+                    }
+                  }}
                 onMouseEnter={() => setHovered(item.screen)}
                 onMouseLeave={() => setHovered(null)}
               >
@@ -146,7 +146,7 @@ const WebNavBar = () => {
   );
 };
 
-const NavBar = () => {
+const NavBarMentor = () => {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_700Bold,
@@ -223,4 +223,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NavBar;
+export default NavBarMentor;

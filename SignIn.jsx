@@ -8,10 +8,13 @@ import { Inter_400Regular,
   Inter_200ExtraLight } from '@expo-google-fonts/inter';
   import CustomPopup from "./CustomPopup"; // Import the custom popup
   import AsyncStorage from '@react-native-async-storage/async-storage';
+  import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Or any other icon set
 
   const { height,width } = Dimensions.get('window');
 
 const SignIn = ({navigation}) => {
+
+  const [isMentor, setIsMentor]=useState(false)
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
   const [errorPopupVisible, setErrorPopupVisible] = useState(false);
 
@@ -53,6 +56,8 @@ const SignIn = ({navigation}) => {
             const userData = await response.json();   
 
             await AsyncStorage.setItem("user", JSON.stringify(userData));
+            setIsMentor(userData.isMentor)
+            console.log(userData.isMentor)
             setSuccessPopupVisible(true)
       
            }
@@ -78,6 +83,7 @@ const SignIn = ({navigation}) => {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+   const [secureText, setSecureText] = React.useState(true); // State to toggle password visibility
 
    const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
   
@@ -89,7 +95,10 @@ const SignIn = ({navigation}) => {
                     <CustomPopup visible={successPopupVisible}
                   onDismiss={() => {
                     setSuccessPopupVisible(false);
-                    navigation.navigate("HomePage"); // Navigate after closing popup
+                    if(isMentor)
+                    navigation.navigate("HomePageMentor"); // Navigate after closing popup
+                  else
+                  navigation.navigate("HomePage");
                   }}
                     icon="check-circle" message="User Logged In successfully!"
                      />
@@ -127,8 +136,11 @@ const SignIn = ({navigation}) => {
           placeholderTextColor="#888"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={secureText}
         />
+          <TouchableOpacity onPress={() => setSecureText(!secureText)} style={appliedStyles.eyeIcon}>
+            <Icon name={secureText ? 'eye-off' : 'eye'} size={24} color="#BFB4FF" />
+          </TouchableOpacity>
      {/**   <View style={styles.rowContainer}>
           <Text style={styles.forgotText}>Forgot Password?</Text>  
         </View> */}
@@ -211,6 +223,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
   },
+  eyeIcon: {
+    position: 'absolute',
+    right: 30,
+    top: '60%',
+    transform: [{ translateY: -12 }],
+    zIndex: 1,
+  },
 });
 
 
@@ -278,7 +297,14 @@ const Webstyles = StyleSheet.create({
   },
   popup:{
 zIndex:1000
-  }
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right:30,
+    top: '54%',
+    transform: [{ translateY: -12 }],
+    zIndex: 1
+  },
 });
 
 export default SignIn;
