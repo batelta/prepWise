@@ -21,6 +21,7 @@ import {
   Inter_100Thin,
   Inter_200ExtraLight,
 } from "@expo-google-fonts/inter";
+import CustomPopup from "./CustomPopup";
 
 export default function ApplicationSplitView() {
   const [fontsLoaded] = useFonts({
@@ -35,7 +36,14 @@ export default function ApplicationSplitView() {
   const [loading, setLoading] = useState(true);
   const [isAddingNew, setIsAddingNew] = useState(false);
 
-  const userID = 1;
+  //delete popup states
+  const [customPopupVisible, setCustomPopupVisible] = useState(false);
+  const [customPopupMessage, setCustomPopupMessage] = useState("");
+  const [customPopupIcon, setCustomPopupIcon] = useState("information");
+  const [customPopupConfirmation, setCustomPopupConfirmation] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState(null);
+
+  const userID = 6;
 
   //  עטיפת fetchApps ב-useCallback
   const fetchApps = useCallback(async () => {
@@ -108,9 +116,19 @@ export default function ApplicationSplitView() {
       if (updated.length === 0) {
         setIsAddingNew(true);
       }
+
+      // הצגת הודעת הצלחה
+      setCustomPopupMessage("Application deleted successfully!");
+      setCustomPopupIcon("check-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     } catch (error) {
       console.error("Error deleting application:", error);
-      alert("Failed to delete application");
+
+      setCustomPopupMessage("Failed to delete application");
+      setCustomPopupIcon("alert-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     }
   };
 
@@ -142,14 +160,24 @@ export default function ApplicationSplitView() {
                 </View>
                 <TouchableOpacity
                   style={styles.deleteIcon}
-                  onPress={() => handleDeleteApplication(app.applicationID)}
+                  onPress={() => {
+                    // שימור ID המשרה למחיקה
+                    setApplicationToDelete(app.applicationID);
+                    // הצגת פופאפ אישור
+                    setCustomPopupMessage(
+                      "Are you sure you want to delete this application?"
+                    );
+                    setCustomPopupIcon("alert-circle");
+                    setCustomPopupConfirmation(true);
+                    setCustomPopupVisible(true);
+                  }}
                 >
                   <Text style={{ fontSize: 14, color: "#9FF9D5" }}>X</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
 
-            {/* 🔹 כפתור הוספת משרה */}
+        
             <TouchableOpacity
               onPress={() => {
                 setIsAddingNew(true);
@@ -186,6 +214,31 @@ export default function ApplicationSplitView() {
           </View>
         </View>
       </ScrollView>
+      <View
+        style={[
+          styles.popupOverlay,
+          !customPopupVisible && { display: "none" },
+        ]}
+      >
+        <CustomPopup
+          visible={customPopupVisible}
+          onDismiss={() => setCustomPopupVisible(false)}
+          icon={customPopupIcon}
+          message={customPopupMessage}
+          isConfirmation={customPopupConfirmation}
+          onConfirm={() => {
+            if (applicationToDelete) {
+              handleDeleteApplication(applicationToDelete);
+            }
+            setCustomPopupVisible(false);
+            setApplicationToDelete(null);
+          }}
+          onCancel={() => {
+            setCustomPopupVisible(false);
+            setApplicationToDelete(null);
+          }}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -193,8 +246,6 @@ export default function ApplicationSplitView() {
 const styles = StyleSheet.create({
   splitView: {
     flexDirection: "row",
-    //flex: 1,
-    //paddingTop: 80, //  מוסיף מקום ל־NavBar הקבוע למעלה
   },
 
   container: {
@@ -223,12 +274,6 @@ const styles = StyleSheet.create({
     overflow: "auto",
     marginTop: 80,
   },
-
-  /*rightPane: {
-    width: "70%",
-    overflow: "auto",
-    marginTop: 20,
-  },*/
 
   header: {
     fontSize: 20,
@@ -291,5 +336,17 @@ const styles = StyleSheet.create({
     right: 10,
     top: 3,
     zIndex: 2,
+  },
+
+  popupOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // רקע חצי שקוף
+    justifyContent: "center",
+    alignItems: "center", // מרכז את הפופאפ על המסך
+    zIndex: 1000, // ודא שהפופאפ יהיה מעל כל שאר התוכן
   },
 });

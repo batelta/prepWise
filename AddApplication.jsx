@@ -6,6 +6,7 @@ import {
   Text,
   SegmentedButtons,
   Switch,
+  ActivityIndicator,
 } from "react-native-paper";
 import {
   ScrollView,
@@ -63,6 +64,7 @@ export default function AddApplication({ onSuccess }) {
   const [titleError, setTitleError] = useState(false);
   const [mode, setMode] = useState("url");
   const [imported, setImported] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const jobTypeList = [
     { label: "Full Time", value: "FullTime" },
@@ -93,8 +95,8 @@ export default function AddApplication({ onSuccess }) {
       setTitleError(false);
     }
 
-    const userID = 1;
-
+    const userID = 6;
+    setIsLoading(true); // הוספתי את זה - מפעיל את מצב הטעינה
     try {
       const API_URL =
         Platform.OS === "web"
@@ -119,7 +121,7 @@ export default function AddApplication({ onSuccess }) {
       console.log(" contacts value:", appToSend.Contacts);
 
       const finalJSON = JSON.stringify(appToSend, null, 2);
-      console.log("🧾 Final JSON string:", finalJSON);
+      console.log(" Final JSON string:", finalJSON);
 
       const response = await fetch(API_URL, {
         method: "POST",
@@ -129,7 +131,9 @@ export default function AddApplication({ onSuccess }) {
         body: JSON.stringify(appToSend),
       });
 
-      console.log("📡 Response status:", response.status);
+      console.log(" Response status:", response.status);
+
+      setIsLoading(false); // ה מבטל את מצב הטעינה אחרי תגובת השרת
 
       if (response.ok) {
         setShowSnackbar(true);
@@ -147,6 +151,7 @@ export default function AddApplication({ onSuccess }) {
       }
     } catch (err) {
       console.error("Error submitting:", err);
+      setIsLoading(false); // ה מבטל את מצב הטעינה במקרה של שגיאה
     }
   };
 
@@ -155,6 +160,7 @@ export default function AddApplication({ onSuccess }) {
       alert("Please enter a valid job URL.");
       return;
     }
+    setIsLoading(true); // ה מפעיל את מצב הטעינה
 
     try {
       const API_URL =
@@ -186,11 +192,13 @@ export default function AddApplication({ onSuccess }) {
       //  מעבר אוטומטי למצב עריכה
       //setMode("manual");
       setImported(true);
-
       setShowSnackbar(true);
+
+      setIsLoading(false); // מבטל את מצב הטעינה אחרי הצלחה
     } catch (error) {
       console.error(" Error importing job data:", error);
       alert("Failed to import job details. Please try again.");
+      setIsLoading(false); // הוספתי את זה - מבטל את מצב הטעינה במקרה של שגיאה
     }
   };
 
@@ -202,16 +210,26 @@ export default function AddApplication({ onSuccess }) {
         value={application.Url}
         onChangeText={(text) => handleAppChange("Url", text)}
         style={styles.input}
+        disabled={isLoading}
         placeholder="https://example.com/job/..."
       />
 
       <Button
         mode="outlined"
         onPress={importFromUrl}
-        icon="download"
+        icon={isLoading ? null : "download"} // ה מסתיר את האייקון בזמן טעינה
+        //icon="download"
         style={{ marginBottom: 20 }}
+        disabled={isLoading} // ה משבית את הכפתור בזמן טעינה
       >
-        Import Job Details
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator animating={true} color="#BFB4FF" size="small" />
+            <Text style={styles.loadingText}>Importing job details...</Text>
+          </View>
+        ) : (
+          "Import Job Details"
+        )}
       </Button>
     </>
   );
@@ -226,6 +244,7 @@ export default function AddApplication({ onSuccess }) {
           if (text.trim()) setTitleError(false);
         }}
         style={styles.input}
+        disabled={isLoading}
       />
       {titleError && <Text style={styles.errorText}>Title is required</Text>}
 
@@ -234,30 +253,35 @@ export default function AddApplication({ onSuccess }) {
         value={application.CompanyName}
         onChangeText={(text) => handleAppChange("CompanyName", text)}
         style={styles.input}
+        disabled={isLoading}
       />
       <TextInput
         label="Location"
         value={application.Location}
         onChangeText={(text) => handleAppChange("Location", text)}
         style={styles.input}
+        disabled={isLoading}
       />
       <TextInput
         label="Company Summary"
-        value={application.Location}
+        value={application.CompanySummary}
         onChangeText={(text) => handleAppChange("CompanySummary", text)}
         style={styles.input}
+        disabled={isLoading}
       />
       <TextInput
         label="Job Description"
         value={application.JobDescription}
         onChangeText={(text) => handleAppChange("JobDescription", text)}
         style={styles.input}
+        disabled={isLoading}
       />
       <TextInput
         label="Notes"
         value={application.Notes}
         onChangeText={(text) => handleAppChange("Notes", text)}
         style={styles.input}
+        disabled={isLoading}
       />
     </>
   );
@@ -287,6 +311,7 @@ export default function AddApplication({ onSuccess }) {
             },
           ]}
           style={{ marginBottom: 20 }}
+          disabled={isLoading}
         />
 
         {mode === "url" && renderUrlForm()}
@@ -337,6 +362,7 @@ export default function AddApplication({ onSuccess }) {
             value={application.IsHybrid}
             onValueChange={(val) => handleAppChange("IsHybrid", val)}
             color="#9FF9D5"
+            disabled={isLoading}
           />
         </View>
 
@@ -346,6 +372,7 @@ export default function AddApplication({ onSuccess }) {
             value={application.IsRemote}
             onValueChange={(val) => handleAppChange("IsRemote", val)}
             color="#9FF9D5"
+            disabled={isLoading}
           />
         </View>
 
@@ -357,6 +384,7 @@ export default function AddApplication({ onSuccess }) {
             value={hasContact}
             onValueChange={setHasContact}
             color="#9FF9D5"
+            disabled={isLoading}
           />
         </View>
 
@@ -368,6 +396,7 @@ export default function AddApplication({ onSuccess }) {
               value={contact.ContactName}
               onChangeText={(text) => handleContactChange("ContactName", text)}
               style={styles.input}
+              disabled={isLoading}
             />
             <TextInput
               label="Contact Email"
@@ -375,6 +404,7 @@ export default function AddApplication({ onSuccess }) {
               onChangeText={(text) => handleContactChange("ContactEmail", text)}
               keyboardType="email-address"
               style={styles.input}
+              disabled={isLoading}
             />
             <TextInput
               label="Contact Phone"
@@ -382,6 +412,7 @@ export default function AddApplication({ onSuccess }) {
               onChangeText={(text) => handleContactChange("ContactPhone", text)}
               keyboardType="phone-pad"
               style={styles.input}
+              disabled={isLoading}
             />
             <TextInput
               label="Contact Notes"
@@ -389,6 +420,7 @@ export default function AddApplication({ onSuccess }) {
               onChangeText={(text) => handleContactChange("ContactNotes", text)}
               multiline
               style={styles.input}
+              disabled={isLoading}
             />
           </View>
         )}
@@ -397,9 +429,20 @@ export default function AddApplication({ onSuccess }) {
           mode="contained"
           onPress={addNewApplication}
           style={{ marginTop: 30 }}
-          icon="check"
+          icon={isLoading ? null : "check"} // ה מסתיר את האייקון בזמן טעינה
+          disabled={isLoading} // ה משבית את הכפתור בזמן טעינה
+          //icon="check"
         >
-          Submit Application
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator animating={true} color="#fff" size="small" />
+              <Text style={[styles.loadingText, { color: "#fff" }]}>
+                Submitting...
+              </Text>
+            </View>
+          ) : (
+            "Submit Application"
+          )}
         </Button>
 
         <Snackbar
@@ -432,6 +475,7 @@ const styles = StyleSheet.create({
     marginTop: 25,
     marginBottom: 10,
     color: "#2C3E50",
+    fontFamily: "Inter_700Bold",
   },
   input: {
     marginBottom: 12,
@@ -463,7 +507,7 @@ const styles = StyleSheet.create({
     marginVertical: 25,
   },
   contactBox: {
-    backgroundColor: "#EFF4F7",
+    backgroundColor: "rgba(252, 248, 248, 0.91)",
     padding: 15,
     borderRadius: 8,
     marginTop: 15,
@@ -485,5 +529,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "rgba(0,0,0,0.4)",
   },
 });

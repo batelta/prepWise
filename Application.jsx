@@ -20,6 +20,7 @@ import {
 } from "@expo-google-fonts/inter";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import NavBar from "./NavBar";
+import CustomPopup from "./CustomPopup";
 
 export default function Application({ applicationID: propID }) {
   const [fontsLoaded] = useFonts({
@@ -72,11 +73,18 @@ export default function Application({ applicationID: propID }) {
   const [isEditingContact, setIsEditingContact] = useState(false); // מצב עריכת איש קשר
   const [contactToEdit, setContactToEdit] = useState(null); // איש הקשר שנמצא במצב עריכה
   const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
+  //const [loading, setLoading] = useState(true);
   const [contactEditMode, setContactEditMode] = useState("edit");
   const [jobTypeModalVisible, setJobTypeModalVisible] = useState(false);
 
   const [contactModalVisible, setContactModalVisible] = useState(false); //modal
+
+  //popup states
+  const [customPopupVisible, setCustomPopupVisible] = useState(false);
+  const [customPopupMessage, setCustomPopupMessage] = useState("");
+  const [customPopupIcon, setCustomPopupIcon] = useState("information");
+  const [customPopupConfirmation, setCustomPopupConfirmation] = useState(false);
+  const [onConfirmAction, setOnConfirmAction] = useState(() => () => {});
 
   const jobTypeList = [
     { label: "Full Time", value: "FullTime" },
@@ -87,19 +95,7 @@ export default function Application({ applicationID: propID }) {
     { label: "Student", value: "Student" },
   ];
 
-  /*const route = useRoute();
-
-  /*const { applicationID } = route.params;
-  /*const userId = 5;*/
-  /*const { applicationId, userId } = route.params;*/
-  const userId = 1;
-  /* const applicationId = 32;*/
-
-  /*useEffect(() => {
-    // אם יש applicationID מה-URL או ממעבר, תוכל להוריד את המידע כאן
-    // כרגע נשתמש במידע ידני בלבד
-    console.log("📝 Displaying application:", application);
-  }, [application]);*/
+  const userId = 6;
 
   useEffect(() => {
     if (!applicationID) return;
@@ -121,7 +117,7 @@ export default function Application({ applicationID: propID }) {
 
     const fetchApplication = async () => {
       try {
-        console.log("🔁 Fetching application with ID:", applicationID);
+        console.log("Fetching application with ID:", applicationID);
 
         const API_URL =
           Platform.OS === "web"
@@ -187,7 +183,10 @@ export default function Application({ applicationID: propID }) {
 
       if (!response.ok) throw new Error("Failed to delete application");
 
-      Alert.alert("Success", "Application deleted successfully!");
+      setCustomPopupMessage("Application deleted successfully!");
+      setCustomPopupIcon("check-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
 
       if (Platform.OS === "web") {
         window.location.reload(); // לרענן רשימה ב־SplitView
@@ -197,7 +196,11 @@ export default function Application({ applicationID: propID }) {
       }
     } catch (error) {
       console.error("Error deleting application:", error);
-      Alert.alert("Error", "Failed to delete application");
+      // הצג פופאפ שגיאה
+      setCustomPopupMessage("Failed to delete application");
+      setCustomPopupIcon("alert-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     }
   };
 
@@ -249,6 +252,7 @@ export default function Application({ applicationID: propID }) {
 
   const deleteContact = async (contactID) => {
     try {
+      console.log("Attempting to delete contact with ID:", contactID);
       // עדכון ה-API URL עם ה-contactID שנשלח
       const API_URL =
         Platform.OS === "web"
@@ -258,6 +262,8 @@ export default function Application({ applicationID: propID }) {
       const response = await fetch(API_URL, {
         method: "DELETE",
       });
+
+      console.log("Response status:", response.status);
 
       if (!response.ok) {
         throw new Error("Failed to delete contact");
@@ -274,8 +280,19 @@ export default function Application({ applicationID: propID }) {
       // סגירת המודל אחרי מחיקה מוצלחת
       setContactModalVisible(false);
       setContactToEdit(null);
+
+      // הצג פופאפ הצלחה
+      setCustomPopupMessage("Contact deleted successfully!");
+      setCustomPopupIcon("check-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     } catch (error) {
       console.error("Error deleting contact:", error);
+
+      setCustomPopupMessage("Failed to delete contact");
+      setCustomPopupIcon("alert-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     }
   };
 
@@ -315,11 +332,10 @@ export default function Application({ applicationID: propID }) {
       const addedContact = await response.json();
       console.log("Added contact from server:", addedContact);
 
+      // עכשיו שנקבל את איש הקשר שנוסף, נעדכן את הסטייט
       setApplication((prevApp) => {
-        // יצירת עותק חדש של מערך אנשי הקשר עם איש הקשר החדש
         const updatedContacts = [...prevApp.contacts, addedContact];
         console.log("Updated contacts array:", updatedContacts);
-        // החזרת אובייקט אפליקציה חדש עם המערך המעודכן
         return {
           ...prevApp,
           contacts: updatedContacts,
@@ -554,7 +570,7 @@ export default function Application({ applicationID: propID }) {
                       setContactModalVisible(false);
                       setIsEditingContact(true);
                     }}
-                    style={[styles.modalButton, { backgroundColor: "#BFB4FF" }]}
+                    style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
                   >
                     Edit Contact
                   </Button>
@@ -563,11 +579,23 @@ export default function Application({ applicationID: propID }) {
                   <Button
                     mode="contained"
                     onPress={() => {
-                      deleteContact(contactToEdit?.contactID);
+                      console.log(
+                        "Deleting contact with ID:",
+                        contactToEdit.contactID
+                      );
                       setContactModalVisible(false);
-                      setContactToEdit(null);
+                      setCustomPopupMessage(
+                        "Are you sure you want to delete this contact?"
+                      );
+                      setCustomPopupIcon("alert-circle");
+                      setCustomPopupConfirmation(true);
+                      // שלח את ה־ID לפופאפ כך שפונקציית המחיקה תוכל לפעול ישירות.
+                      setOnConfirmAction(
+                        () => () => deleteContact(contactToEdit.contactID)
+                      ); // העברת ה־ID ישירות לפונקציה
+                      setCustomPopupVisible(true);
                     }}
-                    style={[styles.modalButton, { backgroundColor: "#BFB4FF" }]}
+                    style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
                   >
                     Delete
                   </Button>
@@ -617,7 +645,16 @@ export default function Application({ applicationID: propID }) {
 
       <Button
         mode="outlined"
-        onPress={handleDeleteApplication}
+        onPress={() => {
+     
+          setCustomPopupMessage(
+            "Are you sure you want to delete this application?"
+          );
+          setCustomPopupIcon("alert-circle");
+          setCustomPopupConfirmation(true);
+          setOnConfirmAction(() => handleDeleteApplication); // שימו לב: אנחנו צריכים לשמור את הפונקציה עצמה
+          setCustomPopupVisible(true);
+        }}
         style={styles.button}
       >
         Delete Application
@@ -665,6 +702,7 @@ export default function Application({ applicationID: propID }) {
         onChangeText={(text) => handleChange("jobDescription", text)}
         style={styles.input}
       />
+
       <View style={styles.notesBox}>
         <View style={styles.addIconButton}>
           <Icon name="note-add" size={28} color="#b9a7f2" />
@@ -683,20 +721,42 @@ export default function Application({ applicationID: propID }) {
 
       <TouchableOpacity
         onPress={() => setJobTypeModalVisible(true)}
-        style={{
-          borderWidth: 1,
-          borderColor: "#ccc",
-          padding: 12,
-          borderRadius: 4,
-          marginBottom: 10,
-          marginTop: 10,
-        }}
+        style={styles.dropdown}
       >
-        <Text style={{ color: application.jobType ? "#000" : "#999" }}>
-          {jobTypeList.find((j) => j.value === application.jobType)?.label ||
+        <Text style={{ color: application.JobType ? "#000" : "#999" }}>
+          {jobTypeList.find((j) => j.value === application.JobType)?.label ||
             "Select Job Type"}
         </Text>
       </TouchableOpacity>
+
+      {/* Modal של JobType */}
+      <Modal
+        visible={jobTypeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setJobTypeModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPressOut={() => setJobTypeModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            {jobTypeList.map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                onPress={() => {
+                  handleChange("JobType", item.value);
+                  setJobTypeModalVisible(false);
+                }}
+                style={styles.modalItem}
+              >
+                <Text style={{ fontSize: 16 }}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <View style={styles.switchRow}>
         <Text>Is Remote?</Text>
@@ -798,6 +858,26 @@ export default function Application({ applicationID: propID }) {
       >
         Application updated successfully!
       </Snackbar>
+      {/* הוספת הפופאפ המותאם */}
+      <View
+        style={[
+          styles.popupOverlay,
+          !customPopupVisible && { display: "none" },
+        ]}
+      >
+        <CustomPopup
+          visible={customPopupVisible}
+          onDismiss={() => setCustomPopupVisible(false)}
+          icon={customPopupIcon}
+          message={customPopupMessage}
+          isConfirmation={customPopupConfirmation}
+          onConfirm={() => {
+            setCustomPopupVisible(false);
+            onConfirmAction(); // מבצע את הפעולה אחרי אישור
+          }}
+          onCancel={() => setCustomPopupVisible(false)}
+        />
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -812,6 +892,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     color: "#163349",
+    fontFamily: "Inter_700Bold",
   },
   label: {
     //fontWeight: "bold",
@@ -828,6 +909,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "#163349",
   },
+
   button: {
     marginTop: 20,
     shadowColor: "#000",
@@ -977,5 +1059,49 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     marginTop: 15,
     width: "100%",
+  },
+
+  popupOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor:
+      Platform.OS === "web" ? "transparent" : "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 25,
+    marginBottom: 10,
+    color: "#2C3E50",
+  },
+  input: {
+    marginBottom: 12,
+    backgroundColor: "#fff",
+    fontFamily: "Inter_300Light",
+    color: "#003D5B",
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 10,
+    backgroundColor: "#fff",
+  },
+  modalItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee", // גבול בין כל אפשרות באותו המודל
+    justifyContent: "center",
+    alignItems: "center",
+    color: "#003D5B",
   },
 });

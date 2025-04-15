@@ -7,19 +7,26 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Platform,
-  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Provider as PaperProvider, Button } from "react-native-paper";
 import NavBar from "./NavBar";
+import CustomPopup from "./CustomPopup";
 
 export default function AllUserApplications() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
-  const userId = 1;
+  //states for popup
+  const [customPopupVisible, setCustomPopupVisible] = useState(false);
+  const [customPopupMessage, setCustomPopupMessage] = useState("");
+  const [customPopupIcon, setCustomPopupIcon] = useState("information");
+  const [customPopupConfirmation, setCustomPopupConfirmation] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState(null);
+
+  const userId = 6;
 
   /*const sampleApplication = {
     applicationID: 1,
@@ -79,9 +86,19 @@ export default function AllUserApplications() {
       setApplications((prev) =>
         prev.filter((app) => app.applicationID !== applicationID)
       );
+
+      // הצגת הודעת הצלחה
+      setCustomPopupMessage("Application deleted successfully!");
+      setCustomPopupIcon("check-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     } catch (error) {
       console.error(" Error deleting:", error);
-      Alert.alert("Error", "Could not delete application.");
+      // הצגת הודעת שגיאה
+      setCustomPopupMessage("Could not delete application.");
+      setCustomPopupIcon("alert-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     }
   };
 
@@ -94,7 +111,17 @@ export default function AllUserApplications() {
           <View key={app.applicationID} style={styles.cardContainer}>
             <TouchableOpacity
               style={styles.deleteIcon}
-              onPress={() => handleDelete(app.applicationID)}
+              onPress={() => {
+                // שמירת ה-ID של המשרה למחיקה
+                setApplicationToDelete(app.applicationID);
+                // הצגת פופאפ אישור
+                setCustomPopupMessage(
+                  "Are you sure you want to delete this application?"
+                );
+                setCustomPopupIcon("alert-circle");
+                setCustomPopupConfirmation(true);
+                setCustomPopupVisible(true);
+              }}
             >
               <Text style={{ fontSize: 16, color: "#9FF9D5" }}>X</Text>
             </TouchableOpacity>
@@ -136,6 +163,32 @@ export default function AllUserApplications() {
       </ScrollView>
 
       <NavBar />
+
+      <View
+        style={[
+          styles.popupOverlay,
+          !customPopupVisible && { display: "none" },
+        ]}
+      >
+        <CustomPopup
+          visible={customPopupVisible}
+          onDismiss={() => setCustomPopupVisible(false)}
+          icon={customPopupIcon}
+          message={customPopupMessage}
+          isConfirmation={customPopupConfirmation}
+          onConfirm={() => {
+            if (applicationToDelete) {
+              handleDelete(applicationToDelete);
+            }
+            setCustomPopupVisible(false);
+            setApplicationToDelete(null);
+          }}
+          onCancel={() => {
+            setCustomPopupVisible(false);
+            setApplicationToDelete(null);
+          }}
+        />
+      </View>
     </View>
   );
 }
@@ -203,5 +256,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
     justifyContent: "space-between",
+  },
+  popupOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
   },
 });

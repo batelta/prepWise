@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, Button, Image, Platform } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useState } from "react";
+import { View, Text, Button, Image, Platform } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 
 const ImageUpload = () => {
   const [imageUri, setImageUri] = useState(null);
@@ -13,7 +13,7 @@ const ImageUpload = () => {
       aspect: [4, 3],
       quality: 1,
     });
-    console.log(result)
+    console.log(result);
     if (!result.cancelled) {
       setImageUri(result.uri);
     }
@@ -21,15 +21,15 @@ const ImageUpload = () => {
 
   const uploadImage = async () => {
     const formData = new FormData();
-    formData.append('file', {
+    formData.append("file", {
       uri: imageUri,
-      name: 'photo.jpg',
-      type: 'image/jpeg',
+      name: "photo.jpg",
+      type: "image/jpeg",
     });
 
     try {
-      const response = await fetch('http://localhost:5062/api/Files/upload', {
-        method: 'POST',
+      const response = await fetch("http://localhost:7137/api/Files/upload", {
+        method: "POST",
         body: formData,
       });
       const data = await response.json();
@@ -37,10 +37,10 @@ const ImageUpload = () => {
       if (data.FilePath) {
         setUploadedImageUrl(data.FilePath);
       } else {
-        console.error('Error uploading file');
+        console.error("Error uploading file");
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error("Error uploading image:", error);
     }
   };
 
@@ -50,14 +50,20 @@ const ImageUpload = () => {
       {imageUri && (
         <View>
           <Text>Selected Image:</Text>
-          <Image source={{ uri: imageUri }} style={{ width: 200, height: 200 }} />
+          <Image
+            source={{ uri: imageUri }}
+            style={{ width: 200, height: 200 }}
+          />
         </View>
       )}
       <Button title="Upload Image" onPress={uploadImage} />
       {uploadedImageUrl && (
         <View>
           <Text>Uploaded Image:</Text>
-          <Image source={{ uri: uploadedImageUrl }} style={{ width: 200, height: 200 }} />
+          <Image
+            source={{ uri: uploadedImageUrl }}
+            style={{ width: 200, height: 200 }}
+          />
         </View>
       )}
     </View>

@@ -142,7 +142,7 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const response = await fetch("http://localhost:5062/api/Users?userId=42"); 
+        const response = await fetch("http://localhost:7137/api/Users?userId=42"); 
         const data = await response.json(); 
         console.log("Fetched Data:", data); //בדיקה- הדפסת הנתונים של המשתמש המחובר
 
@@ -207,7 +207,7 @@ const pickImage = async () => {
     };
   
     try {
-      const response = await fetch("http://localhost:5062/api/Users/42", {
+      const response = await fetch("http://localhost:7137/api/Users/42", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
