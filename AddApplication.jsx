@@ -463,24 +463,24 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   header: {
-    fontSize: 24,
-    //fontWeight: "bold",
     marginBottom: 20,
-    color: "#163349",
-    fontFamily: "Inter_700Bold",
+    fontSize: 28,
+    fontWeight: 900,
+    color: "#003D5B",
+    fontFamily: "Inter_400Regular",
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
     marginTop: 25,
     marginBottom: 10,
-    color: "#2C3E50",
-    fontFamily: "Inter_700Bold",
+    color: "#003D5B",
+    fontWeight: 700,
+    fontFamily: "Inter_400Regular",
   },
   input: {
     marginBottom: 12,
     backgroundColor: "#fff",
-    fontFamily: "Inter_300Light",
+    fontFamily: "Inter_400Regular",
     color: "#003D5B",
   },
   errorText: {
@@ -512,6 +512,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 15,
   },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",

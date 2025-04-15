@@ -38,7 +38,7 @@ export default function Application({ applicationID: propID }) {
   console.log("📦 applicationID:", applicationID);
 
   // משרה ידנית
-  /*const [application, setApplication] = useState({
+  const [application, setApplication] = useState({
     applicationID: 1,
     title: "Software Engineer",
     companyName: "TechCorp",
@@ -52,9 +52,9 @@ export default function Application({ applicationID: propID }) {
     isHybrid: true,
     isRemote: false,
     contacts: [],
-  });*/
+  });
 
-  const [application, setApplication] = useState({
+  /*const [application, setApplication] = useState({
     applicationID: null,
     title: "",
     companyName: "",
@@ -67,7 +67,7 @@ export default function Application({ applicationID: propID }) {
     isHybrid: false,
     isRemote: false,
     contacts: [],
-  });
+  });*/
 
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(false); // מצב עריכת איש קשר
@@ -571,6 +571,7 @@ export default function Application({ applicationID: propID }) {
                       setIsEditingContact(true);
                     }}
                     style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
+                    labelStyle={{ color: "#003D5B" }}
                   >
                     Edit Contact
                   </Button>
@@ -596,6 +597,9 @@ export default function Application({ applicationID: propID }) {
                       setCustomPopupVisible(true);
                     }}
                     style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
+                    labelStyle={{
+                      color: "#163349",
+                    }}
                   >
                     Delete
                   </Button>
@@ -646,7 +650,6 @@ export default function Application({ applicationID: propID }) {
       <Button
         mode="outlined"
         onPress={() => {
-     
           setCustomPopupMessage(
             "Are you sure you want to delete this application?"
           );
@@ -888,26 +891,30 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   header: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 28,
+    fontWeight: 900,
     marginBottom: 20,
-    color: "#163349",
-    fontFamily: "Inter_700Bold",
+    color: "#003D5B",
+    fontFamily: "Inter_400Regular",
   },
   label: {
     //fontWeight: "bold",
+    fontWeight: 800,
+    fontSize: 20,
     marginTop: 10,
-    fontFamily: "Inter_700Bold",
-    color: "#163349",
+    fontFamily: "Inter_400Regular",
+    color: "#003D5B",
   },
   text: {
     marginBottom: 10,
+    fontSize: 20,
     fontFamily: "Inter_300Light",
-    color: "#163349",
+    color: "#003D5B",
   },
   input: {
     marginBottom: 10,
-    color: "#163349",
+    color: "red",
+    fontFamily: "Inter_300Light",
   },
 
   button: {
@@ -920,22 +927,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginLeft: 170,
     width: "50%",
+    marginLeft:
+      Platform.OS === "ios" || Platform.OS === "android" ? "25%" : 170, // במובייל נמרכז את הכפתור
   },
 
   cancelButton: {
     backgroundColor: "#ddd",
   },
   company: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 24,
+    fontWeight: 900,
     marginBottom: 10,
+    color: "#003D5B",
+    fontFamily: "Inter_300Light",
   },
-  contactDisplay: {
+  /*contactDisplay: {
     backgroundColor: "#f2f2f2",
     padding: 10,
     marginBottom: 10,
     borderRadius: 6,
-  },
+  },*/
 
   checkboxContainer: {
     flexDirection: "row",
@@ -955,9 +966,13 @@ const styles = StyleSheet.create({
   },
 
   notesBox: {
-    position: "absolute",
-    top: 30,
-    right: 10,
+    position:
+      Platform.OS === "ios" || Platform.OS === "android"
+        ? "relative"
+        : "absolute", // ב־iOS ו־Android, נשים את ה־notesBox מתחת לשדות
+    top: Platform.OS === "ios" || Platform.OS === "android" ? 20 : 30, // Adjust top margin for mobile
+    right: Platform.OS === "ios" || Platform.OS === "android" ? 5 : 10, // הזזת ה־right
+    left: Platform.OS === "ios" || Platform.OS === "android" ? 2 : undefined, // הוספת left במובייל כדי להזיז ימינה
     backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
@@ -973,6 +988,8 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     minHeight: 150,
     maxHeight: 350,
+    marginTop: Platform.OS === "ios" || Platform.OS === "android" ? 20 : 0, // הוספת רווח במובייל
+    marginBottom: Platform.OS === "ios" || Platform.OS === "android" ? 40 : 0, // הוספת רווח נוסף בין ה־notesBox לכפתורים במובייל
   },
   addIconButton: {
     flexDirection: "row",
@@ -1002,13 +1019,17 @@ const styles = StyleSheet.create({
   },
   contactName: {
     marginLeft: 10,
-    fontSize: 16,
-    color: "#163349",
+    fontSize: 20,
+    fontFamily: "Inter_300Light",
+    color: "#003D5B",
+    fontWeight: 600,
   },
-  contactDetails: {
+  /*contactDetails: {
     marginLeft: 40, // נדחף עם ריווח מהשמאל
     marginTop: 10,
-  },
+    fontFamily: "Inter_300Light",
+    color: "#003D5B",
+  },*/
 
   navBar: {
     position: "relative", // מבנה המיקום של ה־NavBar
@@ -1034,19 +1055,21 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalHeader: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 24,
+    //fontWeight: "bold",
     marginBottom: 15,
-    color: "#163349",
+    color: "#003D5B",
     textAlign: "center",
+    fontFamily: "Inter_400Regular",
   },
   contactDetailsModal: {
     width: "100%",
   },
   contactDetailItem: {
-    fontSize: 16,
+    fontSize: 18,
     marginBottom: 10,
-    color: "#333",
+    fontFamily: "Inter_400Regular",
+    color: "#003D5B",
   },
   modalButtonsRow: {
     flexDirection: "row",
@@ -1055,10 +1078,12 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     width: "48%",
+    fontFamily: "Inter_400Regular",
   },
   modalCloseButton: {
     marginTop: 15,
     width: "100%",
+    borderColor: "#ccc",
   },
 
   popupOverlay: {
@@ -1085,7 +1110,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: "#fff",
     fontFamily: "Inter_300Light",
-    color: "#003D5B",
   },
   dropdown: {
     borderWidth: 1,
