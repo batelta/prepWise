@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { TextInput, Button, Snackbar, Text, Switch } from "react-native-paper";
 import { TouchableOpacity, Modal } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useNavigation } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import {
   Inter_400Regular,
@@ -21,6 +21,9 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import NavBar from "./NavBar";
 import CustomPopup from "./CustomPopup";
+import GeminiChat from "./GeminiChat";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 
 export default function Application({ applicationID: propID }) {
   const [fontsLoaded] = useFonts({
@@ -36,6 +39,11 @@ export default function Application({ applicationID: propID }) {
 
   console.log("🔎 route.params:", route.params);
   console.log("📦 applicationID:", applicationID);
+
+  const [showChat, setShowChat] = useState(false);
+  const appliedStyles = Platform.OS === "web" ? Webstyles : styles;
+
+  const navigation = useNavigation(); // להשתמש בנavigaion ע
 
   // משרה ידנית
   const [application, setApplication] = useState({
@@ -139,6 +147,8 @@ export default function Application({ applicationID: propID }) {
 
     fetchApplication();
   }, [applicationID]);
+
+  // כפתור חזור
 
   const handleChange = (field, value) => {
     setApplication((prev) => ({ ...prev, [field]: value }));
@@ -352,106 +362,41 @@ export default function Application({ applicationID: propID }) {
     }
   };
 
-  /* const addContact = async () => {
-    try {
-      const newContact = {
-        contactName: contactToEdit.contactName,
-        contactEmail: contactToEdit.contactEmail,
-        contactPhone: contactToEdit.contactPhone,
-        contactNotes: contactToEdit.contactNotes,
-      };
-
-      const API_URL =
-        Platform.OS === "web"
-          ? `https://localhost:7137/api/JobSeekers/${userId}/applications/${applicationID}/contacts`
-          : `http://192.168.1.92:7137/api/JobSeekers/${userId}/applications/${applicationID}/contacts`;
-
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newContact),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to add contact");
-      }
-
-      // עדכון הסטייט עם איש הקשר החדש
-      const addedContact = await response.json();
-
-      // אחרי העדכון, הסטייט אמור להתעדכן כאן
-      setApplication((prev) => ({
-        ...prev,
-        contacts: [...prev.contacts, addedContact], // עדכון הסטייט עם הקשר החדש
-      }));
-
-      setIsEditingContact(false); // סגירת מצב העריכה
-      setContactToEdit(null); // ניקוי הנתונים אחרי השמירה
-      setContactEditMode("edit");
-    } catch (error) {
-      console.error("Error adding contact:", error);
-    }
-  };*/
-
   useEffect(() => {
     console.log("Contacts after add:", application.contacts);
   }, [application.contacts]);
 
-  /*const addContact = async () => {
-    try {
-      const newContact = {
-        contactName: contactToEdit.contactName,
-        contactEmail: contactToEdit.contactEmail,
-        contactPhone: contactToEdit.contactPhone,
-        contactNotes: contactToEdit.contactNotes,
-      };
-
-      const API_URL =
-        Platform.OS === "web"
-          ? `https://localhost:7137/api/JobSeekers/${userId}/applications/${applicationID}/contacts`
-          : `http://192.168.1.92:7137/api/JobSeekers/${userId}/applications/${applicationID}/contacts`;
-
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newContact),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to add contact");
-      }
-
-      // עדכון הסטייט כדי להוסיף את איש הקשר החדש
-      const addedContact = await response.json();
-
-      setApplication((prev) => ({
-        ...prev,
-        contacts: [...prev.contacts, addedContact],
-      }));
-
-      console.log("Contacts after add:", [
-        ...application.contacts,
-        addedContact,
-      ]);
-
-      //setIsEditingContact(false);
-      //setContactToEdit(null);
-
-      setIsEditingContact(false); // סגירת מצב העריכה
-      setContactToEdit(null); // ניקוי הנתונים אחרי השמירה
-      setContactEditMode("edit");
-    } catch (error) {
-      console.error("Error adding contact:", error);
-    }
-  };*/
-
   const renderDisplayMode = () => (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* כפתור חזרה עם טקסט - עם צבע טקסט מעודכן */}
+      {(Platform.OS === "ios" || Platform.OS === "android") && (
+        <TouchableOpacity
+          onPress={() => navigation.navigate("AllUserApplications")}
+          style={{
+            marginTop: 10,
+            marginBottom: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            paddingLeft: 5,
+          }}
+        >
+          <FontAwesome name="arrow-left" size={24} color="#9FF9D5" />
+          <Text
+            style={{
+              marginLeft: 10,
+              fontSize: 16,
+              color: "#003D5B", // צבע טקסט מעודכן
+              fontFamily: "Inter_400Regular",
+            }}
+          >
+            All Applications
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {/* כותרת רגילה */}
       <Text style={styles.header}>{application.title || "No Title"}</Text>
+
       <Text style={styles.company}>{application.companyName}</Text>
 
       <Text style={styles.label}>Location:</Text>
@@ -846,14 +791,13 @@ export default function Application({ applicationID: propID }) {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      {Platform.OS === "web" && <NavBar />} {/* Show NavBar only on web */}
       {isEditingContact
         ? renderContactEditMode()
         : isEditing
         ? renderEditMode()
         : renderDisplayMode()}
-
-      {Platform.OS === "ios" && !isEditing && <NavBar />}
-
+      {/*Platform.OS === "ios" && !isEditing && <NavBar />*/}
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
@@ -881,33 +825,84 @@ export default function Application({ applicationID: propID }) {
           onCancel={() => setCustomPopupVisible(false)}
         />
       </View>
+      {/* Bot Icon (can be placed wherever you want) */}
+      <TouchableOpacity
+        style={appliedStyles.chatIcon}
+        onPress={() => setShowChat(!showChat)}
+      >
+        <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
+      </TouchableOpacity>
+      {showChat && (
+        <View style={appliedStyles.overlay}>
+          <View style={appliedStyles.chatModal}>
+            <TouchableOpacity
+              onPress={() => setShowChat(false)}
+              style={{ alignSelf: "flex-end", padding: 5 }}
+            >
+              <Text style={{ fontSize: 18, fontWeight: "bold" }}>✖</Text>
+            </TouchableOpacity>
+            <GeminiChat />
+          </View>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  chatIcon: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#fff",
+    borderRadius: 30,
+    padding: 12,
+    zIndex: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5, // צל ב-Android
+  },
+  chatModal: {
+    position: "absolute",
+    bottom: 80, // שינוי מ-90 ל-80 להתאמה למיקום החדש
+    right: 10,
+    width: "90%",
+    height: 500,
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
   container: {
     padding: 20,
     backgroundColor: "white",
+    position: Platform.OS === "web" ? "static" : "relative", // תעשה את ה־position relative רק במובייל
   },
   header: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 900,
     marginBottom: 20,
     color: "#003D5B",
     fontFamily: "Inter_400Regular",
+    textAlign: Platform.OS === "web" ? "left" : "center",
+    marginTop: Platform.OS === "web" ? 0 : 20, // במובייל נשאיר רווח קטן מעל הכותרת כדי לתת מקום לכפתור
   },
   label: {
     //fontWeight: "bold",
-    fontWeight: 800,
-    fontSize: 20,
+    fontWeight: 800, //need to add more bold
+    fontSize: 18,
     marginTop: 10,
     fontFamily: "Inter_400Regular",
     color: "#003D5B",
   },
   text: {
     marginBottom: 10,
-    fontSize: 20,
+    fontSize: 17,
     fontFamily: "Inter_300Light",
     color: "#003D5B",
   },
@@ -935,7 +930,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ddd",
   },
   company: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 900,
     marginBottom: 10,
     color: "#003D5B",
@@ -1127,5 +1122,63 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     color: "#003D5B",
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    marginTop: Platform.OS === "web" ? 0 : 20, // ריווח עליון במצב נייד
+  },
+  backButtonHeader: {
+    marginRight: 15,
+    paddingRight: 5,
+  },
+});
+
+const Webstyles = StyleSheet.create({
+  chatIcon: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#fff",
+    borderRadius: 30,
+    padding: 12,
+    zIndex: 10,
+  },
+  chatModal: {
+    position: "absolute",
+    bottom: 0,
+    right: 10,
+    width: "40%",
+    height: 450,
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
   },
 });

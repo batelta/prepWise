@@ -8,7 +8,6 @@ import {
   ScrollView,
 } from "react-native";
 
-
 const JobForm = () => {
   const [jobLink, setJobLink] = useState(
     "https://www.global-e.com/careers/af-15b/"
