@@ -14,7 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
-const EditProfile = () => {
+const EditProfileMentor = () => {
 const [popupVisible, setPopupVisible] = useState(false);
  
 const navigation = useNavigation();
@@ -615,4 +615,4 @@ const Webstyles = StyleSheet.create({
 
 
 
-export default EditProfile;
+export default EditProfileMentor;
