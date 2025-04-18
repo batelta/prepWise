@@ -7,19 +7,33 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Platform,
-  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Provider as PaperProvider, Button } from "react-native-paper";
 import NavBar from "./NavBar";
+import CustomPopup from "./CustomPopup";
+import GeminiChat from "./GeminiChat";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+
+import { useContext } from "react";
+import { UserContext } from "./UserContext";
 
 export default function AllUserApplications() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
-  const userId = 6;
+  //states for popup
+  const [customPopupVisible, setCustomPopupVisible] = useState(false);
+  const [customPopupMessage, setCustomPopupMessage] = useState("");
+  const [customPopupIcon, setCustomPopupIcon] = useState("information");
+  const [customPopupConfirmation, setCustomPopupConfirmation] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState(null);
+
+  //const userId = 6;
+
+  const { Loggeduser } = useContext(UserContext);
 
   /*const sampleApplication = {
     applicationID: 1,
@@ -29,17 +43,43 @@ export default function AllUserApplications() {
     jobType: "Full Time",
   };*/
 
+  const [showChat, setShowChat] = useState(false);
+  const appliedStyles = Platform.OS === "web" ? Webstyles : styles;
+
   useEffect(() => {
+    const fetchApplications = async () => {
+      if (!Loggeduser?.userID) return;
+
+      try {
+        const API_URL =
+          Platform.OS === "web"
+            ? `http://localhost:5062/api/JobSeekers/${Loggeduser.userID}/applications`
+            : `http://10.0.0.18:7137/api/JobSeekers/${Loggeduser.userID}/applications`;
+
+        const response = await fetch(API_URL);
+        const data = await response.json();
+
+        console.log("Applications from API:", data);
+        setApplications(data);
+      } catch (error) {
+        console.error("Failed to fetch applications", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApplications();
+  }, [Loggeduser]);
+
+  /*useEffect(() => {
     const fetchApplications = async () => {
       try {
         const API_URL =
           Platform.OS === "web"
-            ? `http://localhost:5062/api/JobSeekers/${userId}/applications`
+            ? `https://localhost:7137/api/JobSeekers/${userId}/applications`
             : `http://10.0.0.18:7137/api/JobSeekers/${userId}/applications`;
 
-        /*192.168.1.64/92*/
-        /*10.0.0.18:7137*/
-
+      
         const response = await fetch(API_URL);
         const data = await response.json();
         console.log("Applications from API:", data);
@@ -52,7 +92,7 @@ export default function AllUserApplications() {
     };
 
     fetchApplications();
-  }, []);
+  }, []);*/
 
   if (loading) {
     return (
@@ -67,8 +107,8 @@ export default function AllUserApplications() {
     try {
       const API_URL =
         Platform.OS === "web"
-          ? `https://localhost:7137/api/JobSeekers/deleteById/${userId}/${applicationID}`
-          : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${userId}/${applicationID}`;
+          ? `https://localhost:5062/api/JobSeekers/deleteById/${userID}/${applicationID}`
+          : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${userID}/${applicationID}`;
 
       console.log("🔍 Deleting application at URL:", API_URL);
 
@@ -79,9 +119,19 @@ export default function AllUserApplications() {
       setApplications((prev) =>
         prev.filter((app) => app.applicationID !== applicationID)
       );
+
+      // הצגת הודעת הצלחה
+      setCustomPopupMessage("Application deleted successfully!");
+      setCustomPopupIcon("check-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     } catch (error) {
       console.error(" Error deleting:", error);
-      Alert.alert("Error", "Could not delete application.");
+      // הצגת הודעת שגיאה
+      setCustomPopupMessage("Could not delete application.");
+      setCustomPopupIcon("alert-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     }
   };
 
@@ -94,7 +144,17 @@ export default function AllUserApplications() {
           <View key={app.applicationID} style={styles.cardContainer}>
             <TouchableOpacity
               style={styles.deleteIcon}
-              onPress={() => handleDelete(app.applicationID)}
+              onPress={() => {
+                // שמירת ה-ID של המשרה למחיקה
+                setApplicationToDelete(app.applicationID);
+                // הצגת פופאפ אישור
+                setCustomPopupMessage(
+                  "Are you sure you want to delete this application?"
+                );
+                setCustomPopupIcon("alert-circle");
+                setCustomPopupConfirmation(true);
+                setCustomPopupVisible(true);
+              }}
             >
               <Text style={{ fontSize: 16, color: "#9FF9D5" }}>X</Text>
             </TouchableOpacity>
@@ -133,9 +193,55 @@ export default function AllUserApplications() {
         >
           Add New Application
         </Button>
+
+        <TouchableOpacity
+          style={styles.chatIcon}
+          onPress={() => setShowChat(!showChat)}
+        >
+          <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
+        </TouchableOpacity>
+
+        {showChat && (
+          <View style={appliedStyles.overlay}>
+            <View style={appliedStyles.chatModal}>
+              <TouchableOpacity
+                onPress={() => setShowChat(false)}
+                style={{ alignSelf: "flex-end", padding: 5 }}
+              >
+                <Text style={{ fontSize: 18, fontWeight: "bold" }}>✖</Text>
+              </TouchableOpacity>
+              <GeminiChat />
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       <NavBar />
+      <View
+        style={[
+          styles.popupOverlay,
+          !customPopupVisible && { display: "none" },
+        ]}
+      >
+        <CustomPopup
+          visible={customPopupVisible}
+          onDismiss={() => setCustomPopupVisible(false)}
+          icon={customPopupIcon}
+          message={customPopupMessage}
+          isConfirmation={customPopupConfirmation}
+          onConfirm={() => {
+            if (applicationToDelete) {
+              handleDelete(applicationToDelete);
+            }
+            setCustomPopupVisible(false);
+            setApplicationToDelete(null);
+          }}
+          onCancel={() => {
+            setCustomPopupVisible(false);
+            setApplicationToDelete(null);
+          }}
+        />
+      </View>
     </View>
   );
 }
@@ -203,5 +309,96 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
     justifyContent: "space-between",
+  },
+  popupOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  chatIcon: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#fff",
+    borderRadius: 30,
+    padding: 12,
+    zIndex: 999, // ערך גבוה יותר כדי להבטיח שיופיע מעל כל אלמנט אחר
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3, // הגדלנו את אטימות הצל
+    shadowRadius: 5,
+    elevation: 8, // הגדלנו את הבליטה ב-Android
+    // הוספת מסגרת דקה להבלטה נוספת
+    borderWidth: 1,
+    borderColor: "rgba(159, 249, 213, 0.3)", // מסגרת בצבע דומה לאייקון
+    marginBottom: 75,
+  },
+  chatModal: {
+    position: "absolute",
+    bottom: 80,
+    right: 10,
+    width: "90%",
+    height: 500,
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+});
+
+const Webstyles = StyleSheet.create({
+  chatIcon: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#fff",
+    borderRadius: 30,
+    padding: 12,
+    zIndex: 10,
+  },
+  chatModal: {
+    position: "absolute",
+    bottom: 0,
+    right: 10,
+    width: "40%",
+    height: 450,
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
   },
 });

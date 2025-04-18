@@ -123,7 +123,7 @@ export default function HomePageMentor() {
                                 </View>
                           <View style={{flex:1}}>
      
-                        <Text style={appliedStyles.title}>Welcome {user ? user.firstName : "Guest"}, to your Home page!</Text>
+                        <Text style={appliedStyles.title}>Welcome {Loggeduser ? Loggeduser.firstName : "Guest"}, to your Home page!</Text>
                         <Text style={appliedStyles.subtitle}>What to do next?</Text> <AnimatedArrow/>
                     </View>
                     </View>
@@ -516,14 +516,22 @@ marginBottom:90,
         overflow: 'hidden', // Ensures the content stays within the round shape
       },
       chatIcon:{
-        position: 'absolute',
-        bottom: 20,
-        right: 20,
-        backgroundColor: '#fff',
+        position: "absolute",
+        bottom: 5,
+        right: 45,
+        backgroundColor: "#fff",
         borderRadius: 30,
         padding: 12,
-        zIndex: 10, // Add this!
-    
+        zIndex: 999, // ערך גבוה יותר כדי להבטיח שיופיע מעל כל אלמנט אחר
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3, // הגדלנו את אטימות הצל
+        shadowRadius: 5,
+        elevation: 8, // הגדלנו את הבליטה ב-Android
+        // הוספת מסגרת דקה להבלטה נוספת
+        borderWidth: 1,
+        borderColor: "rgba(159, 249, 213, 0.3)", // מסגרת בצבע דומה לאייקון
+        marginBottom: 12,
       },
       chatModal:{
           position: 'absolute',

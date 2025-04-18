@@ -1,8 +1,19 @@
 import * as React from 'react';
 import { Button, Provider as PaperProvider } from 'react-native-paper';
 import { Text, View, StyleSheet, TouchableOpacity,Image } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Inter_400Regular,
+  Inter_300Light, Inter_700Bold,Inter_100Thin,
+  Inter_200ExtraLight } from '@expo-google-fonts/inter';
 
 export default function SignUp({ navigation }) {
+    const [fontsLoaded] = useFonts({
+        Inter_400Regular,
+        Inter_700Bold,
+        Inter_100Thin,
+        Inter_200ExtraLight,
+        Inter_300Light
+      });
   return (
     <View style={styles.container}>
       <View style={styles.loginBox}>
@@ -11,19 +22,19 @@ export default function SignUp({ navigation }) {
       <Image source={require('./assets/prepWise Logo.png')} style={styles.avatarContainer} />
          </View>
 <View style={styles.buttonsContainer}>
-        <Button 
+        <TouchableOpacity 
           mode="contained" 
           style={styles.loginButton}
           onPress={() => navigation.navigate('SignUpJobSeeker')}
         >
-          Sign Up as a Wise Job Seeker
-        </Button>
+          <Text style={styles.signinText}>Sign Up as a Wise Job Seeker</Text>
+        </TouchableOpacity>
 
-        <Button mode="contained" style={styles.loginButton}
+        <TouchableOpacity mode="contained" style={styles.loginButton}
         onPress={() => navigation.navigate('SignUpMentor')}
 >
-          Sign Up as a Mentor
-        </Button>
+<Text style={styles.signinText}>Sign Up as a Mentor</Text>
+        </TouchableOpacity>
 
         </View>
   
@@ -37,7 +48,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#white',
   },
   loginBox: {
     width: 500,
@@ -56,15 +66,18 @@ const styles = StyleSheet.create({
     resizeMode:'contain'
   },
 
+  signinText:{
+      color: 'white',
+      fontFamily: 'Inter_300Light',
   
+  },
   loginButton: {
     backgroundColor: '#BFB4FF',
-    padding: 5,
-    margin:10,
+    padding: 12,
     borderRadius: 5,
     width: '100%',
     alignItems: 'center',
-    alignSelf:'center'
+    marginTop: 20,  // Add margin to separate button from inputs
   },
   buttonsContainer:{
     justifyContent:'space-evenly'

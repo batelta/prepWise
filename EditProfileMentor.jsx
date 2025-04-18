@@ -8,13 +8,16 @@ import { Button, Modal, Portal, Checkbox, Provider as PaperProvider } from 'reac
 import LanguageSelector from './LanguageSelector';
 import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
-import NavBar from "./NavBar";
+import NavBarMentor from "./NavBarMentor";
 import CustomPopup from "./CustomPopup"; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { useContext } from 'react';
+import { UserContext } from './UserContext'; // adjust the path
 
 
 const EditProfileMentor = () => {
+    const { Loggeduser ,setLoggedUser} = useContext(UserContext);
+  
 const [popupVisible, setPopupVisible] = useState(false);
  
 const navigation = useNavigation();
@@ -129,7 +132,7 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
   }
 };
 
-    
+ 
   
      const [mentoringModalVisible, setMentoringModalVisible] = React.useState(false);
        const [selectedMentoring, setSelectedMentoring] = React.useState([]);
@@ -160,30 +163,21 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
     "I'm a seasoned expert in my area. (10+ years)"
   ];
   const [selectedLanguages, setSelectedLanguages] = useState([]);
- 
+
+    const [userID, setUserID] = useState(null); // To store userID
+  
+  useEffect(() => {
+    if (Loggeduser) {
+      setUserID(Loggeduser.userID);
+        console.log(Loggeduser);
+      }
+    }, [Loggeduser]);
 useEffect(() => {
   const fetchUserDetails = async () => {
     try {
-      // קבלת הנתונים מתוך AsyncStorage
-      const userData = await AsyncStorage.getItem('user');
-      if (!userData) {
-        console.log("No user data found in AsyncStorage.");
-        return;
-      }
-
-      const parsedUser = JSON.parse(userData);
-      console.log("Parsed user from AsyncStorage:", parsedUser);
-
-      const userId = parsedUser.userID || parsedUser.userId;
-      console.log("User ID:", userId);
-
-      if (!userId) {
-        console.error("User ID is undefined. Cannot fetch user data.");
-        return;
-      }
-
+    
       // קריאה ל-API לפי ID כדי לקבל את כל הנתונים (כולל תחומים ושפות)
-      const response = await fetch(`http://localhost:5062/api/Mentors/${userId}`);
+      const response = await fetch(`http://localhost:5062/api/Mentors/${userID}`);
       if (!response.ok) {
         console.error("Failed to fetch full user data from API.");
         return;
@@ -217,7 +211,7 @@ useEffect(() => {
   };
 
   fetchUserDetails();
-}, []);
+}, [userID]);
 
 useEffect(() => {
   if (user.language.length > 0) {
@@ -282,7 +276,7 @@ const pickImage = async () => {
       console.log('Sending updated user:', updatedUser); // ← Log before sending
 
       // 3. ביצוע קריאת PUT עם ה- userId מתוך AsyncStorage
-      const response = await fetch(`http://localhost:5062/api/Mentors/${userId}`, {
+      const response = await fetch(`http://localhost:5062/api/Mentors/${userID}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -293,6 +287,13 @@ const pickImage = async () => {
       if (response.ok) {
         const responseData = await response.json();
         console.log("User updated successfully:", responseData);
+          // ✅ Add userID only to the local object you're storing
+      const userWithID = { ...updatedUser, userID };
+
+      // ✅ Save to AsyncStorage with userID included
+      await AsyncStorage.setItem("user", JSON.stringify(userWithID));
+      setLoggedUser(userWithID); // ← This updates the context immediately!
+
         setPopupVisible(true);
       } else {
         const errorData = await response.json();
@@ -413,14 +414,15 @@ const pickImage = async () => {
               
             </View>
     
-            {/* Fields Modal */}
-            <View style={appliedStyles.inputContainer}>
+           {/* Fields Modal */}
+           <View style={appliedStyles.inputContainer}>
               <Text style={appliedStyles.label}>Career Fields</Text>
               <Button
                 mode="contained"
                 onPress={() => setFieldModalVisible(true)}
                 style={appliedStyles.input}
                 labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
+                contentStyle={{ justifyContent: 'flex-start'}}
               >
                 {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
               </Button>
@@ -432,9 +434,13 @@ const pickImage = async () => {
                       label={field} 
                       status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
                       onPress={() => toggleField(field)} 
+                       labelStyle={{ fontFamily: "Inter_400Regular" }}
+                       color="#d6cbff"
                     />
                   ))}
-                  <Button onPress={() => setFieldModalVisible(false)}>Done</Button>
+                  <Button onPress={() => setFieldModalVisible(false)} 
+                  labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}} 
+                    >Done</Button>
                 </Modal>
               </Portal>
             </View>
@@ -446,16 +452,47 @@ const pickImage = async () => {
                 mode="contained"
                 onPress={() => setExperienceModalVisible(true)}
                 style={appliedStyles.input}
-                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight' }}
+                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
+                contentStyle={{ justifyContent: 'flex-start'}}
               >
                 {user.experience || "Select Your Experience Level"}
               </Button>
               <Portal>
                 <Modal visible={experienceModalVisible} onDismiss={() => setExperienceModalVisible(false)} contentContainerStyle={[appliedStyles.modalContent, { backgroundColor: 'white' }]}>
                   {experiences.map((exp, index) => (
-                    <Checkbox.Item key={index} label={exp} status={user.experience === exp ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, experience: exp })} />
+                    <Checkbox.Item key={index} label={exp} status={user.experience === exp ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, experience: exp })}
+                    labelStyle={{ fontFamily: "Inter_400Regular" }}
+                    color="#d6cbff"/>
                   ))}
-                  <Button onPress={() => setExperienceModalVisible(false)}>Done</Button>
+                  <Button onPress={() => setExperienceModalVisible(false)}
+                      labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}} 
+                    >Done</Button>
+                </Modal>
+              </Portal>
+            </View>
+       {/* mentoringType Modal */}
+              <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Mentoring Type</Text>
+              <Button 
+                mode="contained"
+                onPress={() => setMentoringModalVisible(true)}
+                style={appliedStyles.input}
+                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
+                contentStyle={{ justifyContent: 'flex-start'}}
+              >
+                {user.mentoringType || "Select Your Mentoring Type"}
+              </Button>
+              <Portal>
+                <Modal visible={mentoringModalVisible} onDismiss={() => setMentoringModalVisible(false)} contentContainerStyle={[appliedStyles.modalContent, { backgroundColor: 'white' }]}>
+                  {mentoringtypes.map((type, index) => (
+                    <Checkbox.Item key={index} label={type} status={user.mentoringType === type ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, mentoringType: type })} 
+                    labelStyle={{ fontFamily: "Inter_400Regular" }}
+                    color="#d6cbff"
+                    />
+                  ))}
+                  <Button onPress={() => setMentoringModalVisible(false)}
+                     labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}}
+                    >Done</Button>
                 </Modal>
               </Portal>
             </View>
@@ -553,7 +590,7 @@ const pickImage = async () => {
           
 
           <View style={{ flex: 1 }}>
-          {Platform.OS === "web" && <NavBar />} {/* מציג רק ב-Web */}
+          {Platform.OS === "web" && <NavBarMentor />} {/* מציג רק ב-Web */}
           </View>
           </View>
         </ScrollView>

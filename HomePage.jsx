@@ -112,25 +112,7 @@ export default function HomePage() {
         ? "http://localhost:5062/api/Users" 
         : "http://192.168.30.157:5062/api/Users";
   
-        //this is the real pic from the server 
-        {/* 
-    useEffect(() => {
-        fetch(`${API_URL}?userId=30`)
-            .then(response => response.text())
-            .then(text => text ? JSON.parse(text) : {})
-            .then(data => {
-                if (data.picture) {
-                    setProfileImage(`${data.picture}`);
-                }
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error("Error fetching image:", error);
-                setError("לא הצלחנו לטעון את התמונה");
-                setLoading(false);
-            });
-    }, []);
-*/}
+ 
     const LogoImage = () => {
         if (Platform.OS === "ios") {
             return <Image source={require('./assets/prepWise Logo.png')} style={appliedStyles.logo} />;
@@ -145,27 +127,9 @@ export default function HomePage() {
                 <LogoImage />
                 <View style={appliedStyles.container}>
                      {/**Success popup */}
-                     {/*}
-              <CustomPopup
-          visible={successPopupVisible}
-          onDismiss={() => setSuccessPopupVisible(false)}
-          icon="check-circle" // Success icon
-          message="Action completed successfully!"
-        />
-        */}
+                 
                     <View style={appliedStyles.header}>
-                       {/*  {loading ? (
-                            <Text>Loading image...</Text>
-                        ) : error ? (
-                            <Text>{error}</Text>
-                        ) : profileImage ? (
-                            <Image source={{ uri: profileImage }} 
-                                style={{ height: 100, width: 100 }}
-                                resizeMode={"contain"} />
-                        ) : (
-                            <Text>אין תמונה זמינה</Text>
-                        )}
-                            */}
+                     
 
                         {/*this is for now only */}
                         <View style={appliedStyles.profileImageContainer}>
@@ -180,7 +144,7 @@ export default function HomePage() {
                                 </View>
                           <View style={{flex:1}}>
      
-                        <Text style={appliedStyles.title}>Welcome {user ? user.firstName : "Guest"}, to your Home page!</Text>
+                        <Text style={appliedStyles.title}>Welcome {Loggeduser ? Loggeduser.firstName : "Guest"}, to your Home page!</Text>
                         <Text style={appliedStyles.subtitle}>What to do next?</Text> <AnimatedArrow/>
                     </View>
                     </View>
@@ -245,6 +209,15 @@ export default function HomePage() {
                         </View>
                     ) : (
                         <View style={appliedStyles.applicationsList}>
+                            <TouchableOpacity style={appliedStyles.seeAllText}
+                            onPress={() => {console.log("Navigating to:all jobs");
+                                if(Platform.OS === 'web' )
+                            navigation.navigate("ApplicationSplitView")
+                        else navigation.navigate("AllUserApplications")
+
+                            }}>
+                                <Text>See All</Text>
+                            </TouchableOpacity>
                             {/* Display applications */}
                             {applications.map((app) => (
                                 <View key={app.applicationID} style={appliedStyles.ApplicationcardContainer}>
@@ -259,11 +232,11 @@ export default function HomePage() {
                                         style={appliedStyles.Applicationcard}
                                         onPress={() => {
                                             console.log("Navigating to:", app.applicationID);
-                                            navigation.navigate("Application", {
-                                                applicationID: app.applicationID,
-                                            });
-                                        }}
-                                    >
+                                            if(Platform.OS === 'web' )
+                                            navigation.navigate("ApplicationSplitView", { applicationID: app.applicationID }); 
+                                        else {navigation.navigate("Application"),{applicationID: app.applicationID}}                                       
+                                    }}
+                                   >
                                         <View style={appliedStyles.Applicationrow}>
                                             <MaterialIcons
                                                 name="work-outline"
@@ -295,40 +268,46 @@ export default function HomePage() {
 >
 <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
 </TouchableOpacity>
+{applications.length === 0 ? (
+  <>
+    {/* new user section */}
+    <Text style={appliedStyles.sectionTitle}>Get Started 💫</Text>
+    <View style={appliedStyles.pressContainer}>
+      <Card style={appliedStyles.pressCard}>
+        <Card.Content style={appliedStyles.pressCardcontent}>
+          <Text style={appliedStyles.pressText}>
+            Press <Text style={{ marginRight: 10 }}> </Text>
+            <AnimatedPlusIcon />
+            <Text style={{ marginHorizontal: 10 }}>
+              to add your first Job Application
+            </Text>
+          </Text>
+        </Card.Content>
+      </Card>
 
-                {/* new user section*/}
-                    <Text style={appliedStyles.sectionTitle}>Get Started 💫</Text>
-                    <View style={appliedStyles.pressContainer}>
-                    <Card style={appliedStyles.pressCard}>
-                    <Card.Content style={appliedStyles.pressCardcontent}>
+      <Card style={appliedStyles.pressCard}>
+        <Card.Content style={appliedStyles.pressCardcontent}>
+          <Text style={appliedStyles.pressText}>
+            Press <Text style={{ marginRight: 10 }}> </Text>
+            <AnimatedPlusIcon />
+            <Text style={{ marginHorizontal: 10 }}>
+              to Open your first mentor match request
+            </Text>
+          </Text>
+        </Card.Content>
+      </Card>
+    </View>
 
-                         <Text style={appliedStyles.pressText}>
-                          Press 
-                          <Text style={{ marginRight: 10 }}> </Text>
-                          <AnimatedPlusIcon />
-                          <Text style={{  marginHorizontal: 10}}>
-                           to add your first Job Application
-                           </Text>
-                            </Text>
-                            </Card.Content>
-                            </Card>
-                            <Card style={appliedStyles.pressCard}>
-                            <Card.Content style={appliedStyles.pressCardcontent}>
-                            <Text style={appliedStyles.pressText}>
-                           Press 
-                           <Text style={{ marginRight: 10 }}> </Text>
-                           <AnimatedPlusIcon />
-                           <Text style={{  marginHorizontal: 10}}>
-                           to Open your first mentor match request
-                           </Text>
-                           </Text>
-                            </Card.Content>
-                            </Card>
-                            </View>
-                <View>
-
-                    <NavBar />
-                </View>
+    <View>
+    </View>
+  </>
+) : (
+  <>
+    {/* Your alternative rendering here, like showing the list of applications */}
+    {/* Map over applications and render them */}
+  </>
+)}
+      <NavBar />
 
                 {showChat && (
     <View style={appliedStyles.overlay}>
@@ -405,7 +384,6 @@ const styles = StyleSheet.create({
         fontFamily: "Inter_300Light",
         left: 9,
         marginBottom: 10, // (Change) Added margin to space out title from the cards
-
     },
     ApplicationsectionTitle:{
         fontSize: 15,
@@ -497,7 +475,7 @@ const styles = StyleSheet.create({
       },
     chatModal:{
         position: 'absolute',
-        bottom: 90,
+        bottom: 0,
         right: 10,
         width: '90%',
         height: 500,
@@ -607,6 +585,8 @@ const Webstyles = StyleSheet.create({
      paddingHorizontal:25,
 
     },
+    seeAllText:{
+    },
     ApplicationsectionTitle:{
         fontSize: 18,
         //  fontWeight: "600",
@@ -698,22 +678,30 @@ marginBottom:90,
         borderRadius: 150, // Half of width/height
         overflow: 'hidden', // Ensures the content stays within the round shape
       },
-      chatIcon:{
-        position: 'absolute',
-        bottom: 20,
-        right: 20,
-        backgroundColor: '#fff',
+      chatIcon: {
+        position: "absolute",
+        bottom: 5,
+        right: 45,
+        backgroundColor: "#fff",
         borderRadius: 30,
         padding: 12,
-        zIndex: 10, // Add this!
-    
+        zIndex: 999, // ערך גבוה יותר כדי להבטיח שיופיע מעל כל אלמנט אחר
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3, // הגדלנו את אטימות הצל
+        shadowRadius: 5,
+        elevation: 8, // הגדלנו את הבליטה ב-Android
+        // הוספת מסגרת דקה להבלטה נוספת
+        borderWidth: 1,
+        borderColor: "rgba(159, 249, 213, 0.3)", // מסגרת בצבע דומה לאייקון
+        marginBottom: 12,
       },
       chatModal:{
           position: 'absolute',
           bottom: 0,
           right: 10,
-          width: '40%',
-          height: 450,
+          width: '30%',
+          height: 480,
           backgroundColor: 'white',
           borderRadius: 10,
           padding: 10,

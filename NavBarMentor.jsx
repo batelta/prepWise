@@ -35,11 +35,11 @@ const createRedirectScreen = (screenName) => {
 };
 const mobileNavItems = [
   { name: "Home", screen: "HomePageMentor" },
-  { name: "Chat", screen: "LandingPage", disabled: true },
-  { name: "Add Offer", screen: "LandingPage" , disabled: true},
-  { name: "Calendar", screen: "LandingPage", disabled: true },
+  { name: "Chat", screen: "ComingSoonChat", disabled: true },
+  { name: "Add Offer", screen: "ComingSoonOffer" , disabled: true},
+  { name: "Calendar", screen: "ComingSoonCalendar", disabled: true },
   { name: "Profile", screen: "Profile" },
-  { name: "Menu", screen: "LandingPage", disabled: true},
+  { name: "Menu", screen: "ComingSoonMenu", disabled: true},
 ];
 
 const Tab = createBottomTabNavigator();
@@ -80,7 +80,6 @@ const MobileNavBar = () => {
         tabPress: e => {
           if (item.disabled) {
             e.preventDefault(); // block navigation
-            alert("This feature is coming soon!");
           }
         }
       }}
@@ -100,11 +99,11 @@ const WebNavBar = () => {
 
   const navItems = [
     { name: "Home", screen: "HomePageMentor" },
-    { name: "Chat", screen: "LandingPage", disabled: true },
-    { name: "Add Offer", screen: "LandingPage", disabled: true },
-    { name: "Calendar", screen: "LandingPage" , disabled: true},
+    { name: "Chat", screen: "ComingSoonChat", disabled: true },
+    { name: "Add Offer", screen: "ComingSoonOffer", disabled: true },
+    { name: "Calendar", screen: "ComingSoonCalendar" , disabled: true},
     { name: "Profile", screen: "Profile" },
-    { name: "Menu", screen: "LandingPage" , disabled: true},
+    { name: "Menu", screen: "ComingSoonMenu" , disabled: true},
   ];
 
   return (
@@ -120,11 +119,9 @@ const WebNavBar = () => {
               <TouchableOpacity
                 key={item.screen}
                 onPress={() => {
-                    if (item.disabled) {
-                      alert("This page is under construction!");
-                    } else {
-                      navigation.navigate(item.screen);
-                    }
+                  if (!item.disabled) {
+                    navigation.navigate(item.screen);
+                  }
                   }}
                 onMouseEnter={() => setHovered(item.screen)}
                 onMouseLeave={() => setHovered(null)}

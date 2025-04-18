@@ -13,11 +13,15 @@ import { Inter_400Regular,
 import { Button, Checkbox } from 'react-native-paper';
   import AsyncStorage from '@react-native-async-storage/async-storage';
  import AntDesign from '@expo/vector-icons/AntDesign';
+ import { useContext } from 'react';
+ import { UserContext } from './UserContext'; // adjust the path
 
   const { width,height } = Dimensions.get('window');
 
 
 const SignUpMentor = ({navigation}) => {
+  const { setLoggedUser} = useContext(UserContext);
+
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
   const [errorPopupVisible, setErrorPopupVisible] = useState(false);
 
@@ -275,6 +279,7 @@ const loginAsUser = async (email, password) => {
   
         // You can now store the full user data if needed
         await AsyncStorage.setItem("user", JSON.stringify(userData));
+        setLoggedUser(userData);
         setSuccessPopupVisible(true);
   
       } else {

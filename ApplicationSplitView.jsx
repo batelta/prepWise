@@ -21,10 +21,19 @@ import {
   Inter_100Thin,
   Inter_200ExtraLight,
 } from "@expo-google-fonts/inter";
-import { useContext } from 'react';
-import { UserContext } from './UserContext'; // adjust the path
+import CustomPopup from "./CustomPopup";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import GeminiChat from "./GeminiChat";
+
+import { useContext } from "react";
+import { UserContext } from "./UserContext";
+import { useRoute } from "@react-navigation/native";
 
 export default function ApplicationSplitView() {
+  const route = useRoute();
+
+  const { startWithAddNew } = route.params || {};
+console.log('params from navbar',startWithAddNew)
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_700Bold,
@@ -34,20 +43,34 @@ export default function ApplicationSplitView() {
   });
   const [applications, setApplications] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+ 
+
   const [loading, setLoading] = useState(true);
-  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [isAddingNew, setIsAddingNew] = useState(() => {
+    return route.params?.startWithAddNew || false;
+  });
+
+  //delete popup states
+  const [customPopupVisible, setCustomPopupVisible] = useState(false);
+  const [customPopupMessage, setCustomPopupMessage] = useState("");
+  const [customPopupIcon, setCustomPopupIcon] = useState("information");
+  const [customPopupConfirmation, setCustomPopupConfirmation] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState(null);
+
+  const [showChat, setShowChat] = useState(false);
+  const appliedStyles = Platform.OS === "web" ? Webstyles : styles;
+
+  //const userID = 6;
 
   const { Loggeduser } = useContext(UserContext);
 
-
   //  עטיפת fetchApps ב-useCallback
-  const fetchApps = useCallback(async () => {
-    
+  /*const fetchApps = useCallback(async (userID) => {
     try {
       const API_URL =
         Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/${user.userID}/applications`
-          : `http://192.168.1.92:7137/api/JobSeekers/${user.userID}/applications`;
+          ? `https://localhost:7137/api/JobSeekers/${userID}/applications`
+          : `http://192.168.1.92:7137/api/JobSeekers/${userID}/applications`;
 
       const response = await fetch(API_URL);
       const data = await response.json();
@@ -64,14 +87,45 @@ export default function ApplicationSplitView() {
     } finally {
       setLoading(false);
     }
-  }, [Loggeduser]);
+  }, []);*/
 
   // קריאה ל-fetchApps בטעינה
+  /*useEffect(() => {
+    fetchApps();
+  }, [fetchApps]);*/
+
+  const fetchApps = useCallback(async (userID) => {
+    try {
+      const API_URL =
+        Platform.OS === "web"
+          ? `http://localhost:5062/api/JobSeekers/${userID}/applications`
+          : `http://192.168.1.92:7137/api/JobSeekers/${userID}/applications`;
+
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setApplications(data);
+
+      if (data.length > 0) {
+        setApplications(data);
+        // Don't force select if you started in add mode
+        if (!startWithAddNew) {
+          setSelectedId(data[0].applicationID);
+          setIsAddingNew(false);
+        }
+      } else {
+        setIsAddingNew(true);
+      }
+      
+    } catch (err) {
+      console.error("Error fetching applications:", err);
+    } finally {
+      setLoading(false);
+    }
+  });
+
   useEffect(() => {
-    if (Loggeduser) {
-      console.log(Loggeduser)
-      console.log(Loggeduser.userID)
-      fetchApps();
+    if (Loggeduser?.userID) {
+      fetchApps(Loggeduser.userID);
     }
   }, [Loggeduser]);
 
@@ -96,8 +150,8 @@ export default function ApplicationSplitView() {
     try {
       const API_URL =
         Platform.OS === "web"
-          ? `https://localhost:7137/api/JobSeekers/deleteById/${user.userID}/${applicationIDToDelete}`
-          : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${user.userID}/${applicationIDToDelete}`;
+          ? `http://localhost:5062/api/JobSeekers/deleteById/${userID}/${applicationIDToDelete}`
+          : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${userID}/${applicationIDToDelete}`;
 
       const response = await fetch(API_URL, { method: "DELETE" });
 
@@ -116,9 +170,19 @@ export default function ApplicationSplitView() {
       if (updated.length === 0) {
         setIsAddingNew(true);
       }
+
+      // הצגת הודעת הצלחה
+      setCustomPopupMessage("Application deleted successfully!");
+      setCustomPopupIcon("check-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     } catch (error) {
       console.error("Error deleting application:", error);
-      alert("Failed to delete application");
+
+      setCustomPopupMessage("Failed to delete application");
+      setCustomPopupIcon("alert-circle");
+      setCustomPopupConfirmation(false);
+      setCustomPopupVisible(true);
     }
   };
 
@@ -127,6 +191,7 @@ export default function ApplicationSplitView() {
       <ScrollView>
         <View style={styles.splitView}>
           <NavBar style={styles.navbar} />
+
           {/* 🔹 Left Pane */}
 
           <View style={styles.leftPane}>
@@ -150,14 +215,23 @@ export default function ApplicationSplitView() {
                 </View>
                 <TouchableOpacity
                   style={styles.deleteIcon}
-                  onPress={() => handleDeleteApplication(app.applicationID)}
+                  onPress={() => {
+                    // שימור ID המשרה למחיקה
+                    setApplicationToDelete(app.applicationID);
+                    // הצגת פופאפ אישור
+                    setCustomPopupMessage(
+                      "Are you sure you want to delete this application?"
+                    );
+                    setCustomPopupIcon("alert-circle");
+                    setCustomPopupConfirmation(true);
+                    setCustomPopupVisible(true);
+                  }}
                 >
                   <Text style={{ fontSize: 14, color: "#9FF9D5" }}>X</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
 
-            {/* 🔹 כפתור הוספת משרה */}
             <TouchableOpacity
               onPress={() => {
                 setIsAddingNew(true);
@@ -175,7 +249,7 @@ export default function ApplicationSplitView() {
           </View>
 
           {/* 🔹 Right Pane */}
-
+{/***
           <View style={styles.rightPane}>
             {isAddingNew ? (
               <AddApplication
@@ -192,8 +266,75 @@ export default function ApplicationSplitView() {
               </Text>
             )}
           </View>
+ */}
+
+<View style={styles.rightPane}>
+  {isAddingNew ? (
+    <AddApplication
+      onSuccess={() => {
+        fetchApps(Loggeduser.userID);
+        setIsAddingNew(false);
+      }}
+    />
+  ) : selectedId ? (
+    <Application 
+      applicationID={selectedId} 
+      key={selectedId} // חשוב מאוד! גורם ל-Application להתאפס כאשר המזהה משתנה
+    />
+  ) : (
+    <Text style={{ padding: 20 }}>
+      Select an application to view details
+    </Text>
+  )}
+</View>
+
         </View>
       </ScrollView>
+      <View
+        style={[
+          styles.popupOverlay,
+          !customPopupVisible && { display: "none" },
+        ]}
+      >
+        <CustomPopup
+          visible={customPopupVisible}
+          onDismiss={() => setCustomPopupVisible(false)}
+          icon={customPopupIcon}
+          message={customPopupMessage}
+          isConfirmation={customPopupConfirmation}
+          onConfirm={() => {
+            if (applicationToDelete) {
+              handleDeleteApplication(applicationToDelete);
+            }
+            setCustomPopupVisible(false);
+            setApplicationToDelete(null);
+          }}
+          onCancel={() => {
+            setCustomPopupVisible(false);
+            setApplicationToDelete(null);
+          }}
+        />
+      </View>
+      <TouchableOpacity
+        style={styles.chatIcon}
+        onPress={() => setShowChat(!showChat)}
+      >
+        <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
+      </TouchableOpacity>
+
+      {showChat && (
+        <View style={appliedStyles.overlay}>
+          <View style={appliedStyles.chatModal}>
+            <TouchableOpacity
+              onPress={() => setShowChat(false)}
+              style={{ alignSelf: "flex-end", padding: 5 }}
+            >
+              <Text style={{ fontSize: 18, fontWeight: "bold" }}>✖</Text>
+            </TouchableOpacity>
+            <GeminiChat />
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -201,8 +342,6 @@ export default function ApplicationSplitView() {
 const styles = StyleSheet.create({
   splitView: {
     flexDirection: "row",
-    //flex: 1,
-    //paddingTop: 80, //  מוסיף מקום ל־NavBar הקבוע למעלה
   },
 
   container: {
@@ -231,12 +370,6 @@ const styles = StyleSheet.create({
     overflow: "auto",
     marginTop: 80,
   },
-
-  /*rightPane: {
-    width: "70%",
-    overflow: "auto",
-    marginTop: 20,
-  },*/
 
   header: {
     fontSize: 20,
@@ -299,5 +432,97 @@ const styles = StyleSheet.create({
     right: 10,
     top: 3,
     zIndex: 2,
+  },
+
+  popupOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // רקע חצי שקוף
+    justifyContent: "center",
+    alignItems: "center", // מרכז את הפופאפ על המסך
+    zIndex: 1000, // ודא שהפופאפ יהיה מעל כל שאר התוכן
+  },
+  chatIcon: {
+    position: "absolute",
+    bottom: 5,
+    right: 45,
+    backgroundColor: "#fff",
+    borderRadius: 30,
+    padding: 12,
+    zIndex: 999, // ערך גבוה יותר כדי להבטיח שיופיע מעל כל אלמנט אחר
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3, // הגדלנו את אטימות הצל
+    shadowRadius: 5,
+    elevation: 8, // הגדלנו את הבליטה ב-Android
+    // הוספת מסגרת דקה להבלטה נוספת
+    borderWidth: 1,
+    borderColor: "rgba(159, 249, 213, 0.3)", // מסגרת בצבע דומה לאייקון
+    marginBottom: 12,
+  },
+  chatModal: {
+    position: "absolute",
+    bottom: 80,
+    right: 10,
+    width: "90%",
+    height: 500,
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+});
+
+const Webstyles = StyleSheet.create({
+  chatIcon: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#fff",
+    borderRadius: 30,
+    padding: 12,
+    zIndex: 10,
+  },
+  chatModal: {
+    position: "absolute",
+    bottom: 0,
+    right: 10,
+    width: "40%",
+    height: 450,
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
   },
 });

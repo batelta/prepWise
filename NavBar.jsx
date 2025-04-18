@@ -20,14 +20,15 @@ import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 
 
-const createRedirectScreen = (screenName) => {
+
+const createRedirectScreen = (screenName,params= {} ) => {
   return () => {
     const navigation = useNavigation();
     const route = useRoute();
 
     React.useEffect(() => {
       if (route.name !== screenName) {
-        navigation.navigate(screenName);
+        navigation.navigate(screenName,params);
       }
     }, []);
     return null;
@@ -35,11 +36,11 @@ const createRedirectScreen = (screenName) => {
 };
 const mobileNavItems = [
   { name: "Home", screen: "HomePage" },
-  { name: "Chat", screen: "GeminiChat", disabled: true },
+  { name: "Messenger", screen: "ComingSoonChat", disabled: true },
   { name: "Add Job", screen: "AddApplication" },
-  { name: "Calendar", screen: "LandingPage", disabled: true },
+  { name: "Calendar", screen: "ComingSoonCalendar", disabled: true },
   { name: "Profile", screen: "Profile" },
-  { name: "Menu", screen: "LandingPage", disabled: true },
+  { name: "Menu", screen: "ComingSoonMenu", disabled: true },
 ];
 
 const Tab = createBottomTabNavigator();
@@ -80,7 +81,6 @@ const MobileNavBar = () => {
        tabPress: e => {
          if (item.disabled) {
            e.preventDefault(); // block navigation
-           alert("This feature is coming soon!");
          }
        }
      }}
@@ -100,11 +100,11 @@ const WebNavBar = () => {
 
   const navItems = [
     { name: "Home", screen: "HomePage" },
-    { name: "Chat", screen: "GeminiChat", disabled: true },
-    { name: "Add Job", screen: "AddApplication" },
-    { name: "Calendar", screen: "LandingPage" , disabled: true},
+    { name: "Messenger ", screen: "ComingSoonChat", disabled: true },
+    { name: "Add Job", screen: "ApplicationSplitView", params: { startWithAddNew: true } },
+    { name: "Calendar", screen: "ComingSoonCalendar" , disabled: true},
     { name: "Profile", screen: "Profile" },
-    { name: "Menu", screen: "LandingPage", disabled: true },
+    { name: "Menu", screen: "ComingSoonMenu", disabled: true },
   ];
 
   return (
@@ -120,10 +120,8 @@ const WebNavBar = () => {
               <TouchableOpacity
                 key={item.screen}
                 onPress={() => {
-                  if (item.disabled) {
-                    alert("This page is under construction!");
-                  } else {
-                    navigation.navigate(item.screen);
+                  if (!item.disabled) {
+                    navigation.navigate(item.screen, item.params); // ✅ passes the param if it exists
                   }
                 }}                
                 onMouseEnter={() => setHovered(item.screen)}

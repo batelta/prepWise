@@ -30,6 +30,11 @@ const theme = {
     text: '#003D5B',    // Text color
   }
 };
+const ComingSoonScreen = () => (
+  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <Text style={{ fontSize: 16, color: "#888" }}>This feature is coming soon!</Text>
+  </View>
+);
 
 const Stack=createNativeStackNavigator();
 
@@ -40,7 +45,7 @@ export default function App() {
 
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='HomePageMentor'>
+     <Stack.Navigator initialRouteName='HomePage'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="HomePage" component={HomePage}/>
@@ -57,7 +62,9 @@ export default function App() {
       <Stack.Screen name="EditProfileMentor" component={EditProfileMentor}/>
       <Stack.Screen name="AllUserApplications" component={AllUserApplications}/>
       <Stack.Screen name="ApplicationSplitView" component={ApplicationSplitView}/>
-
+      <Stack.Screen name="ComingSoon" component={ComingSoonScreen} />
+      <Stack.Screen name="ComingSoonCalendar" component={ComingSoonScreen} />
+      <Stack.Screen name="ComingSoonMenu" component={ComingSoonScreen} />
 
      </Stack.Navigator>
     </PaperProvider>

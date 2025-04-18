@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView,Platform  } from "react-native";
+import { View, Text,Dimensions, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView,Platform  } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -9,14 +9,17 @@ import LanguageSelector from './LanguageSelector';
 import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
 import NavBar from "./NavBar";
-import CustomPopup from "./CustomPopup"; 
+import CustomPopup from "./CustomPopup";   
+import ModalRN  from 'react-native-modal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; // adjust the path
 
+  const { width,height } = Dimensions.get('window');
+
 
 const EditProfile = () => {
-  const { Loggeduser } = useContext(UserContext);
+  const { Loggeduser ,setLoggedUser } = useContext(UserContext);
 
 const [popupVisible, setPopupVisible] = useState(false);
  
@@ -250,6 +253,13 @@ const pickImage = async () => {
       if (response.ok) {
         const responseData = await response.json();
         console.log("User updated successfully:", responseData);
+        // ✅ Add userID only to the local object you're storing
+        const userWithID = { ...updatedUser, userID };
+
+        // ✅ Save to AsyncStorage with userID included
+        await AsyncStorage.setItem("user", JSON.stringify(userWithID));
+        setLoggedUser(userWithID); // ← This updates the context immediately!
+
         setPopupVisible(true);
       } else {
         const errorData = await response.json();
@@ -370,30 +380,40 @@ const pickImage = async () => {
               
             </View>
     
-            {/* Fields Modal */}
-            <View style={appliedStyles.inputContainer}>
+           {/* Fields Modal */}
+           <View style={appliedStyles.inputContainer}>
               <Text style={appliedStyles.label}>Career Fields</Text>
               <Button
                 mode="contained"
                 onPress={() => setFieldModalVisible(true)}
                 style={appliedStyles.input}
-                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
-              >
+                labelStyle={appliedStyles.modalLabelText}
+                contentStyle={appliedStyles.modalText} 
+                >
                 {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
               </Button>
-              <Portal>
-                <Modal visible={fieldModalVisible} onDismiss={() => setFieldModalVisible(false)} contentContainerStyle={appliedStyles.modalContent}>
-                  {Fields.map((field, index) => (
-                    <Checkbox.Item 
-                      key={index} 
-                      label={field} 
-                      status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
-                      onPress={() => toggleField(field)} 
-                    />
-                  ))}
-                  <Button onPress={() => setFieldModalVisible(false)}>Done</Button>
-                </Modal>
-              </Portal>
+               <ModalRN 
+                  isVisible={fieldModalVisible} 
+                  onBackdropPress={() => setFieldModalVisible(false)} 
+                  onBackButtonPress={() => setFieldModalVisible(false)}
+                  style={{ justifyContent: 'flex-end', margin: 0 }} // ⬅️ makes it appear from the bottom
+              
+                >
+                  <View style={appliedStyles.modalBox}>
+                    {Fields.map((field, index) => (
+                      <Checkbox.Item 
+                        key={index} 
+                        label={field} 
+                        status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
+                        onPress={() => toggleField(field)} 
+                        color="#d6cbff"
+                      />
+                    ))}
+                    <Button onPress={() => setFieldModalVisible(false)}
+                    labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}}
+                       >Done</Button>
+                  </View>
+                </ModalRN>
             </View>
     
             {/* Experience */}
@@ -403,32 +423,38 @@ const pickImage = async () => {
                 mode="contained"
                 onPress={() => setExperienceModalVisible(true)}
                 style={appliedStyles.input}
-                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight' }}
-              >
+                labelStyle={appliedStyles.modalLabelText}
+                contentStyle={appliedStyles.modalText} 
+                >
                 {user.experience || "Select Your Experience Level"}
               </Button>
-              <Portal>
-                <Modal visible={experienceModalVisible} onDismiss={() => setExperienceModalVisible(false)} contentContainerStyle={[appliedStyles.modalContent, { backgroundColor: 'white' }]}>
-                  {experiences.map((exp, index) => (
-                    <Checkbox.Item key={index} label={exp} status={user.experience === exp ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, experience: exp })} />
-                  ))}
-                  <Button onPress={() => setExperienceModalVisible(false)}>Done</Button>
-                </Modal>
-              </Portal>
+              <ModalRN 
+                 isVisible={experienceModalVisible} 
+                 onBackdropPress={() => setExperienceModalVisible(false)} 
+                 onBackButtonPress={() => setExperienceModalVisible(false)}
+                 style={{ justifyContent: 'flex-end', margin: 0 }} // ⬅️ makes it appear from the bottom
+             
+               >
+                 <View style={appliedStyles.modalBox}>
+                     {experiences.map((exp, index) => (
+                 <Checkbox.Item key={index} label={exp} status={user.experience === exp ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, experience: exp })}
+                    labelStyle={{ fontFamily: "Inter_400Regular" }}
+                     color="#d6cbff"/>
+                   ))}
+                   <Button onPress={() => setExperienceModalVisible(false)}
+                 labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}} 
+              >Done</Button>
+                 </View>
+               </ModalRN>
             </View>
     
             {/* Languages */}
             <View style={appliedStyles.inputContainer}>
               <Text style={appliedStyles.label}>Languages</Text>
-             {/* <Text style={ { backgroundColor: "#FFFFF", padding: 10, borderRadius: 5 }}>
-                {selectedLanguages.length > 0 ? selectedLanguages.join(", ") : "Pick Items (0 selected)"}
-              </Text>*/}
-              
               <LanguageSelector 
                 selectedLanguages={selectedLanguages} 
-                setSelectedLanguages={setSelectedLanguages}
-                
-              /></View>
+                setSelectedLanguages={setSelectedLanguages} />
+                </View>
             
             
     
@@ -489,10 +515,10 @@ const styles = StyleSheet.create({
   imageContainer: {flexDirection:'row',alignSelf:'flex-start',marginLeft: 15,marginBottom:20},
   profileImage: {width: 150,height:  150,
   borderRadius:  80,borderWidth: 3,borderColor: "white",},
-  inputContainer: { width: "80%", marginBottom: 10, },
+  inputContainer: { width: "80%", marginBottom: 10 },
   //input: { backgroundColor: "#F2F2F2", padding: 15, borderRadius: 20, width: "100%", color: "#A9A9A9",fontFamily:"Inter_300Light", },
   input:{width: '100%',padding:1,marginVertical: 8,borderWidth: 1,fontFamily:'Inter_200ExtraLight',borderColor: '#ccc',
-  borderRadius: 6,backgroundColor: '#f9f9f9',paddingLeft:0,height: 50,  paddingLeft: 10,},
+  borderRadius: 6,backgroundColor: '#fff',paddingLeft:0,height: 50,  paddingLeft: 10,},
   label: { fontSize: 14, color: "#003D5B", marginBottom: 5,fontFamily:"Inter_300Light",},
   passwordContainer: { flexDirection: "row", alignItems: "center", },
   eyeIcon: { position: "absolute", right: 15 },
@@ -506,6 +532,31 @@ const styles = StyleSheet.create({
   cardContainer:{width:"100%",marginLeft:95},
   overlay: {position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
   justifyContent: "center",alignItems: "center",zIndex: 9999,},
+  modalText:{
+    justifyContent: 'left', 
+    paddingLeft:1,
+    borderRadius: 10
+  },
+  modalBox: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+    width: width * 0.9,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalLabelText:{
+    color: "#A9A9A9", fontSize:13,
+     fontFamily:'Inter_200ExtraLight',
+      marginLeft:0,
+      fontSize:14
+  },
 });
 
 const Webstyles = StyleSheet.create({
@@ -519,7 +570,7 @@ const Webstyles = StyleSheet.create({
   borderRadius:  130 ,borderWidth: 3,borderColor: "white",},
   inputContainer: { width: "80%", marginBottom: 10},
   input:{width: '100%',padding:1,marginVertical: 8,borderWidth: 1,fontFamily:'Inter_200ExtraLight',borderColor: '#ccc',
-  borderRadius: 6,backgroundColor: '#f9f9f9',paddingLeft:0,height: 50,  paddingLeft: 10,color: "#A9A9A9",},
+  borderRadius: 6,backgroundColor: '#fff',paddingLeft:0,height: 50,  paddingLeft: 10,color: "#A9A9A9",},
   label: { fontSize: 14, color: "#003D5B", marginBottom: 5,fontFamily:"Inter_300Light", },
   passwordContainer: { flexDirection: "row", alignItems: "center" },
   eyeIcon: { position: "absolute", right: 15 },
@@ -531,6 +582,30 @@ const Webstyles = StyleSheet.create({
   modalContent: {backgroundColor: "white",width:"35%",marginLeft:580,borderRadius:15},//חלונית מודל של התחומי קריירה
   cardContainer:{width:"35%",backgroundColor: "white",borderRadius: "12px",boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
   padding: "20px",alignItems:"center",position: "relative",zIndex:1,},
+  modalText:{
+    justifyContent: 'left', 
+    paddingLeft:1,
+    borderRadius: 10
+  },
+  modalBox: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+    width: '50%',
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalLabelText:{
+    color: "#888", fontSize:13,
+     fontFamily:'Inter_200ExtraLight',
+      marginLeft:1,
+  },
 });
 
 

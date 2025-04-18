@@ -9,16 +9,17 @@ export const UserProvider = ({ children }) => {
   const loadUser = async () => {
     const storedUser = await AsyncStorage.getItem('user');
     if (storedUser) {
-        setLoggedUser(JSON.parse(storedUser));
+      setLoggedUser(JSON.parse(storedUser));
+      console.log('Loaded from storage:', storedUser);
     }
   };
 
   useEffect(() => {
-    loadUser();
+    loadUser(); // Only load once when the app starts
   }, []);
 
   return (
-    <UserContext.Provider value={{ Loggeduser, setLoggedUser }}>
+    <UserContext.Provider value={{ Loggeduser, setLoggedUser, loadUser }}>
       {children}
     </UserContext.Provider>
   );

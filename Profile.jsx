@@ -21,7 +21,7 @@ import { UserContext } from './UserContext'; // adjust the path
 const defaultImage = require('../prepWise/assets/womanImage.jpg'); // תמונה קבועה לאפליקציה (בדיקה בטלפון)
 
 const Profile = () => {
-    const { Loggeduser } = useContext(UserContext);
+    const { Loggeduser,setLoggedUser} = useContext(UserContext);
   
   const [isMentor, setIsMentor]=useState(false)
 
@@ -87,6 +87,11 @@ const Profile = () => {
     setPopupVisible(true); // רק פותח את הפופאפ, לא מוחק
   };
   
+  const handleLogOut=async ()=>{
+    await AsyncStorage.removeItem('user');//מחיקת המשתמש מהלוקל סטורג
+    setLoggedUser(null)
+ navigation.navigate("SignIn")
+  }
   console.log("isMentor:", isMentor);
 
   return (
@@ -151,6 +156,11 @@ const Profile = () => {
           <TouchableOpacity style={styles.option}>
             <Text style={styles.optionText}>
            {/*}   <MaterialIcons name="support-agent" size={20} color="black" /> Help & Support */}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.option} onPress={() => handleLogOut()}>
+            <Text style={styles.optionText}>
+              <MaterialCommunityIcons name="logout-variant" size={20} color="black" /> Log Out
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.option}>
@@ -301,26 +311,28 @@ position: "absolute",
   width: Platform.OS === "web" ? "90%" : "100%",
   marginLeft:Platform.OS === "web" ? "500px" : 40,
   marginRight:Platform.OS === "web" ? 0 : 0, 
-  marginTop:Platform.OS === "web" ?"-220px":0,
-
+  //marginTop:Platform.OS === "web" ?"-300px":0,
+  transform: Platform.OS === "web" ? [{ translateY: -400 }] : []
   },
 
-  cardContainer:{height:"90%",
-    width:Platform.OS === "web" ?"70%":"100%",
+  cardContainer:{height:"50%",
+    width:Platform.OS === "web" ?"85%":"100%",
     marginRight:Platform.OS === "web" ?0:30,
     backgroundColor:Platform.OS === "web" ?"white":"null",
     borderRadius:Platform.OS === "web" ? "12px":"0px",
     boxShadow: Platform.OS === "web" ?"0 4px 8px rgba(0, 0, 0, 0.1)":"0",
-    padding: Platform.OS === "web" ?"20px":"0px",
-    
+    padding: Platform.OS === "web" ?"150px":"0px",
   },
 
   detailsContainer:{
-    width:Platform.OS === "web" ?"30%":"100%",
+    width:Platform.OS === "web" ?"40%":"100%",
     backgroundColor:Platform.OS === "web" ?"white":"null",
     borderRadius:Platform.OS === "web" ? "12px":"0px",
     boxShadow: Platform.OS === "web" ?"0 6px 12px rgba(0, 0, 0, 0.2)":"0",
     padding: Platform.OS === "web" ?"20px":"0px",
+    //check for the mobile
+alignItems:'center',
+transform: Platform.OS === "web" ? [{ translateY: -90 }] : []
 
   }
 

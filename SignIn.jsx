@@ -9,10 +9,13 @@ import { Inter_400Regular,
   import CustomPopup from "./CustomPopup"; // Import the custom popup
   import AsyncStorage from '@react-native-async-storage/async-storage';
   import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Or any other icon set
+  import { useContext } from 'react';
+  import { UserContext } from './UserContext'; // adjust the path
 
   const { height,width } = Dimensions.get('window');
 
 const SignIn = ({navigation}) => {
+    const { setLoggedUser} = useContext(UserContext);
 
   const [isMentor, setIsMentor]=useState(false)
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
@@ -54,8 +57,10 @@ const SignIn = ({navigation}) => {
             console.log('user found ')
               // Convert response JSON to an object
             const userData = await response.json();   
+            console.log('user : ',userData)
 
             await AsyncStorage.setItem("user", JSON.stringify(userData));
+            setLoggedUser(userData)
             setIsMentor(userData.isMentor)
             console.log(userData.isMentor)
             setSuccessPopupVisible(true)
