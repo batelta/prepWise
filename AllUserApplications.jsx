@@ -48,13 +48,21 @@ export default function AllUserApplications() {
 
   useEffect(() => {
     const fetchApplications = async () => {
-      if (!Loggeduser?.userID) return;
+      console.log("Loggeduser changed:", Loggeduser);
+
+      if (!Loggeduser?.id) {
+        console.log("No user found, redirecting to SignIn");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'SignIn' }]
+        });
+        return;
+      }
 
       try {
         const API_URL =
-          Platform.OS === "web"
-            ? `http://localhost:5062/api/JobSeekers/${Loggeduser.userID}/applications`
-            : `http://10.0.0.18:7137/api/JobSeekers/${Loggeduser.userID}/applications`;
+          `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications`
+     
 
         const response = await fetch(API_URL);
         const data = await response.json();
@@ -106,9 +114,8 @@ export default function AllUserApplications() {
   const handleDelete = async (applicationID) => {
     try {
       const API_URL =
-        Platform.OS === "web"
-          ? `https://localhost:5062/api/JobSeekers/deleteById/${userID}/${applicationID}`
-          : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${userID}/${applicationID}`;
+        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${userID}/${applicationID}`
+        
 
       console.log("🔍 Deleting application at URL:", API_URL);
 

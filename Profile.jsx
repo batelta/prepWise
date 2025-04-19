@@ -24,7 +24,10 @@ const Profile = () => {
     const { Loggeduser,setLoggedUser} = useContext(UserContext);
   
   const [isMentor, setIsMentor]=useState(false)
-
+  const [firstName,setFirstName]=useState("")
+  const [lastName,setLastName]=useState("")
+  const [email,setEmail]=useState("")
+  const [profileImage,setProfileImage]=useState("")
 
  const [fontsLoaded] = useFonts({
      Inter_400Regular,
@@ -52,19 +55,76 @@ const Profile = () => {
   useEffect(() => {
     if (Loggeduser) {
       setUser(Loggeduser);
-      setIsMentor(Loggeduser.isMentor);
-      setUserID(Loggeduser.userID); // if needed elsewhere
+      setUserID(Loggeduser.id); // if needed elsewhere
       console.log("Logged user:", Loggeduser);
+      loginAsUser(Loggeduser.email, Loggeduser.password); // use it directly from Loggeduser here
+      setEmail(Loggeduser.email)
     }
   }, [Loggeduser]);
 
-  console.log("Profile Image URL:", user.picture);
+  const loginAsUser=async (email,password )=>{
+    console.log(email,password,Loggeduser.password)
+
+    try{
+      console.log("Sending request to API...");
+  const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users/SearchUser" 
+      const response =await fetch (API_URL, { 
+        method: 'POST', // Specify that this is a POST request
+        headers: {
+          'Content-Type': 'application/json' // Indicate that you're sending JSON data
+        },
+        body: JSON.stringify({ // Convert the user data into a JSON string
+            UserId: 0,
+            FirstName: "String",
+            LastName: "String",
+            Email: email,
+            Password: password,
+            CareerField: ["String"], // Convert to an array
+            Experience: "String",
+            Picture: "String",
+            Language: ["String"], // Convert to an array
+            FacebookLink: "String",
+            LinkedInLink: "String",
+            IsMentor:false
+        })
+      });
+
+      //const responseBody = await response.text();  // Use text() instead of json() to handle any response format
+      //console.log("Response Body:", responseBody);
+      console.log("response ok?", response.ok);
+
+      if(response.ok)
+       {
+        console.log('user found ')
+        
+          // Convert response JSON to an object
+        const userData = await response.json();   
+        console.log(userData)
+    setProfileImage(userData.picture)
+    setFirstName(userData.firstName)
+    setLastName(userData.lastName)
+    setIsMentor(userData.isMentor)
+    console.log("mentor?",isMentor)
+    console.log("firstName?",firstName)
+
+    console.log("Profile Image URL:", profileImage);
+
+       }
+  
+  if(!response.ok){
+    throw new Error('failed to find user')
+  }
+    }catch(error){
+  console.log(error)
+    }
+}     
+
   const handleConfirmDelete = async () => {
     try {
     
     
 
-      const response = await fetch(`https://localhost:5062/api/Users/Deletebyid?userid=${userID}`, {
+      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Users/Deletebyid?userid=${userID}`, {
         method: "DELETE",
       });
   
@@ -92,7 +152,7 @@ const Profile = () => {
     setLoggedUser(null)
  navigation.navigate("SignIn")
   }
-  console.log("isMentor:", isMentor);
+ 
 
   return (
     <SafeAreaView style={styles.container}>
@@ -102,26 +162,28 @@ const Profile = () => {
             <View style={styles.cardContainer}>
             <View style={styles.detailsContainer}>
         {/* תמונת הפרופיל */}
+        <Image source={{ uri: profileImage }} style={styles.profileImage} />
+        {/** 
         {Platform.OS === 'web' ? (
-        user.picture ? (
-          <Image source={{ uri: user.picture }} style={styles.profileImage} />
+        profileImage ? (
+          <Image source={{ uri: profileImage }} style={styles.profileImage} />
         ) : (
           <Text>Loading image...</Text>
         )
       ) : (
-        <Image source={defaultImage} style={styles.profileImage} />
+        <Image source={profileImage} style={styles.profileImage} />
       )}
-
+*/}
         {/* שם המשתמש ואימייל }
         {user.firstName ? <Text style={styles.name}>{user.firstName} {user.lastName}</Text> : null}
         {user.email ? <Text style={styles.email}>{user.email}</Text> : null}
         {*/}
 
         {/* -בדיקה לטלפון שם המשתמש ואימייל */}
-        <Text style={styles.name}>{user.firstName ? `${user.firstName} ${user.lastName}` : Platform.OS !== "web" 
-        ? "Natelie Cohen" : ""}</Text>
+        <Text style={styles.name}>{firstName} {lastName} 
+       </Text>
 
-        <Text style={styles.email}>{user.email ? user.email : Platform.OS !== "web" ? "NatalieCohen@gmail.com" : ""}
+        <Text style={styles.email}>{email}
         </Text>
         </View>
         <View style={styles.boxContainer}>

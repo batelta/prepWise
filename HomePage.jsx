@@ -17,6 +17,8 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import GeminiChat from './GeminiChat';
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; // adjust the path
@@ -35,52 +37,96 @@ export default function HomePage() {
     ////just checking
    {/*    const [successPopupVisible, setSuccessPopupVisible] = useState(true);*/}
    const [profileImage, setProfileImage] = useState(null);
-   const [userID, setUserID] = useState(null); // To store userID
+   const [firstname, setFirstname] = useState("Guest");
 
-   useEffect(() => {
-    if (Loggeduser) {
-        setProfileImage(Loggeduser.picture); // use user directly from context
-        setUserID(Loggeduser.userID);
-        console.log(Loggeduser);
-      }
-    }, [Loggeduser]);
+  // const [userID, setUserID] = useState(null); // To store userID
+
+ // This runs only once when Loggeduser is first set
+useEffect(() => {
+    if (Loggeduser?.id) {
+      loginAsUser(Loggeduser.email, Loggeduser.password);
+    }
+  }, [Loggeduser?.id]);
   
-      // Debugging: Check if userID is set after fetching user data
-      useEffect(() => {
-        if (userID !== null) { // Ensure userID is available before making the request
-            console.log("Fetching applications for userID:", userID);
-    
-            const fetchApplications = async () => {
-                try {
-                    const API_URL =
-                        Platform.OS === "web"
-                            ? `http://localhost:5062/api/JobSeekers/${userID}/applications`
-                            : `http://10.0.0.18:5062/api/JobSeekers/${userID}/applications`;
-    
-                    const response = await fetch(API_URL);
-                    const data = await response.json();
-                    console.log("Applications from API:", data);
-                    setApplications(data);
-                } catch (error) {
-                    console.error("Failed to fetch applications", error);
-                } finally {
-                    setLoadingApp(false);
-                }
-            };
-    
-            fetchApplications();
+  // This runs every time the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      const fetchApplications = async () => {
+        try {
+          const response = await fetch(
+            `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications`
+          );
+          const data = await response.json();
+          setApplications(data);
+        } catch (error) {
+          console.error("Failed to fetch applications", error);
+        } finally {
+          setLoadingApp(false);
         }
-    }, [userID]); // Fetch applications whenever userID changes
+      };
+  
+      if (Loggeduser?.id) {
+        fetchApplications();
+      }
+    }, [Loggeduser?.id])
+  );
+  
+  
     
-      
+  const loginAsUser=async (email,password )=>{
+    console.log(email,password,Loggeduser.password)
+
+    try{
+      console.log("Sending request to API...");
+  const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users/SearchUser" 
+      const response =await fetch (API_URL, { 
+        method: 'POST', // Specify that this is a POST request
+        headers: {
+          'Content-Type': 'application/json' // Indicate that you're sending JSON data
+        },
+        body: JSON.stringify({ // Convert the user data into a JSON string
+            UserId: 0,
+            FirstName: "String",
+            LastName: "String",
+            Email: email,
+            Password: password,
+            CareerField: ["String"], // Convert to an array
+            Experience: "String",
+            Picture: "String",
+            Language: ["String"], // Convert to an array
+            FacebookLink: "String",
+            LinkedInLink: "String",
+            IsMentor:false
+        })
+      });
+
+      //const responseBody = await response.text();  // Use text() instead of json() to handle any response format
+      //console.log("Response Body:", responseBody);
+      console.log("response ok?", response.ok);
+
+      if(response.ok)
+       {
+        console.log('user found ')
+        
+          // Convert response JSON to an object
+        const userData = await response.json();   
+    setProfileImage(userData.picture)
+    setFirstname(userData.firstName)
+       }
+  
+  if(!response.ok){
+    throw new Error('failed to find user')
+  }
+    }catch(error){
+  console.log(error)
+    }
+}     
 
       const handleDelete = async (applicationID) => {
           try {
             console.log(applicationID)
             const API_URL =
-              Platform.OS === "web"
-                ? `http://localhost:5062/api/JobSeekers/deleteById/${userID}/${applicationID}`
-                : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${userID}/${applicationID}`;
+              `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${Loggeduser.id}/${applicationID}`
       
             console.log("🔍 Deleting application at URL:", API_URL);
       
@@ -108,16 +154,14 @@ export default function HomePage() {
     const [Name, setName] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const API_URL = Platform.OS === 'web'  
-        ? "http://localhost:5062/api/Users" 
-        : "http://192.168.30.157:5062/api/Users";
+    const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users" 
   
- 
     const LogoImage = () => {
         if (Platform.OS === "ios") {
             return <Image source={require('./assets/prepWise Logo.png')} style={appliedStyles.logo} />;
         }
     };
+   
    
 
     return (
@@ -135,16 +179,18 @@ export default function HomePage() {
                         <View style={appliedStyles.profileImageContainer}>
 
                         <View  style={appliedStyles.profileImage}>
-                        <Image source={profileImage}
-                               style={{  width: '100%',
-                                height: '100%',
-                                resizeMode: 'cover'}}
-                                 />
+  <Image
+    source={{ uri: profileImage }}
+    style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+  />
+
+
+                   
                                 </View>
                                 </View>
                           <View style={{flex:1}}>
      
-                        <Text style={appliedStyles.title}>Welcome {Loggeduser ? Loggeduser.firstName : "Guest"}, to your Home page!</Text>
+                        <Text style={appliedStyles.title}>Welcome {firstname} , to your Home page!</Text>
                         <Text style={appliedStyles.subtitle}>What to do next?</Text> <AnimatedArrow/>
                     </View>
                     </View>
@@ -234,8 +280,8 @@ export default function HomePage() {
                                             console.log("Navigating to:", app.applicationID);
                                             if(Platform.OS === 'web' )
                                             navigation.navigate("ApplicationSplitView", { applicationID: app.applicationID }); 
-                                        else {navigation.navigate("Application"),{applicationID: app.applicationID}}                                       
-                                    }}
+                                          else  navigation.navigate("Application", {applicationID: app.applicationID});  // FIXED: use proper parameter passing
+                                        }}
                                    >
                                         <View style={appliedStyles.Applicationrow}>
                                             <MaterialIcons
@@ -275,6 +321,12 @@ export default function HomePage() {
     <View style={appliedStyles.pressContainer}>
       <Card style={appliedStyles.pressCard}>
         <Card.Content style={appliedStyles.pressCardcontent}>
+        <TouchableOpacity  onPress={() => {
+                                            console.log("Navigating to:in web to splitview");
+                                            if(Platform.OS === 'web' )
+                                            navigation.navigate("ApplicationSplitView"); 
+                                          else  navigation.navigate("AddApplication");  //
+                                        }} >
           <Text style={appliedStyles.pressText}>
             Press <Text style={{ marginRight: 10 }}> </Text>
             <AnimatedPlusIcon />
@@ -282,6 +334,7 @@ export default function HomePage() {
               to add your first Job Application
             </Text>
           </Text>
+          </TouchableOpacity>
         </Card.Content>
       </Card>
 
@@ -307,8 +360,8 @@ export default function HomePage() {
     {/* Map over applications and render them */}
   </>
 )}
-      <NavBar />
-
+     {/**    */}
+     <NavBar />
                 {showChat && (
     <View style={appliedStyles.overlay}>
   <View style={appliedStyles.chatModal}>
@@ -399,7 +452,7 @@ const styles = StyleSheet.create({
     ToDoAndApplications:{
         flexDirection:'column',
         justifyContent:'flex-start',
-        marginBottom:30,
+        marginBottom:60,
             },
     toDoList: {
         flexDirection: "row",
@@ -436,10 +489,11 @@ const styles = StyleSheet.create({
     },
     Applicationcard:{
      width:'100%',
+   //  paddingBottom:60
     },
     ApplicationCardcontent:{
         alignItems: 'center', // Centers items inside Card.Content
-        justifyContent: 'flex-start',
+       // justifyContent: 'flex-start',
     },
 
     pressText: {
@@ -464,14 +518,22 @@ const styles = StyleSheet.create({
         marginBottom:80
     },
     chatIcon:{
-        position: 'absolute',
-        bottom: 100,
-        right: 20,
-        backgroundColor: '#fff',
+        position: "absolute",
+        bottom: 65,
+        right: 45,
+        backgroundColor: "#fff",
         borderRadius: 30,
         padding: 12,
-        zIndex: 20, // Add this!
-    
+        zIndex: 999, // ערך גבוה יותר כדי להבטיח שיופיע מעל כל אלמנט אחר
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3, // הגדלנו את אטימות הצל
+        shadowRadius: 5,
+        elevation: 8, // הגדלנו את הבליטה ב-Android
+        // הוספת מסגרת דקה להבלטה נוספת
+        borderWidth: 1,
+        borderColor: "rgba(159, 249, 213, 0.3)", // מסגרת בצבע דומה לאייקון
+        marginBottom: 12,
       },
     chatModal:{
         position: 'absolute',
@@ -492,7 +554,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",alignItems: "center",zIndex: 9999,
       },
       ApplicationcardContainer:{
-        marginBottom: 15,
+        marginBottom: 25,
         position: "relative",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
@@ -503,13 +565,13 @@ const styles = StyleSheet.create({
         position: "absolute",
         left: 10,
         top: 10,
-        zIndex: 2,
+        zIndex: 999,
       },
       Applicationcard: {
         backgroundColor: "#fff",
         borderRadius: 12,
         padding: 15,
-        paddingLeft: 40,
+        paddingLeft: 20,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -521,13 +583,17 @@ const styles = StyleSheet.create({
       },
       Applicationrow: {
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-start",
+      //  width:250,
       },
       Applicationtitle: {
         fontSize: 16,
         fontWeight: "600",
         color: "#163349",
       },
+      seeAllText:{
+    marginBottom:10
+    },
       Applicationcompany: {
         fontSize: 14,
         color: "#555",

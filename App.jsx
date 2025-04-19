@@ -18,9 +18,8 @@ import HomePageMentor from './HomePageMentor';
 import Application from './Application';
 import EditProfileMentor from './EditProfileMentor';
 import AllUserApplications from './AllUserApplications'
-import ApplicationSplitView from './ApplicationSplitView'
+import ApplicationSplitView from './ApplicationSplitView';
 import { UserProvider } from './UserContext'; // 🔥 import the provider
-
 // Define your custom theme
 const theme = {
   colors: {
@@ -45,23 +44,25 @@ export default function App() {
 
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='HomePage'>
+     <Stack.Navigator initialRouteName='SignIn'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
-      <Stack.Screen name="HomePage" component={HomePage}/>
       <Stack.Screen name="GeminiChat" component={GeminiChat}/>
       <Stack.Screen name="LandingPage" component={LandingPage}/>
       <Stack.Screen name="JobForm" component={JobForm}/>
       <Stack.Screen name="AddApplication" component={AddApplication}/>
       <Stack.Screen name="SignUpJobSeeker" component={SignUpJobSeeker}/>
+      <Stack.Screen name="SignUpMentor" component={SignUpMentor}/>
+
+      <Stack.Screen name="HomePage" component={HomePage}/>
+      <Stack.Screen name="HomePageMentor" component={HomePageMentor}/>
       <Stack.Screen name="Profile" component={Profile}/>
       <Stack.Screen name="EditProfile" component={EditProfile}/>
-      <Stack.Screen name="SignUpMentor" component={SignUpMentor}/>
-      <Stack.Screen name="HomePageMentor" component={HomePageMentor}/>
-      <Stack.Screen name="Application" component={Application}/>
       <Stack.Screen name="EditProfileMentor" component={EditProfileMentor}/>
+      <Stack.Screen name="Application" component={Application}/>
       <Stack.Screen name="AllUserApplications" component={AllUserApplications}/>
       <Stack.Screen name="ApplicationSplitView" component={ApplicationSplitView}/>
+
       <Stack.Screen name="ComingSoon" component={ComingSoonScreen} />
       <Stack.Screen name="ComingSoonCalendar" component={ComingSoonScreen} />
       <Stack.Screen name="ComingSoonMenu" component={ComingSoonScreen} />

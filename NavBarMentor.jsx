@@ -20,76 +20,100 @@ import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 
 
-const createRedirectScreen = (screenName) => {
-  return () => {
-    const navigation = useNavigation();
-    const route = useRoute();
+const ComingSoonScreen = () => (
+  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <Text style={{ fontSize: 16, color: "#888" }}>This feature is coming soon!</Text>
+  </View>
+);
 
-    React.useEffect(() => {
-      if (route.name !== screenName) {
-        navigation.navigate(screenName);
-      }
-    }, []);
-    return null;
-  };
-};
 const mobileNavItems = [
-  { name: "Home", screen: "HomePageMentor" },
-  { name: "Chat", screen: "ComingSoonChat", disabled: true },
-  { name: "Add Offer", screen: "ComingSoonOffer" , disabled: true},
+  { name: "Home", screen: "HomePage" },
+  { name: "Messenger", screen: "ComingSoonChat", disabled: true },
+  { name: "Add Offer", screen: "ComingSoonOffer" },
   { name: "Calendar", screen: "ComingSoonCalendar", disabled: true },
   { name: "Profile", screen: "Profile" },
-  { name: "Menu", screen: "ComingSoonMenu", disabled: true},
+  { name: "Menu", screen: "ComingSoonMenu", disabled: true },
 ];
 
 const Tab = createBottomTabNavigator();
 
 const MobileNavBar = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  
+  // Track which tab is currently selected for highlighting
+  const [activeTab, setActiveTab] = React.useState("Home");
+  
+  // Map screen names to tab names for synchronization
+  const screenToTabMap = {};
+  mobileNavItems.forEach(item => {
+    screenToTabMap[item.screen] = item.name;
+  });
+  
+  // Check if current route matches any of our screens on mount and route change
+  React.useEffect(() => {
+    const currentRouteName = route.name;
+    if (screenToTabMap[currentRouteName]) {
+      setActiveTab(screenToTabMap[currentRouteName]);
+    }
+  }, [route]);
 
   return (
     <Tab.Navigator
-    screenOptions={({ route }) => ({
-      tabBarIcon: ({ focused, size }) => {
-        const iconColor = "#003D5B";
-        let iconName;
-        if (route.name === "Home") iconName = focused ? "home" : "home-outline";
-        else if (route.name === "Chat") iconName = focused ? "chatbubble" : "chatbubble-outline";
-        else if (route.name === "Add Offer") iconName = focused ? "add-circle" : "add-circle-outline";
-        else if (route.name === "Calendar") iconName = focused ? "calendar" : "calendar-outline";
-        else if (route.name === "Profile") iconName = focused ? "person" : "person-outline";
-        else if (route.name === "Menu") iconName = focused ? "menu" : "menu-outline";
-        return <Ionicons name={iconName} size={size} color={iconColor} />;
-      },
-      tabBarLabelStyle: {
-        color: "#003D5B",
-        fontSize: 9,
-        textAlign: "center",
-        width: 60,
-      },
-      tabBarStyle: styles.tabBar,
-      headerShown: false,
-    })}
-  >
-    {mobileNavItems.map((item) => (
-      <Tab.Screen
-      key={item.name}
-      name={item.name}
-      component={item.disabled ? () => null : createRedirectScreen(item.screen)}
-      listeners={{
-        tabPress: e => {
-          if (item.disabled) {
-            e.preventDefault(); // block navigation
-          }
-        }
-      }}
-    />
-    
-    ))}
-  </Tab.Navigator>
-  
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, size }) => {
+          // Use both the focused state and our custom activeTab state
+          const isActive = route.name === activeTab;
+          const iconColor = "#003D5B";
+          let iconName;
+          
+          if (route.name === "Home") iconName = isActive ? "home" : "home-outline";
+          else if (route.name === "Messenger") iconName = isActive ? "chatbubble" : "chatbubble-outline";
+          else if (route.name === "Add Offer") iconName = isActive ? "add-circle" : "add-circle-outline";
+          else if (route.name === "Calendar") iconName = isActive ? "calendar" : "calendar-outline";
+          else if (route.name === "Profile") iconName = isActive ? "person" : "person-outline";
+          else if (route.name === "Menu") iconName = isActive ? "menu" : "menu-outline";
+          
+          return <Ionicons name={iconName} size={size} color={iconColor} />;
+        },
+        tabBarLabelStyle: {
+          color: "#003D5B",
+          fontSize: 9,
+          textAlign: "center",
+          width: 60,
+        },
+        tabBarStyle: styles.tabBar,
+        headerShown: false,
+      })}
+    >
+      {mobileNavItems.map((item) => {
+        const EmptyComponent = () => null;
+        
+        return (
+          <Tab.Screen
+            key={item.name}
+            name={item.name}
+            component={EmptyComponent}
+            listeners={{
+              tabPress: e => {
+                // Always prevent default to handle navigation manually
+                e.preventDefault();
+                
+                if (!item.disabled) {
+                  // Update active tab for highlighting
+                  setActiveTab(item.name);
+                  // Navigate to the actual screen
+                  navigation.navigate(item.screen);
+                }
+              }
+            }}
+          />
+        );
+      })}
+    </Tab.Navigator>
   );
 };
+
 
 
 const WebNavBar = () => {
@@ -99,7 +123,7 @@ const WebNavBar = () => {
 
   const navItems = [
     { name: "Home", screen: "HomePageMentor" },
-    { name: "Chat", screen: "ComingSoonChat", disabled: true },
+    { name: "Messenger", screen: "ComingSoonChat", disabled: true },
     { name: "Add Offer", screen: "ComingSoonOffer", disabled: true },
     { name: "Calendar", screen: "ComingSoonCalendar" , disabled: true},
     { name: "Profile", screen: "Profile" },

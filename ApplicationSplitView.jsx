@@ -28,12 +28,15 @@ import GeminiChat from "./GeminiChat";
 import { useContext } from "react";
 import { UserContext } from "./UserContext";
 import { useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 
 export default function ApplicationSplitView() {
   const route = useRoute();
+  const navigation = useNavigation();
 
-  const { startWithAddNew } = route.params || {};
-console.log('params from navbar',startWithAddNew)
+  const { startWithAddNew } = route?.params || {};
+
+  console.log("🧪 params from navbar", route?.params);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_700Bold,
@@ -46,9 +49,12 @@ console.log('params from navbar',startWithAddNew)
  
 
   const [loading, setLoading] = useState(true);
-  const [isAddingNew, setIsAddingNew] = useState(() => {
-    return route.params?.startWithAddNew || false;
-  });
+  const [isAddingNew, setIsAddingNew] = useState(false)
+  useEffect(() => {
+    if (route.params?.startWithAddNew) {
+      setIsAddingNew(true);
+    }
+  }, [route.params]);
 
   //delete popup states
   const [customPopupVisible, setCustomPopupVisible] = useState(false);
@@ -63,43 +69,14 @@ console.log('params from navbar',startWithAddNew)
   //const userID = 6;
 
   const { Loggeduser } = useContext(UserContext);
+  const [userID, setUserID] = useState(true);
 
   //  עטיפת fetchApps ב-useCallback
-  /*const fetchApps = useCallback(async (userID) => {
-    try {
-      const API_URL =
-        Platform.OS === "web"
-          ? `https://localhost:7137/api/JobSeekers/${userID}/applications`
-          : `http://192.168.1.92:7137/api/JobSeekers/${userID}/applications`;
-
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setApplications(data);
-
-      if (data.length > 0) {
-        setSelectedId(data[0].applicationID);
-        setIsAddingNew(false);
-      } else {
-        setIsAddingNew(true);
-      }
-    } catch (err) {
-      console.error("Error fetching applications:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);*/
-
-  // קריאה ל-fetchApps בטעינה
-  /*useEffect(() => {
-    fetchApps();
-  }, [fetchApps]);*/
 
   const fetchApps = useCallback(async (userID) => {
     try {
       const API_URL =
-        Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/${userID}/applications`
-          : `http://192.168.1.92:7137/api/JobSeekers/${userID}/applications`;
+         `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${userID}/applications`
 
       const response = await fetch(API_URL);
       const data = await response.json();
@@ -124,8 +101,10 @@ console.log('params from navbar',startWithAddNew)
   });
 
   useEffect(() => {
-    if (Loggeduser?.userID) {
-      fetchApps(Loggeduser.userID);
+    if (Loggeduser?.id) {
+      console.log("logged user in SPLIT",Loggeduser)
+      fetchApps(Loggeduser.id);
+      setUserID(Loggeduser.id)
     }
   }, [Loggeduser]);
 
@@ -149,13 +128,12 @@ console.log('params from navbar',startWithAddNew)
   const handleDeleteApplication = async (applicationIDToDelete) => {
     try {
       const API_URL =
-        Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/deleteById/${userID}/${applicationIDToDelete}`
-          : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${userID}/${applicationIDToDelete}`;
+        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${userID}/${applicationIDToDelete}`
 
       const response = await fetch(API_URL, { method: "DELETE" });
 
       if (!response.ok) throw new Error("Failed to delete application");
+      console.log("logged user in split",userID)
 
       // עדכון רשימה אחרי מחיקה
       const updated = applications.filter(
@@ -172,10 +150,15 @@ console.log('params from navbar',startWithAddNew)
       }
 
       // הצגת הודעת הצלחה
+
       setCustomPopupMessage("Application deleted successfully!");
       setCustomPopupIcon("check-circle");
       setCustomPopupConfirmation(false);
       setCustomPopupVisible(true);
+      console.log('🧪 Finished deletion successfully');
+      console.log('🧪 Loggeduser still inside delete handler:', Loggeduser);
+
+
     } catch (error) {
       console.error("Error deleting application:", error);
 
@@ -272,7 +255,7 @@ console.log('params from navbar',startWithAddNew)
   {isAddingNew ? (
     <AddApplication
       onSuccess={() => {
-        fetchApps(Loggeduser.userID);
+        fetchApps(Loggeduser.id);
         setIsAddingNew(false);
       }}
     />

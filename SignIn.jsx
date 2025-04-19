@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { View,Dimensions,ScrollView, Text, TextInput, TouchableOpacity, Image, StyleSheet,Platform } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useFonts } from 'expo-font';
@@ -24,9 +24,7 @@ const SignIn = ({navigation}) => {
    const loginAsUser=async (email,password )=>{
         try{
           console.log("Sending request to API...");
-      const API_URL = Platform.OS === 'web'  //changed the url for web and phone
-    ? "http://localhost:5062/api/Users/SearchUser" 
-    : "http://192.168.30.157:5062/api/Users/SearchUser";
+      const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users/SearchUser" 
           const response =await fetch (API_URL, { 
             method: 'POST', // Specify that this is a POST request
             headers: {
@@ -55,16 +53,24 @@ const SignIn = ({navigation}) => {
           if(response.ok)
            {
             console.log('user found ')
+            
               // Convert response JSON to an object
             const userData = await response.json();   
             console.log('user : ',userData)
-
-            await AsyncStorage.setItem("user", JSON.stringify(userData));
-            setLoggedUser(userData)
+            const filteredUserData = {
+              password: userData.password, // This is just an example; never store raw passwords without encryption
+              email: userData.email,       // Store the email if needed
+              id: userData.userID,      // Store the user id if needed
+              // Add other fields you want to save here
+            };
+            console.log("filtered",filteredUserData)
+              //store the full user data if needed
+              await AsyncStorage.setItem("user", JSON.stringify(filteredUserData));
+              setLoggedUser(filteredUserData);
             setIsMentor(userData.isMentor)
             console.log(userData.isMentor)
             setSuccessPopupVisible(true)
-      
+
            }
       
       if(!response.ok){
@@ -90,6 +96,8 @@ const SignIn = ({navigation}) => {
   const [password, setPassword] = useState('');
    const [secureText, setSecureText] = React.useState(true); // State to toggle password visibility
 
+   
+  
    const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
   
   return (
@@ -99,11 +107,12 @@ const SignIn = ({navigation}) => {
             <View style={styles.overlay}>
                     <CustomPopup visible={successPopupVisible}
                   onDismiss={() => {
-                    setSuccessPopupVisible(false);
-                    if(isMentor)
-                    navigation.navigate("HomePageMentor"); // Navigate after closing popup
-                  else
-                  navigation.navigate("HomePage");
+                            // ✅ Move navigation here:
+  setTimeout(() => {
+    navigation.navigate(isMentor ? "HomePageMentor" : "HomePage");
+  }, 150); // Wait a bit so the popup can show
+                    setSuccessPopupVisible(false); 
+
                   }}
                     icon="check-circle" message="User Logged In successfully!"
                      />

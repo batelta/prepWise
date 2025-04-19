@@ -177,7 +177,7 @@ useEffect(() => {
     try {
     
       // קריאה ל-API לפי ID כדי לקבל את כל הנתונים (כולל תחומים ושפות)
-      const response = await fetch(`http://localhost:5062/api/Mentors/${userID}`);
+      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Mentors/${userID}`);
       if (!response.ok) {
         console.error("Failed to fetch full user data from API.");
         return;
@@ -276,7 +276,7 @@ const pickImage = async () => {
       console.log('Sending updated user:', updatedUser); // ← Log before sending
 
       // 3. ביצוע קריאת PUT עם ה- userId מתוך AsyncStorage
-      const response = await fetch(`http://localhost:5062/api/Mentors/${userID}`, {
+      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Mentors/${userID}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

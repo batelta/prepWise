@@ -30,16 +30,67 @@ export default function HomePageMentor() {
    {/*    const [successPopupVisible, setSuccessPopupVisible] = useState(true);*/}
    const [user, setUser] = useState(null);
    const [profileImage, setProfileImage] = useState(null);
+   const [firstname, setFirstname] = useState("Guest");
 
    useEffect(() => {
     if (Loggeduser) {
         setProfileImage(Loggeduser.picture); // use user directly from context
         setUser(Loggeduser);
         console.log(Loggeduser);
+        loginAsUser(Loggeduser.email, Loggeduser.password); // use it directly from Loggeduser here
+
       }
     }, [Loggeduser]);
   
-
+    const loginAsUser=async (email,password )=>{
+        console.log(email,password,Loggeduser.password)
+    
+        try{
+          console.log("Sending request to API...");
+      const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users/SearchUser" 
+          const response =await fetch (API_URL, { 
+            method: 'POST', // Specify that this is a POST request
+            headers: {
+              'Content-Type': 'application/json' // Indicate that you're sending JSON data
+            },
+            body: JSON.stringify({ // Convert the user data into a JSON string
+                UserId: 0,
+                FirstName: "String",
+                LastName: "String",
+                Email: email,
+                Password: password,
+                CareerField: ["String"], // Convert to an array
+                Experience: "String",
+                Picture: "String",
+                Language: ["String"], // Convert to an array
+                FacebookLink: "String",
+                LinkedInLink: "String",
+                IsMentor:false
+            })
+          });
+    
+          //const responseBody = await response.text();  // Use text() instead of json() to handle any response format
+          //console.log("Response Body:", responseBody);
+          console.log("response ok?", response.ok);
+    
+          if(response.ok)
+           {
+            console.log('user found ')
+            
+              // Convert response JSON to an object
+            const userData = await response.json();   
+        setProfileImage(userData.picture)
+        setFirstname(userData.firstName)
+           }
+      
+      if(!response.ok){
+        throw new Error('failed to find user')
+      }
+        }catch(error){
+      console.log(error)
+        }
+    }     
+    
     const [fontsLoaded] = useFonts({
         Inter_400Regular,
         Inter_700Bold,
@@ -50,9 +101,7 @@ export default function HomePageMentor() {
     const [Name, setName] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const API_URL = Platform.OS === 'web'  
-        ? "http://localhost:5062/api/Users" 
-        : "http://192.168.30.157:5062/api/Users";
+    const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users" 
   
         //this is the real pic from the server 
         {/* 
@@ -114,7 +163,7 @@ export default function HomePageMentor() {
                         <View style={appliedStyles.profileImageContainer}>
 
                         <View  style={appliedStyles.profileImage}>
-                        <Image source={profileImage}
+                        <Image source={{ uri: profileImage }}
                                style={{  width: '100%',
                                 height: '100%',
                                 resizeMode: 'cover'}}
@@ -123,7 +172,7 @@ export default function HomePageMentor() {
                                 </View>
                           <View style={{flex:1}}>
      
-                        <Text style={appliedStyles.title}>Welcome {Loggeduser ? Loggeduser.firstName : "Guest"}, to your Home page!</Text>
+                        <Text style={appliedStyles.title}>Welcome {firstname}, to your Home page!</Text>
                         <Text style={appliedStyles.subtitle}>What to do next?</Text> <AnimatedArrow/>
                     </View>
                     </View>

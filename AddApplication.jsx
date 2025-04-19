@@ -29,6 +29,7 @@ import {
 import GeminiChat from "./GeminiChat";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
+import NavBar from "./NavBar";
 
 import { useContext } from "react";
 import { UserContext } from "./UserContext";
@@ -39,7 +40,7 @@ export default function AddApplication({ onSuccess }) {
 
   useEffect(() => {
     if (Loggeduser) {
-      setUserID(Loggeduser.userID);
+      setUserID(Loggeduser.id);
       console.log(Loggeduser);
     }
   }, [Loggeduser]);
@@ -220,9 +221,8 @@ export default function AddApplication({ onSuccess }) {
     setIsLoading(true); // הוספתי את זה - מפעיל את מצב הטעינה
     try {
       const API_URL =
-        Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/${userID}/applications`
-          : `http://192.168.1.92:7137/api/JobSeekers/${userID}/applications`;
+         `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${userID}/applications`
+          
 
       const isValidContact = //in case that the user open the contact switch but didn't add deatils.
         contact.ContactName.trim() !== "" || contact.ContactEmail.trim() !== "";
@@ -285,9 +285,8 @@ export default function AddApplication({ onSuccess }) {
 
     try {
       const API_URL =
-        Platform.OS === "web"
-          ? "https://localhost:5062/api/Application/fetch-job"
-          : "http://192.168.1.92:7137/api/Application/fetch-job";
+         "https://proj.ruppin.ac.il/igroup11/prod/api/Application/fetch-job"
+          
 
       const response = await fetch(API_URL, {
         method: "POST",
@@ -701,7 +700,10 @@ export default function AddApplication({ onSuccess }) {
           </View>
         )}
       </ScrollView>
+      <NavBar />
+
     </KeyboardAvoidingView>
+
   );
 }
 

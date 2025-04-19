@@ -60,22 +60,7 @@ export default function Application({ applicationID: propID }) {
     contactPhone: "",
   });
 
-  // משרה ידנית
-  /*const [application, setApplication] = useState({
-    applicationID: 1,
-    title: "Software Engineer",
-    companyName: "TechCorp",
-    location: "New York, NY",
-    url: "https://techcorp.com/jobs/software-engineer",
-    companySummary: "A leading tech company providing cutting-edge solutions.",
-    jobDescription:
-      "Responsible for developing and maintaining software applications.",
-    notes: "Looking for candidates with experience in React and Node.js.",
-    jobType: "Full Time",
-    isHybrid: true,
-    isRemote: false,
-    contacts: [],
-  });*/
+
 
   const [application, setApplication] = useState({
     applicationID: null,
@@ -118,7 +103,6 @@ export default function Application({ applicationID: propID }) {
     { label: "Student", value: "Student" },
   ];
 
-  //const userId = 6;
 
 
   
@@ -126,7 +110,7 @@ export default function Application({ applicationID: propID }) {
 useEffect(() => {
   if (Loggeduser) {
     console.log("Logged user:", Loggeduser);
-    console.log("User ID:", Loggeduser.userID);
+    console.log("User ID:", Loggeduser.id);
     setUser(Loggeduser);
   }
 }, [Loggeduser]);
@@ -159,12 +143,10 @@ useEffect(() => {
   
   const fetchApplication = async () => {
     try {
-      console.log("API call with ID:", applicationID, "User ID:", User.userID);
+      console.log("API call with ID:", applicationID, "User ID:", User.id);
       
       const API_URL =
-        Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/${User.userID}/applications/${applicationID}`
-          : `http://192.168.1.92:7137/api/JobSeekers/${User.userID}/applications/${applicationID}`;
+        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}`
           
       console.log("Fetch URL:", API_URL);
       
@@ -199,9 +181,7 @@ useEffect(() => {
     try {
       console.log("updating applicationID:", applicationID);
       const API_URL =
-        Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/${User.userID}/applications/${applicationID}`
-          : `http://192.168.1.92:7137/api/JobSeekers/${User.userID}/applications/${applicationID}`;
+         `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}`
 
       const response = await fetch(API_URL, {
         method: "PUT",
@@ -224,9 +204,7 @@ useEffect(() => {
   const handleDeleteApplication = async () => {
     try {
       const API_URL =
-        Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/deleteById/${User.userID}/${applicationID}`
-          : `http://192.168.1.92:7137/api/JobSeekers/deleteById/${User.userID}/${applicationID}`;
+         `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${User.id}/${applicationID}`
 
       const response = await fetch(API_URL, {
         method: "DELETE",
@@ -372,9 +350,7 @@ useEffect(() => {
       }));
 
       const API_URL =
-        Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/${User.userID}/applications/${applicationID}/contacts/${contactToEdit.contactID}`
-          : `http://192.168.1.92:7137/api/JobSeekers/${User.userID}/applications/${applicationID}/contacts/${contactToEdit.contactID}`;
+         `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}/contacts/${contactToEdit.contactID}`
 
       const response = await fetch(API_URL, {
         method: "PUT",
@@ -401,9 +377,7 @@ useEffect(() => {
       console.log("Attempting to delete contact with ID:", contactID);
       // עדכון ה-API URL עם ה-contactID שנשלח
       const API_URL =
-        Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/deleteContact/${User.userID}/applications/${applicationID}/contacts/${contactID}`
-          : `http://192.168.1.92:7137/api/JobSeekers/deleteContact/${User.userID}/applications/${applicationID}/contacts/${contactID}`;
+        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteContact/${User.id}/applications/${applicationID}/contacts/${contactID}`
 
       const response = await fetch(API_URL, {
         method: "DELETE",
@@ -462,9 +436,7 @@ useEffect(() => {
       };
 
       const API_URL =
-        Platform.OS === "web"
-          ? `http://localhost:5062/api/JobSeekers/${User.userID}/applications/${applicationID}/contacts`
-          : `http://192.168.1.92:7137/api/JobSeekers/${User.userID}/applications/${applicationID}/contacts`;
+        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}/contacts`
 
       const response = await fetch(API_URL, {
         method: "POST",

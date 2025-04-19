@@ -150,7 +150,7 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
 
   useEffect(() => {
     if (Loggeduser) {
-      setUserID(Loggeduser.userID);
+      setUserID(Loggeduser.id);
         console.log(Loggeduser);
       }
     }, [Loggeduser]);
@@ -160,7 +160,7 @@ useEffect(() => {
     try {
 
       // קריאה ל-API לפי ID כדי לקבל את כל הנתונים (כולל תחומים ושפות)
-      const response = await fetch(`http://localhost:5062/api/Users?userId=${userID}`);
+      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Users?userId=${userID}`);
       if (!response.ok) {
         console.error("Failed to fetch full user data from API.");
         return;
@@ -241,7 +241,7 @@ const pickImage = async () => {
       };
   
       // 3. ביצוע קריאת PUT עם ה- userId מתוך AsyncStorage
-      const response = await fetch(`http://localhost:5062/api/Users/${userID}`, 
+      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Users/${userID}`, 
         {
         method: "PUT",
         headers: {
@@ -254,11 +254,15 @@ const pickImage = async () => {
         const responseData = await response.json();
         console.log("User updated successfully:", responseData);
         // ✅ Add userID only to the local object you're storing
-        const userWithID = { ...updatedUser, userID };
-
+        const filteredUserData = {
+          password: updatedUser.password, // This is just an example; never store raw passwords without encryption
+          email: updatedUser.email,       // Store the email if needed
+          id: userID,      // Store the user id if needed
+          // Add other fields you want to save here
+        };
         // ✅ Save to AsyncStorage with userID included
-        await AsyncStorage.setItem("user", JSON.stringify(userWithID));
-        setLoggedUser(userWithID); // ← This updates the context immediately!
+        await AsyncStorage.setItem("user", JSON.stringify(filteredUserData));
+        setLoggedUser(filteredUserData); // ← This updates the context immediately!
 
         setPopupVisible(true);
       } else {
