@@ -14,6 +14,7 @@ import ModalRN  from 'react-native-modal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; // adjust the path
+import defaultProfile from './assets/defaultProfileImage.jpg'; // make sure this path is correct
 
   const { width,height } = Dimensions.get('window');
 
@@ -177,7 +178,9 @@ useEffect(() => {
         password: fullUserData.password || "",
         facebookLink: fullUserData.facebookLink || "",
         linkedinLink: fullUserData.linkedinLink || "",
-        picture: fullUserData.picture || "",
+        picture: fullUserData.picture === "string" 
+    ? defaultProfile 
+    : { uri: fullUserData.picture },
         experience: fullUserData.experience || "",
         language: fullUserData.language || [],
         careerField: fullUserData.careerField || [],
@@ -299,7 +302,7 @@ const pickImage = async () => {
 
           <View style={appliedStyles.imageContainer}>
             <TouchableOpacity onPress={pickImage} style={appliedStyles.imageWrapper}>
-              <Image source={{ uri: user.picture || "" }} style={appliedStyles.profileImage} />
+              <Image source={user.picture} style={appliedStyles.profileImage} />
               <TouchableOpacity onPress={pickImage} style={appliedStyles.editIcon}>
                 <AntDesign name="edit" size={20} color="white" />
               </TouchableOpacity>
@@ -472,7 +475,7 @@ const pickImage = async () => {
                   setUser({ ...user, facebookLink: text });
                   handleChange("facebookLink", text);
                 }}
-                placeholder="Facebook link"
+                placeholder="Facebook link (optional)"
 
               />
               {errors.facebookLink ? <Text style={appliedStyles.errorText}>{errors.facebookLink}</Text> : null}
@@ -488,7 +491,7 @@ const pickImage = async () => {
                   setUser({ ...user, linkedinLink: text });
                   handleChange("linkedinLink", text);
                 }}
-                placeholder="LinkedIn link"
+                placeholder="LinkedIn link (optional)"
 
               />
               {errors.linkedinLink ? <Text style={appliedStyles.errorText}>{errors.linkedinLink}</Text> : null}

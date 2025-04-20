@@ -18,12 +18,11 @@ import { UserContext } from './UserContext'; // adjust the path
 
 
 //
-const defaultImage = require('../prepWise/assets/womanImage.jpg'); // תמונה קבועה לאפליקציה (בדיקה בטלפון)
 
 const Profile = () => {
     const { Loggeduser,setLoggedUser} = useContext(UserContext);
   
-  const [isMentor, setIsMentor]=useState(false)
+  const [IsMentor, setIsMentor]=useState(false)
   const [firstName,setFirstName]=useState("")
   const [lastName,setLastName]=useState("")
   const [email,setEmail]=useState("")
@@ -100,11 +99,16 @@ const Profile = () => {
           // Convert response JSON to an object
         const userData = await response.json();   
         console.log(userData)
-    setProfileImage(userData.picture)
+        console.log(userData.picture)
+
+        if(userData.picture==="string") 
+          setProfileImage(require('./assets/defaultProfileImage.jpg'))  
+        else
+        setProfileImage({ uri: userData.picture })
     setFirstName(userData.firstName)
     setLastName(userData.lastName)
     setIsMentor(userData.isMentor)
-    console.log("mentor?",isMentor)
+    console.log("mentor?",IsMentor)
     console.log("firstName?",firstName)
 
     console.log("Profile Image URL:", profileImage);
@@ -162,7 +166,7 @@ const Profile = () => {
             <View style={styles.cardContainer}>
             <View style={styles.detailsContainer}>
         {/* תמונת הפרופיל */}
-        <Image source={{ uri: profileImage }} style={styles.profileImage} />
+        <Image source={ profileImage } style={styles.profileImage} />
         {/** 
         {Platform.OS === 'web' ? (
         profileImage ? (
@@ -190,7 +194,7 @@ const Profile = () => {
         {/* תיבה ראשונה - הגדרות */}
         <View style={styles.box}> 
           <TouchableOpacity style={styles.option} onPress={() => 
-            { if(isMentor)
+            { if(IsMentor)
               navigation.navigate("EditProfileMentor")
               else
               navigation.navigate("EditProfile")}}>
@@ -260,7 +264,7 @@ visible={popupVisible}
 
         {/* סרגל הניווט */}
         <View style={styles.tabContainer}>
-        {isMentor ? <NavBarMentor /> : <NavBar />}
+        {IsMentor ? <NavBarMentor /> : <NavBar />}
         </View>
       </ScrollView>
     </SafeAreaView>

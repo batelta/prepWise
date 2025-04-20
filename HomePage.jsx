@@ -109,8 +109,11 @@ useEffect(() => {
         console.log('user found ')
         
           // Convert response JSON to an object
-        const userData = await response.json();   
-    setProfileImage(userData.picture)
+        const userData = await response.json();
+        if(userData.picture==="string") 
+          setProfileImage(require('./assets/defaultProfileImage.jpg'))  
+        else
+    setProfileImage({ uri: userData.picture })
     setFirstname(userData.firstName)
        }
   
@@ -180,7 +183,7 @@ useEffect(() => {
 
                         <View  style={appliedStyles.profileImage}>
   <Image
-    source={{ uri: profileImage }}
+    source={ profileImage }
     style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
   />
 

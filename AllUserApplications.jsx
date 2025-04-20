@@ -114,7 +114,7 @@ export default function AllUserApplications() {
   const handleDelete = async (applicationID) => {
     try {
       const API_URL =
-        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${userID}/${applicationID}`
+        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${Loggeduser.id}/${applicationID}`
         
 
       console.log("🔍 Deleting application at URL:", API_URL);

@@ -260,10 +260,17 @@ export default function ApplicationSplitView() {
       }}
     />
   ) : selectedId ? (
-    <Application 
+    //////////////////////////////////change now
+    /*<Application 
       applicationID={selectedId} 
       key={selectedId} // חשוב מאוד! גורם ל-Application להתאפס כאשר המזהה משתנה
-    />
+    />*/
+    <Application  
+    applicationID={selectedId}  
+    key={selectedId}  
+    onDeleteSuccess={() => { fetchApps(Loggeduser.id);
+    setSelectedId(null);  }}/>
+
   ) : (
     <Text style={{ padding: 20 }}>
       Select an application to view details

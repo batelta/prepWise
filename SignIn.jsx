@@ -50,37 +50,40 @@ const SignIn = ({navigation}) => {
           //console.log("Response Body:", responseBody);
           console.log("response ok?", response.ok);
 
-          if(response.ok)
-           {
-            console.log('user found ')
-            
-              // Convert response JSON to an object
-            const userData = await response.json();   
-            console.log('user : ',userData)
-            const filteredUserData = {
-              password: userData.password, // This is just an example; never store raw passwords without encryption
-              email: userData.email,       // Store the email if needed
-              id: userData.userID,      // Store the user id if needed
-              // Add other fields you want to save here
-            };
-            console.log("filtered",filteredUserData)
-              //store the full user data if needed
-              await AsyncStorage.setItem("user", JSON.stringify(filteredUserData));
-              setLoggedUser(filteredUserData);
-            setIsMentor(userData.isMentor)
-            console.log(userData.isMentor)
-            setSuccessPopupVisible(true)
-
-           }
+          if (response.ok) {
+            const rawText = await response.text();
+            console.log("🧾 Raw response text:", rawText);
       
-      if(!response.ok){
-        setErrorPopupVisible(true)
-        throw new Error('failed to find user')
-      }
-        }catch(error){
-      console.log(error)
+            if (rawText === "") {
+              console.warn("❗ User not found (empty response)");
+              setErrorPopupVisible(true); // Show your custom popup
+              return;
+            }
+      
+            const userData = JSON.parse(rawText); // Safe to parse now
+            console.log("✅ Parsed user:", userData);
+      
+            const filteredUserData = {
+              password: userData.password,
+              email: userData.email,
+              id: userData.userID,
+            };
+      
+            await AsyncStorage.setItem("user", JSON.stringify(filteredUserData));
+            setLoggedUser(filteredUserData);
+            setIsMentor(userData.isMentor);
+            setSuccessPopupVisible(true); // Success popup
+          } else {
+            // If response is not ok (e.g., 400 or 500)
+            console.error("❌ API response not OK");
+            setErrorPopupVisible(true);
+          }
+      
+        } catch (error) {
+          console.error("🚨 Error in loginAsUser:", error);
+          setErrorPopupVisible(true);
         }
-    }
+      };
 
 
 
@@ -163,8 +166,8 @@ const SignIn = ({navigation}) => {
       <Text style={appliedStyles.CreateAccounttext}
       onPress={()=> navigation.navigate('SignUp')}>Create Account</Text>
       </View>
-        <TouchableOpacity style={appliedStyles.loginButton}>
-          <Text style={appliedStyles.loginText} onPress={() => loginAsUser(email, password)}>LOGIN</Text>
+        <TouchableOpacity style={appliedStyles.loginButton} onPress={() => loginAsUser(email, password)}>
+          <Text style={appliedStyles.loginText} >LOGIN</Text>
         </TouchableOpacity>
       </View>
 

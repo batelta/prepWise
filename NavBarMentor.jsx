@@ -27,7 +27,7 @@ const ComingSoonScreen = () => (
 );
 
 const mobileNavItems = [
-  { name: "Home", screen: "HomePage" },
+  { name: "Home", screen: "HomePageMentor" },
   { name: "Messenger", screen: "ComingSoonChat", disabled: true },
   { name: "Add Offer", screen: "ComingSoonOffer" },
   { name: "Calendar", screen: "ComingSoonCalendar", disabled: true },

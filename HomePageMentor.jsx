@@ -79,7 +79,10 @@ export default function HomePageMentor() {
             
               // Convert response JSON to an object
             const userData = await response.json();   
-        setProfileImage(userData.picture)
+            if(userData.picture==="string") 
+                setProfileImage(require('./assets/defaultProfileImage.jpg'))  
+              else
+          setProfileImage({ uri: userData.picture })        
         setFirstname(userData.firstName)
            }
       
@@ -163,7 +166,7 @@ export default function HomePageMentor() {
                         <View style={appliedStyles.profileImageContainer}>
 
                         <View  style={appliedStyles.profileImage}>
-                        <Image source={{ uri: profileImage }}
+                        <Image source={profileImage}
                                style={{  width: '100%',
                                 height: '100%',
                                 resizeMode: 'cover'}}

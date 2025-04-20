@@ -93,6 +93,10 @@ export default function Application({ applicationID: propID }) {
   const [customPopupIcon, setCustomPopupIcon] = useState("information");
   const [customPopupConfirmation, setCustomPopupConfirmation] = useState(false);
   const [onConfirmAction, setOnConfirmAction] = useState(() => () => {});
+  //////
+  const [onPopupOk, setOnPopupOk] = useState(() => () => {});
+
+
 
   const jobTypeList = [
     { label: "Full Time", value: "FullTime" },
@@ -210,19 +214,36 @@ useEffect(() => {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to delete application");
-
+      if (!response.ok) 
+      throw new Error("Failed to delete application");
+  
       setCustomPopupMessage("Application deleted successfully!");
       setCustomPopupIcon("check-circle");
       setCustomPopupConfirmation(false);
       setCustomPopupVisible(true);
 
-      if (Platform.OS === "web") {
-        window.location.reload(); // לרענן רשימה ב־SplitView
+      
+   /* if (Platform.OS === "web") {
+        //////////change now 
+       // window.location.reload(); // לרענן רשימה ב־SplitView
+
+       setTimeout(() => {
+        navigation.replace("ApplicationSplitView");
+      }, 1000); 
+
+
       } else {
         // אם במובייל, נחזור לדף הקודם
         navigation.goBack();
       }
+       */
+      setOnPopupOk(() => () => {
+        if (Platform.OS === "web") {
+          navigation.replace("ApplicationSplitView");
+        } else {
+          navigation.goBack();
+        }
+      });
     } catch (error) {
       console.error("Error deleting application:", error);
       // הצג פופאפ שגיאה
@@ -230,6 +251,7 @@ useEffect(() => {
       setCustomPopupIcon("alert-circle");
       setCustomPopupConfirmation(false);
       setCustomPopupVisible(true);
+      setOnPopupOk(() => () => {}); 
     }
   };
 
@@ -1045,7 +1067,7 @@ useEffect(() => {
           !customPopupVisible && { display: "none" },
         ]}
       >
-        <CustomPopup
+        {/*<CustomPopup
           visible={customPopupVisible}
           onDismiss={() => setCustomPopupVisible(false)}
           icon={customPopupIcon}
@@ -1056,7 +1078,30 @@ useEffect(() => {
             onConfirmAction(); // מבצע את הפעולה אחרי אישור
           }}
           onCancel={() => setCustomPopupVisible(false)}
-        />
+        />*/}
+        <CustomPopup
+  visible={customPopupVisible}
+  onDismiss={() => {
+    setCustomPopupVisible(false);
+    onPopupOk(); // קורא לפעולה שהוגדרה אחרי לחיצה על OK
+  }}
+  icon={customPopupIcon}
+  message={customPopupMessage}
+  isConfirmation={customPopupConfirmation}
+  onConfirm={() => {
+    setCustomPopupVisible(false);
+    onConfirmAction(); // מיועד לפופאפ מסוג Yes/No
+  }}
+  onCancel={() => setCustomPopupVisible(false)}
+/>
+
+        
+        
+
+
+
+
+
       </View>
       {Platform.OS !== "web" && (
         <TouchableOpacity
