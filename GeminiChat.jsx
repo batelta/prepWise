@@ -4,8 +4,9 @@ import { TextInput, Button, Card, Text, ActivityIndicator } from "react-native-p
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { KeyboardAvoidingView, Platform } from "react-native";
 
-const API_KEY = "AIzaSyChUXRg1ZyJOG1mxzqVuhnZE3vN89V3YSY"; 
+const API_KEY = "AIzaSyDtX7_UXPgZWz-nDuZFApKJvPk_AyV9-D4"; 
 
 const GeminiChat = () => {
   const [userInput, setUserInput] = useState("");
@@ -38,19 +39,27 @@ const GeminiChat = () => {
   const renderMessage = ({ item }) => (
     <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5, alignSelf: item.sender === "user" ? "flex-end" : "flex-start" }}>
       {item.sender === "bot" && <MaterialCommunityIcons name="robot" size={24} color="#003D5B" style={{ marginRight: 5 }} />}
-      <Card style={{
-        backgroundColor: item.sender === "user" ? "#gray" : "#9FF9D5",
+      <Card>
+        <Card.Content style={{
+        backgroundColor: item.sender === "user" ? "#E0E0E0" : "#9FF9D5",
         padding: 10,
         borderRadius: 10,
-        maxWidth: "80%",
-      }}>
-        <Text>{item.text}</Text>
+        maxWidth: "90%", // made it wider
+        minWidth: 80,     // prevents super narrow messages like just "hi"      
+        }}>
+        <Text style={{ flexShrink: 1 }}>{item.text}</Text>
+        </Card.Content>
       </Card>
       {item.sender === "user" && <Ionicons name="person-circle-outline" size={24} color="#003D5B" style={{ marginLeft: 5 }} />}
     </View>
   );
 
   return (
+    <KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === "ios" ? "padding" : "height"}
+  keyboardVerticalOffset={250} // adjust this if needed
+>
     <View style={styles.container}>
       <FlatList
         data={messages}
@@ -75,6 +84,7 @@ const GeminiChat = () => {
         </Button>
       </View>
     </View>
+    </KeyboardAvoidingView>
   );
 };
 

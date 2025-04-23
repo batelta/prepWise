@@ -20,7 +20,6 @@ import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 
 
-
 const ComingSoonScreen = () => (
   <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
     <Text style={{ fontSize: 16, color: "#888" }}>This feature is coming soon!</Text>
@@ -28,9 +27,9 @@ const ComingSoonScreen = () => (
 );
 
 const mobileNavItems = [
-  { name: "Home", screen: "HomePage" },
+  { name: "Home", screen: "HomePageMentor" },
   { name: "Messenger", screen: "ComingSoonChat", disabled: true },
-  { name: "Add Job", screen: "AddApplication" },
+  { name: "Add Offer", screen: "ComingSoonOffer" },
   { name: "Calendar", screen: "ComingSoonCalendar", disabled: true },
   { name: "Profile", screen: "Profile" },
   { name: "Menu", screen: "ComingSoonMenu", disabled: true },
@@ -70,7 +69,7 @@ const MobileNavBar = () => {
           
           if (route.name === "Home") iconName = isActive ? "home" : "home-outline";
           else if (route.name === "Messenger") iconName = isActive ? "chatbubble" : "chatbubble-outline";
-          else if (route.name === "Add Job") iconName = isActive ? "add-circle" : "add-circle-outline";
+          else if (route.name === "Add Offer") iconName = isActive ? "add-circle" : "add-circle-outline";
           else if (route.name === "Calendar") iconName = isActive ? "calendar" : "calendar-outline";
           else if (route.name === "Profile") iconName = isActive ? "person" : "person-outline";
           else if (route.name === "Menu") iconName = isActive ? "menu" : "menu-outline";
@@ -115,18 +114,20 @@ const MobileNavBar = () => {
   );
 };
 
+
+
 const WebNavBar = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const [hovered, setHovered] = React.useState("");
 
   const navItems = [
-    { name: "Home", screen: "HomePage" },
-    { name: "Messenger ", screen: "ComingSoonChat", disabled: true },
-    { name: "Add Job", screen: "ApplicationSplitView", params: { startWithAddNew: true } },
+    { name: "Home", screen: "HomePageMentor" },
+    { name: "Messenger", screen: "ComingSoonChat", disabled: true },
+    { name: "Add Offer", screen: "ComingSoonOffer", disabled: true },
     { name: "Calendar", screen: "ComingSoonCalendar" , disabled: true},
     { name: "Profile", screen: "Profile" },
-    { name: "Menu", screen: "ComingSoonMenu", disabled: true },
+    { name: "Menu", screen: "ComingSoonMenu" , disabled: true},
   ];
 
   return (
@@ -143,9 +144,9 @@ const WebNavBar = () => {
                 key={item.screen}
                 onPress={() => {
                   if (!item.disabled) {
-                    navigation.navigate(item.screen, item.params); // ✅ passes the param if it exists
+                    navigation.navigate(item.screen);
                   }
-                }}                
+                  }}
                 onMouseEnter={() => setHovered(item.screen)}
                 onMouseLeave={() => setHovered(null)}
               >
@@ -166,7 +167,7 @@ const WebNavBar = () => {
   );
 };
 
-const NavBar = () => {
+const NavBarMentor = () => {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_700Bold,
@@ -243,4 +244,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NavBar;
+export default NavBarMentor;

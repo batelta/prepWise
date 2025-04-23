@@ -1,84 +1,86 @@
 import * as React from 'react';
 import { Button, Provider as PaperProvider } from 'react-native-paper';
-import { Linking, Text, View } from 'react-native';
-import { TextInput } from 'react-native-paper';
-import { Image } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-// Define your custom theme
-const theme = {
-  colors: {
-    primary: '#BFB4FF', // Button color
-    accent: '#9FF9D5',  // Highlight color
-    background: '#FDFCF5', // Light cream background
-    text: '#003D5B',    // Text color
-  },
-  headline:{
-fontFamily:'Inter',
-color:'#003D5B',
-fontSize:22,
-fontWeight:'regular',
-marginBottom:40
-  },
-  SecHeadline:{
-    fontFamily:'Inter',
-color:'#003D5B',
-fontSize:18,
-fontWeight:'regular',
-marginBottom:40
-  },
-  button:
-  {width:'80%',
-    marginTop:20
-  },
-      textInput:{
-        width: '80%',
-    marginBottom: 15,
-    backgroundColor: '#F2F2F2',
-    color:'#F2F2F2'
-  },
-      logo:{
-        position:'absolute',
-        top:0,
-        width:'30%',
-        resizeMode:'contain'
-      },
-      passwordtext:{
-        textDecorationLine:'underline',
-        color:'#003D5B',
-      },
-};
+import { Text, View, StyleSheet, TouchableOpacity,Image } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Inter_400Regular,
+  Inter_300Light, Inter_700Bold,Inter_100Thin,
+  Inter_200ExtraLight } from '@expo-google-fonts/inter';
 
-
-export default function SignUp({navigation}) {
-
-  //textinput
-  const [Emailtext, setEmailText]=React.useState("");
-  const [Passwordtext, setPasswordText]=React.useState("");
-
+export default function SignUp({ navigation }) {
+    const [fontsLoaded] = useFonts({
+        Inter_400Regular,
+        Inter_700Bold,
+        Inter_100Thin,
+        Inter_200ExtraLight,
+        Inter_300Light
+      });
   return (
-    <PaperProvider theme={theme}>
-      <View style={{ flex: 1, justifyContent: 'center',
-         alignItems: 'center', 
-         borderStyle:'solid',
-         backgroundColor: theme.colors.background ,
-         position:'relative'}}>
-     <Image source={require('./assets/prepWise Logo.png')}
-           style={theme.logo}/>
-      <Text style={theme.SecHeadline}>Sign Up</Text>
-           
-      <Button mode="contained" 
-      style={theme.button}
-      onPress={()=>navigation.navigate('SignUpJob')}
-      >Sign Up as a Wise Job Seeker</Button>
-        <Button mode="contained" 
-      style={theme.button}>Sign Up as a Mentor</Button>
-<View style={{flexDirection:'row',marginTop:30}}>
-<Text style={theme.footer}>Already have an account? </Text>
-<Text style={theme.passwordtext}
-onPress={()=>navigation.navigate('SignIn')}>Sign In</Text>
-</View>
+    <View style={styles.container}>
+      <View style={styles.loginBox}>
+        <View style={styles.avatarContainer}>
+       
+      <Image source={require('./assets/prepWise Logo.png')} style={styles.avatarContainer} />
+         </View>
+<View style={styles.buttonsContainer}>
+        <TouchableOpacity 
+          mode="contained" 
+          style={styles.loginButton}
+          onPress={() => navigation.navigate('SignUpJobSeeker')}
+        >
+          <Text style={styles.signinText}>Sign Up as a Wise Job Seeker</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity mode="contained" style={styles.loginButton}
+        onPress={() => navigation.navigate('SignUpMentor')}
+>
+<Text style={styles.signinText}>Sign Up as a Mentor</Text>
+        </TouchableOpacity>
+
+        </View>
+  
       </View>
-    </PaperProvider>
+    </View>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loginBox: {
+    width: 500,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 5,
+  },
+  avatarContainer: {
+    width: 90, // Set a fixed width
+    height: 90, // Set a fixed height (same as width)
+    borderRadius: 45, // Half of width/height to make it round
+    justifyContent: 'center',
+    alignItems: 'center',
+    resizeMode:'contain'
+  },
+
+  signinText:{
+      color: 'white',
+      fontFamily: 'Inter_300Light',
+  
+  },
+  loginButton: {
+    backgroundColor: '#BFB4FF',
+    padding: 12,
+    borderRadius: 5,
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 20,  // Add margin to separate button from inputs
+  },
+  buttonsContainer:{
+    justifyContent:'space-evenly'
+  }
+  
+});

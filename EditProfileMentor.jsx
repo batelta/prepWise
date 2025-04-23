@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text,Dimensions, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView,Platform  } from "react-native";
+import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView,Platform  } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -8,20 +8,17 @@ import { Button, Modal, Portal, Checkbox, Provider as PaperProvider } from 'reac
 import LanguageSelector from './LanguageSelector';
 import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
-import NavBar from "./NavBar";
-import CustomPopup from "./CustomPopup";   
-import ModalRN  from 'react-native-modal';
+import NavBarMentor from "./NavBarMentor";
+import CustomPopup from "./CustomPopup"; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; // adjust the path
 import defaultProfile from './assets/defaultProfileImage.jpg'; // make sure this path is correct
 
-  const { width,height } = Dimensions.get('window');
 
-
-const EditProfile = () => {
-  const { Loggeduser ,setLoggedUser } = useContext(UserContext);
-
+const EditProfileMentor = () => {
+    const { Loggeduser ,setLoggedUser} = useContext(UserContext);
+  
 const [popupVisible, setPopupVisible] = useState(false);
  
 const navigation = useNavigation();
@@ -45,6 +42,8 @@ const navigation = useNavigation();
     experience: "",
     language:[],
     careerField:[],
+    company:"",
+    mentoringType:""
   });
 
 
@@ -56,6 +55,7 @@ const [errors, setErrors] = useState({
   password: "",
   facebookLink: "",
   linkedinLink: "",
+  company:""
 });
 
 
@@ -122,9 +122,26 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
       setErrors(prevErrors => ({ ...prevErrors, linkedinLink: "" }));
     }
   }
+  if (field === "company") {
+    if (!value.trim()) {
+        setErrors(prevErrors => ({ ...prevErrors, company: "" }));
+    } else if (!/^[A-Za-z]{1,15}$/.test(value)) {
+      setErrors(prevErrors => ({ ...prevErrors, company: "Only letters, up to 15 characters." }));
+    } else {
+      setErrors(prevErrors => ({ ...prevErrors, company: "" }));
+    }
+  }
 };
 
+ 
   
+     const [mentoringModalVisible, setMentoringModalVisible] = React.useState(false);
+       const [selectedMentoring, setSelectedMentoring] = React.useState([]);
+       const mentoringtypes = [
+         "Journey ",
+         "One-time Session",
+         "All-in-One"
+       ];
   //const theme = useTheme();  // הגדרת ה-theme
   const [fieldModalVisible, setFieldModalVisible] = React.useState(false);
   const [selectedFields, setSelectedFields] = React.useState([]);
@@ -147,21 +164,21 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
     "I'm a seasoned expert in my area. (10+ years)"
   ];
   const [selectedLanguages, setSelectedLanguages] = useState([]);
-  const [userID, setUserID] = useState(null); // To store userID
 
+    const [userID, setUserID] = useState(null); // To store userID
+  
   useEffect(() => {
     if (Loggeduser) {
       setUserID(Loggeduser.id);
         console.log(Loggeduser);
       }
     }, [Loggeduser]);
-
 useEffect(() => {
   const fetchUserDetails = async () => {
     try {
-
+    console.log("id",userID)
       // קריאה ל-API לפי ID כדי לקבל את כל הנתונים (כולל תחומים ושפות)
-      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Users?userId=${userID}`);
+      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Mentors/${userID}`);
       if (!response.ok) {
         console.error("Failed to fetch full user data from API.");
         return;
@@ -179,17 +196,18 @@ useEffect(() => {
         facebookLink: fullUserData.facebookLink || "",
         linkedinLink: fullUserData.linkedinLink || "",
         picture: fullUserData.picture === "string" 
-    ? defaultProfile 
-    : { uri: fullUserData.picture },
+            ? defaultProfile 
+            : { uri: fullUserData.picture },
         experience: fullUserData.experience || "",
         language: fullUserData.language || [],
         careerField: fullUserData.careerField || [],
+        company:fullUserData.company||"",
+        mentoringType:fullUserData.mentoringType||""
       });
 
       // עדכון התחומים והשפות לתצוגה
       setSelectedFields(fullUserData.careerField || []);
       setSelectedLanguages(fullUserData.language || []);
-
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
@@ -224,10 +242,9 @@ const pickImage = async () => {
   }
 };
 
-  
   const saveChanges = async () => {
     try {
-    
+  
   
       // 2. יצירת אובייקט עדכון המשתמש
       const updatedUser = {
@@ -241,11 +258,14 @@ const pickImage = async () => {
         careerField: selectedFields,
         language: selectedLanguages,
         picture: base64Image || user.picture,
+        company:user.company,
+        mentoringType:user.mentoringType,
+        isMentor:true
       };
-  
+      console.log('Sending updated user:', updatedUser); // ← Log before sending
+
       // 3. ביצוע קריאת PUT עם ה- userId מתוך AsyncStorage
-      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Users/${userID}`, 
-        {
+      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Mentors/${userID}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -394,33 +414,28 @@ const pickImage = async () => {
                 mode="contained"
                 onPress={() => setFieldModalVisible(true)}
                 style={appliedStyles.input}
-                labelStyle={appliedStyles.modalLabelText}
-                contentStyle={appliedStyles.modalText} 
-                >
+                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
+                contentStyle={{ justifyContent: 'flex-start'}}
+              >
                 {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
               </Button>
-               <ModalRN 
-                  isVisible={fieldModalVisible} 
-                  onBackdropPress={() => setFieldModalVisible(false)} 
-                  onBackButtonPress={() => setFieldModalVisible(false)}
-                  style={{ justifyContent: 'flex-end', margin: 0 }} // ⬅️ makes it appear from the bottom
-              
-                >
-                  <View style={appliedStyles.modalBox}>
-                    {Fields.map((field, index) => (
-                      <Checkbox.Item 
-                        key={index} 
-                        label={field} 
-                        status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
-                        onPress={() => toggleField(field)} 
-                        color="#d6cbff"
-                      />
-                    ))}
-                    <Button onPress={() => setFieldModalVisible(false)}
-                    labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}}
-                       >Done</Button>
-                  </View>
-                </ModalRN>
+              <Portal>
+                <Modal visible={fieldModalVisible} onDismiss={() => setFieldModalVisible(false)} contentContainerStyle={appliedStyles.modalContent}>
+                  {Fields.map((field, index) => (
+                    <Checkbox.Item 
+                      key={index} 
+                      label={field} 
+                      status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
+                      onPress={() => toggleField(field)} 
+                       labelStyle={{ fontFamily: "Inter_400Regular" }}
+                       color="#d6cbff"
+                    />
+                  ))}
+                  <Button onPress={() => setFieldModalVisible(false)} 
+                  labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}} 
+                    >Done</Button>
+                </Modal>
+              </Portal>
             </View>
     
             {/* Experience */}
@@ -430,38 +445,63 @@ const pickImage = async () => {
                 mode="contained"
                 onPress={() => setExperienceModalVisible(true)}
                 style={appliedStyles.input}
-                labelStyle={appliedStyles.modalLabelText}
-                contentStyle={appliedStyles.modalText} 
-                >
+                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
+                contentStyle={{ justifyContent: 'flex-start'}}
+              >
                 {user.experience || "Select Your Experience Level"}
               </Button>
-              <ModalRN 
-                 isVisible={experienceModalVisible} 
-                 onBackdropPress={() => setExperienceModalVisible(false)} 
-                 onBackButtonPress={() => setExperienceModalVisible(false)}
-                 style={{ justifyContent: 'flex-end', margin: 0 }} // ⬅️ makes it appear from the bottom
-             
-               >
-                 <View style={appliedStyles.modalBox}>
-                     {experiences.map((exp, index) => (
-                 <Checkbox.Item key={index} label={exp} status={user.experience === exp ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, experience: exp })}
+              <Portal>
+                <Modal visible={experienceModalVisible} onDismiss={() => setExperienceModalVisible(false)} contentContainerStyle={[appliedStyles.modalContent, { backgroundColor: 'white' }]}>
+                  {experiences.map((exp, index) => (
+                    <Checkbox.Item key={index} label={exp} status={user.experience === exp ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, experience: exp })}
                     labelStyle={{ fontFamily: "Inter_400Regular" }}
-                     color="#d6cbff"/>
-                   ))}
-                   <Button onPress={() => setExperienceModalVisible(false)}
-                 labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}} 
-              >Done</Button>
-                 </View>
-               </ModalRN>
+                    color="#d6cbff"/>
+                  ))}
+                  <Button onPress={() => setExperienceModalVisible(false)}
+                      labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}} 
+                    >Done</Button>
+                </Modal>
+              </Portal>
+            </View>
+       {/* mentoringType Modal */}
+              <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Mentoring Type</Text>
+              <Button 
+                mode="contained"
+                onPress={() => setMentoringModalVisible(true)}
+                style={appliedStyles.input}
+                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
+                contentStyle={{ justifyContent: 'flex-start'}}
+              >
+                {user.mentoringType || "Select Your Mentoring Type"}
+              </Button>
+              <Portal>
+                <Modal visible={mentoringModalVisible} onDismiss={() => setMentoringModalVisible(false)} contentContainerStyle={[appliedStyles.modalContent, { backgroundColor: 'white' }]}>
+                  {mentoringtypes.map((type, index) => (
+                    <Checkbox.Item key={index} label={type} status={user.mentoringType === type ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, mentoringType: type })} 
+                    labelStyle={{ fontFamily: "Inter_400Regular" }}
+                    color="#d6cbff"
+                    />
+                  ))}
+                  <Button onPress={() => setMentoringModalVisible(false)}
+                     labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}}
+                    >Done</Button>
+                </Modal>
+              </Portal>
             </View>
     
             {/* Languages */}
             <View style={appliedStyles.inputContainer}>
               <Text style={appliedStyles.label}>Languages</Text>
+             {/* <Text style={ { backgroundColor: "#FFFFF", padding: 10, borderRadius: 5 }}>
+                {selectedLanguages.length > 0 ? selectedLanguages.join(", ") : "Pick Items (0 selected)"}
+              </Text>*/}
+              
               <LanguageSelector 
                 selectedLanguages={selectedLanguages} 
-                setSelectedLanguages={setSelectedLanguages} />
-                </View>
+                setSelectedLanguages={setSelectedLanguages}
+                
+              /></View>
             
             
     
@@ -497,6 +537,42 @@ const pickImage = async () => {
               {errors.linkedinLink ? <Text style={appliedStyles.errorText}>{errors.linkedinLink}</Text> : null}
             </View>
     
+      {/* Company */}
+      <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Company</Text>
+              <TextInput
+                style={appliedStyles.input}
+                value={user.company}
+                onChangeText={(text) => {
+                  setUser({ ...user, company: text });  // עדכון ה-state של firstName
+                  handleChange("company", text);  // קריאה לפונקציה handleChange לביצוע הבדיקה
+                }}
+                placeholder="Company (optional)"
+                placeholderText={appliedStyles.placeholderText}
+
+              />
+              {errors.company ? <Text style={appliedStyles.errorText}>{errors.company}</Text> : null}
+            </View>
+              {/* mentoringType Modal */}
+              <View style={appliedStyles.inputContainer}>
+              <Text style={appliedStyles.label}>Mentoring Type</Text>
+              <Button 
+                mode="contained"
+                onPress={() => setMentoringModalVisible(true)}
+                style={appliedStyles.input}
+                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight' }}
+              >
+                {user.mentoringType || "Select Your Mentoring Type"}
+              </Button>
+              <Portal>
+                <Modal visible={mentoringModalVisible} onDismiss={() => setMentoringModalVisible(false)} contentContainerStyle={[appliedStyles.modalContent, { backgroundColor: 'white' }]}>
+                  {mentoringtypes.map((type, index) => (
+                    <Checkbox.Item key={index} label={type} status={user.mentoringType === type ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, mentoringType: type })} />
+                  ))}
+                  <Button onPress={() => setMentoringModalVisible(false)}>Done</Button>
+                </Modal>
+              </Portal>
+            </View>
           {/* Save Button */}
           <View style={appliedStyles.footerContainer}>
             <TouchableOpacity style={appliedStyles.saveButton} onPress={saveChanges}>
@@ -504,9 +580,10 @@ const pickImage = async () => {
             </TouchableOpacity>
           </View>
          
+          
 
           <View style={{ flex: 1 }}>
-          {Platform.OS === "web" && <NavBar />} {/* מציג רק ב-Web */}
+          {Platform.OS === "web" && <NavBarMentor />} {/* מציג רק ב-Web */}
           </View>
           </View>
         </ScrollView>
@@ -522,10 +599,10 @@ const styles = StyleSheet.create({
   imageContainer: {flexDirection:'row',alignSelf:'flex-start',marginLeft: 15,marginBottom:20},
   profileImage: {width: 150,height:  150,
   borderRadius:  80,borderWidth: 3,borderColor: "white",},
-  inputContainer: { width: "80%", marginBottom: 10 },
+  inputContainer: { width: "80%", marginBottom: 10, },
   //input: { backgroundColor: "#F2F2F2", padding: 15, borderRadius: 20, width: "100%", color: "#A9A9A9",fontFamily:"Inter_300Light", },
   input:{width: '100%',padding:1,marginVertical: 8,borderWidth: 1,fontFamily:'Inter_200ExtraLight',borderColor: '#ccc',
-  borderRadius: 6,backgroundColor: '#fff',paddingLeft:0,height: 50,  paddingLeft: 10,},
+  borderRadius: 6,backgroundColor: '#f9f9f9',paddingLeft:0,height: 50,  paddingLeft: 10,},
   label: { fontSize: 14, color: "#003D5B", marginBottom: 5,fontFamily:"Inter_300Light",},
   passwordContainer: { flexDirection: "row", alignItems: "center", },
   eyeIcon: { position: "absolute", right: 15 },
@@ -539,31 +616,6 @@ const styles = StyleSheet.create({
   cardContainer:{width:"100%",marginLeft:95},
   overlay: {position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
   justifyContent: "center",alignItems: "center",zIndex: 9999,},
-  modalText:{
-    justifyContent: 'left', 
-    paddingLeft:1,
-    borderRadius: 10
-  },
-  modalBox: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
-    width: width * 0.9,
-    alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalLabelText:{
-    color: "#A9A9A9", fontSize:13,
-     fontFamily:'Inter_200ExtraLight',
-      marginLeft:0,
-      fontSize:14
-  },
 });
 
 const Webstyles = StyleSheet.create({
@@ -577,7 +629,7 @@ const Webstyles = StyleSheet.create({
   borderRadius:  130 ,borderWidth: 3,borderColor: "white",},
   inputContainer: { width: "80%", marginBottom: 10},
   input:{width: '100%',padding:1,marginVertical: 8,borderWidth: 1,fontFamily:'Inter_200ExtraLight',borderColor: '#ccc',
-  borderRadius: 6,backgroundColor: '#fff',paddingLeft:0,height: 50,  paddingLeft: 10,color: "#A9A9A9",},
+  borderRadius: 6,backgroundColor: '#f9f9f9',paddingLeft:0,height: 50,  paddingLeft: 10,color: "#A9A9A9",},
   label: { fontSize: 14, color: "#003D5B", marginBottom: 5,fontFamily:"Inter_300Light", },
   passwordContainer: { flexDirection: "row", alignItems: "center" },
   eyeIcon: { position: "absolute", right: 15 },
@@ -589,32 +641,8 @@ const Webstyles = StyleSheet.create({
   modalContent: {backgroundColor: "white",width:"35%",marginLeft:580,borderRadius:15},//חלונית מודל של התחומי קריירה
   cardContainer:{width:"35%",backgroundColor: "white",borderRadius: "12px",boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
   padding: "20px",alignItems:"center",position: "relative",zIndex:1,},
-  modalText:{
-    justifyContent: 'left', 
-    paddingLeft:1,
-    borderRadius: 10
-  },
-  modalBox: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
-    width: '50%',
-    alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalLabelText:{
-    color: "#888", fontSize:13,
-     fontFamily:'Inter_200ExtraLight',
-      marginLeft:1,
-  },
 });
 
 
 
-export default EditProfile;
+export default EditProfileMentor;
