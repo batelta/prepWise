@@ -1,8 +1,6 @@
-import { View, Text, ImageEditor, ScrollView, Image, TouchableOpacity, Platform, StyleSheet, SafeAreaView, Alert } from "react-native";
-import { PlusCircle } from "lucide-react-native";
+import { View, Text, ScrollView, Image, TouchableOpacity, Platform, StyleSheet, SafeAreaView, Alert } from "react-native";
 import NavBarMentor from "./NavBarMentor";
-import { AnimatedCircularProgress } from "react-native-circular-progress";
-import { FAB,Card } from "react-native-paper";
+import { Card } from "react-native-paper";
 import { useEffect, useState } from "react";
 import { useFonts } from 'expo-font';
 import { Inter_400Regular,
@@ -11,14 +9,12 @@ import { Inter_400Regular,
 import AnimatedArrow from './AnimatedArrow'
 import AnimatedPlusIcon from "./AnimatedPlusIcon";
 
-import CustomPopup from "./CustomPopup"; // Import the custom popup
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import GeminiChat from './GeminiChat';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useContext } from 'react';
-import { UserContext } from './UserContext'; // adjust the path
+import { UserContext } from './UserContext'; 
 
-const progress = 0; // 75% completed
+const progress = 0; //just for now
 
 
 export default function HomePageMentor() {
@@ -26,8 +22,6 @@ export default function HomePageMentor() {
 
     const [showChat, setShowChat] = useState(false);
 
-    ////just checking
-   {/*    const [successPopupVisible, setSuccessPopupVisible] = useState(true);*/}
    const [user, setUser] = useState(null);
    const [profileImage, setProfileImage] = useState(null);
    const [firstname, setFirstname] = useState("Guest");

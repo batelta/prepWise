@@ -1,8 +1,7 @@
-import { View, Text,ActivityIndicator, ImageEditor, ScrollView, Image, TouchableOpacity, Platform, StyleSheet, SafeAreaView, Alert } from "react-native";
-import { PlusCircle } from "lucide-react-native";
+import { View, Text,ActivityIndicator, ScrollView, Image, TouchableOpacity, Platform, StyleSheet, SafeAreaView, Alert } from "react-native";
 import NavBar from "./NavBar";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
-import { FAB,Card } from "react-native-paper";
+import { Card } from "react-native-paper";
 import { useEffect, useState } from "react";
 import { useFonts } from 'expo-font';
 import { Inter_400Regular,
@@ -10,20 +9,16 @@ import { Inter_400Regular,
   Inter_200ExtraLight } from '@expo-google-fonts/inter';
 import AnimatedArrow from './AnimatedArrow'
 import AnimatedPlusIcon from "./AnimatedPlusIcon";
-
-import CustomPopup from "./CustomPopup"; // Import the custom popup
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import GeminiChat from './GeminiChat';
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
-
 import { useContext } from 'react';
-import { UserContext } from './UserContext'; // adjust the path
+import { UserContext } from './UserContext'; 
 
-const progress = 0; // 75% completed
+const progress = 0; // just for now
 
 export default function HomePage() {
     const { Loggeduser } = useContext(UserContext);
@@ -34,12 +29,9 @@ export default function HomePage() {
     const [showChat, setShowChat] = useState(false);
  const [applications, setApplications] = useState([]);
   const [loadingApp, setLoadingApp] = useState(true);
-    ////just checking
-   {/*    const [successPopupVisible, setSuccessPopupVisible] = useState(true);*/}
    const [profileImage, setProfileImage] = useState(null);
    const [firstname, setFirstname] = useState("Guest");
 
-  // const [userID, setUserID] = useState(null); // To store userID
 
  // This runs only once when Loggeduser is first set
 useEffect(() => {
@@ -100,8 +92,6 @@ useEffect(() => {
         })
       });
 
-      //const responseBody = await response.text();  // Use text() instead of json() to handle any response format
-      //console.log("Response Body:", responseBody);
       console.log("response ok?", response.ok);
 
       if(response.ok)
@@ -131,7 +121,7 @@ useEffect(() => {
             const API_URL =
               `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${Loggeduser.id}/${applicationID}`
       
-            console.log("🔍 Deleting application at URL:", API_URL);
+            console.log("Deleting application at URL:", API_URL);
       
             const response = await fetch(API_URL, { method: "DELETE" });
       
@@ -173,7 +163,6 @@ useEffect(() => {
                 {/** logo component is here only for mobile*/}
                 <LogoImage />
                 <View style={appliedStyles.container}>
-                     {/**Success popup */}
                  
                     <View style={appliedStyles.header}>
                      
@@ -187,8 +176,6 @@ useEffect(() => {
     style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
   />
 
-
-                   
                                 </View>
                                 </View>
                           <View style={{flex:1}}>
@@ -236,8 +223,6 @@ useEffect(() => {
                     </View>
                 </View>
        
-{/**trying to display jobs */}
-{/* Applications Section */}
 {/* Applications Section */}
 <View style={appliedStyles.Applicationsection}>
     <Text style={appliedStyles.ApplicationsectionTitle}>All Applications 💻</Text>
@@ -310,7 +295,7 @@ useEffect(() => {
     </Card>
 </View>
 </View>
-                       {/* Bot Icon (can be placed wherever you want) */}
+                       {/* Bot Icon */}
      <TouchableOpacity
   style={appliedStyles.chatIcon}
   onPress={() => setShowChat(!showChat)}
@@ -359,11 +344,8 @@ useEffect(() => {
   </>
 ) : (
   <>
-    {/* Your alternative rendering here, like showing the list of applications */}
-    {/* Map over applications and render them */}
   </>
 )}
-     {/**    */}
      <NavBar />
                 {showChat && (
     <View style={appliedStyles.overlay}>
@@ -386,8 +368,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#fff",
         padding: 50,
-        flexDirection: 'row', // Ensures text and image are side by side
-        //justifyContent:'space-evenly',
+        flexDirection: 'row', 
     },
     logo: {
         position: 'relative',
@@ -399,15 +380,15 @@ const styles = StyleSheet.create({
         flexDirection: "row-reverse",
     alignItems: "center",
     width: "130%",
-    left: "-15%", // Moves it left without relying on margins
+    left: "-15%", 
     paddingHorizontal: 16,
     },
     profileImageContainer: {
         width: 120,
         height: 120,
-        borderRadius: 80, // Ensures full circle
+        borderRadius: 80, 
         overflow: 'hidden', // Prevents image from going beyond border
-        alignSelf: 'flex-start', // גורם לתמונה להיצמד לימין  (הוספה) 
+        alignSelf: 'flex-start', // גורם לתמונה להיצמד לימין 
         marginRight:10
 },
     profileImage: {
@@ -429,8 +410,8 @@ const styles = StyleSheet.create({
     section: {
         flexDirection: "row",
         justifyContent: "flex-start",
-        flexWrap: "wrap", // (Change) Allows wrapping if needed for responsiveness
-        alignItems: "center", // (Change) Ensures proper alignment
+        flexWrap: "wrap", //  Allows wrapping if needed for responsiveness
+        alignItems: "center", // Ensures proper alignment
     },
     Applicationsection: {
         marginTop: 24,
@@ -439,13 +420,13 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontFamily: "Inter_300Light",
         left: 9,
-        marginBottom: 10, // (Change) Added margin to space out title from the cards
+        marginBottom: 10, //Added margin to space out title from the cards
     },
     ApplicationsectionTitle:{
         fontSize: 15,
         fontFamily: "Inter_300Light",
         left: 9,
-        marginBottom: 10, // (Change) Added margin to space out title from the cards
+        marginBottom: 10, //Added margin to space out title from the cards
     },
     sectionDescription: {
           color: "gray",
@@ -459,12 +440,12 @@ const styles = StyleSheet.create({
             },
     toDoList: {
         flexDirection: "row",
-        justifyContent: "space-between", // (Change) Ensures even spacing between cards
+        justifyContent: "space-between", // Ensures even spacing between cards
         paddingHorizontal: 10,
-        flexWrap: "nowrap", // (Change) Prevents wrapping so both cards stay in one row
+        flexWrap: "nowrap", //Prevents wrapping so both cards stay in one row
     },
     ToDocard:{
-        width: "48%", // (Change) Adjusted width so both cards fit in one row
+        width: "48%", //Adjusted width so both cards fit in one row
        height:120,
        },
        Cardcontent:{
@@ -492,11 +473,9 @@ const styles = StyleSheet.create({
     },
     Applicationcard:{
      width:'100%',
-   //  paddingBottom:60
     },
     ApplicationCardcontent:{
         alignItems: 'center', // Centers items inside Card.Content
-       // justifyContent: 'flex-start',
     },
 
     pressText: {
@@ -505,17 +484,17 @@ const styles = StyleSheet.create({
         fontFamily:"Inter_300Light",
       },
     pressCard:{
-        width: "90%", // (Change) Increased width to make it look more like a card
+        width: "90%", // Increased width to make it look more like a card
         margin: 10,
-        alignSelf: "center", // (Change) Centered the card
-        padding: 15, // (Change) Added padding to make it visually distinct
-        backgroundColor: "#f3f4f6", // (Change) Ensures it looks like a card
-        borderRadius: 12, // (Change) Gives a card-like appearance
+        alignSelf: "center", // Centered the card
+        padding: 15, // Added padding to make it visually distinct
+        backgroundColor: "#f3f4f6", // Ensures it looks like a card
+        borderRadius: 12, // Gives a card-like appearance
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 2, // (Change) Adds shadow effect for Android
+        elevation: 2, // Adds shadow effect for Android
     },
     pressContainer:{
         marginBottom:80
@@ -532,8 +511,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3, // הגדלנו את אטימות הצל
         shadowRadius: 5,
-        elevation: 8, // הגדלנו את הבליטה ב-Android
-        // הוספת מסגרת דקה להבלטה נוספת
+        elevation: 8, 
         borderWidth: 1,
         borderColor: "rgba(159, 249, 213, 0.3)", // מסגרת בצבע דומה לאייקון
         marginBottom: 12,
@@ -587,7 +565,6 @@ const styles = StyleSheet.create({
       Applicationrow: {
         flexDirection: "row",
         alignItems: "flex-start",
-      //  width:250,
       },
       Applicationtitle: {
         fontSize: 16,
@@ -614,15 +591,14 @@ const Webstyles = StyleSheet.create({
         backgroundColor: "#fff",
         padding: 130,
         flexDirection: 'row', // Ensures text and image are side by side
-        //justifyContent:'space-evenly',
 
     },
     header: {
         alignItems: "center",
         marginTop: 16,
-        flexDirection: "row-reverse", // הופך את הסדר של התמונה והטקסט(הוספה)
-        justifyContent: "space-between",////(הוספה)
-        width: "90%",////(הוספה)
+        flexDirection: "row-reverse", // הופך את הסדר של התמונה והטקסט)
+        justifyContent: "space-between",
+        width: "90%",
     },
     profileImage: {
         width: 100,
@@ -632,7 +608,6 @@ const Webstyles = StyleSheet.create({
  },
     title: {
         fontSize: 20,
-       // fontWeight: "bold",
         marginTop: 8,
         fontFamily:"Inter_400Regular"
 
@@ -648,7 +623,6 @@ const Webstyles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 18,
-      //  fontWeight: "600",
         position:'relative',
         fontFamily:"Inter_400Regular",
      paddingHorizontal:25,
@@ -658,7 +632,6 @@ const Webstyles = StyleSheet.create({
     },
     ApplicationsectionTitle:{
         fontSize: 18,
-        //  fontWeight: "600",
           position:'relative',
           fontFamily:"Inter_400Regular",
        paddingHorizontal:10,
@@ -667,7 +640,6 @@ const Webstyles = StyleSheet.create({
     sectionDescription: {
         color: "gray",
         fontFamily:"Inter_300Light",
-       // paddingHorizontal:25,
 
     },
     ToDoAndApplications:{
@@ -739,12 +711,12 @@ marginBottom:90,
         height: 300,
         borderRadius: 60, // Ensures full circle
         overflow: 'hidden', // Prevents image from going beyond border
-        alignSelf: 'flex-start', // גורם לתמונה להיצמד לימין  (הוספה) 
+        alignSelf: 'flex-start', // גורם לתמונה להיצמד לימין ) 
 },
     profileImage: {
         width: 300,
         height: 300,
-        borderRadius: 150, // Half of width/height
+        borderRadius: 150, 
         overflow: 'hidden', // Ensures the content stays within the round shape
       },
       chatIcon: {
@@ -759,8 +731,7 @@ marginBottom:90,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3, // הגדלנו את אטימות הצל
         shadowRadius: 5,
-        elevation: 8, // הגדלנו את הבליטה ב-Android
-        // הוספת מסגרת דקה להבלטה נוספת
+        elevation: 8, 
         borderWidth: 1,
         borderColor: "rgba(159, 249, 213, 0.3)", // מסגרת בצבע דומה לאייקון
         marginBottom: 12,
@@ -825,7 +796,7 @@ marginBottom:90,
       centered: {
         justifyContent: "center",
         alignItems: "center",
-        padding: 20, // Optional
+        padding: 20, 
       }
 ,      
       applicationsList: {

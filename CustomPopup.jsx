@@ -6,7 +6,7 @@ import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
 
 
-const { width ,height} = Dimensions.get("window"); // Get screen width
+const { width } = Dimensions.get("window"); // Get screen width
 const CustomPopup = ({ visible, onDismiss, icon, message,isConfirmation = false, onConfirm,onCancel}) => {
  const [fontsLoaded] = useFonts({
      Inter_400Regular,
@@ -53,14 +53,12 @@ const CustomPopup = ({ visible, onDismiss, icon, message,isConfirmation = false,
 };
 
 const styles = StyleSheet.create({
-  /////תוספת
   overlay: {
   position: "absolute", 
   top: 0,
   left: 0,
   right: 0,
   bottom: 0,
-//////תוספת
   },
   dialog: {
     width: width - 60, // Makes the dialog width slightly less than screen width
@@ -73,7 +71,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     alignSelf:'center',
-    //marginTop:height/2,
     zIndex:1000
   },
   title: {

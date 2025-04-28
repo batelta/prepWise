@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Button, Provider as PaperProvider } from 'react-native-paper';
-import { Linking, Text, View } from 'react-native';
+import { Provider as PaperProvider } from 'react-native-paper';
+import {  Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SignIn from './SignIn';
@@ -8,7 +8,6 @@ import SignUp from './SignUp';
 import HomePage from './HomePage';
 import GeminiChat from './GeminiChat';
 import LandingPage from './LandingPage';
-import JobForm from './JobForm';
 import AddApplication from './AddApplication';
 import SignUpJobSeeker from './SignUpJobSeeker';
 import Profile from './Profile';
@@ -39,7 +38,7 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <UserProvider> {/* 🔥 Wrap everything inside this */}
+    <UserProvider> {/* Wrap everything inside this */}
 
     <NavigationContainer>
     <PaperProvider theme={theme}>
@@ -48,7 +47,6 @@ export default function App() {
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="GeminiChat" component={GeminiChat}/>
       <Stack.Screen name="LandingPage" component={LandingPage}/>
-      <Stack.Screen name="JobForm" component={JobForm}/>
       <Stack.Screen name="AddApplication" component={AddApplication}/>
       <Stack.Screen name="SignUpJobSeeker" component={SignUpJobSeeker}/>
       <Stack.Screen name="SignUpMentor" component={SignUpMentor}/>

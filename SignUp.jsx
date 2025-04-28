@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { Button, Provider as PaperProvider } from 'react-native-paper';
 import { Text, View, StyleSheet, TouchableOpacity,Image } from 'react-native';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular,
@@ -58,9 +57,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   avatarContainer: {
-    width: 90, // Set a fixed width
-    height: 90, // Set a fixed height (same as width)
-    borderRadius: 45, // Half of width/height to make it round
+    width: 90, 
+    height: 90, 
+    borderRadius: 45, 
     justifyContent: 'center',
     alignItems: 'center',
     resizeMode:'contain'
@@ -77,7 +76,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     width: '100%',
     alignItems: 'center',
-    marginTop: 20,  // Add margin to separate button from inputs
+    marginTop: 20,  
   },
   buttonsContainer:{
     justifyContent:'space-evenly'

@@ -17,7 +17,7 @@ export const UserProvider = ({ children }) => {
     } catch (error) {
       console.error("Error loading user from storage:", error);
     } finally {
-      setLoadingUser(false); // ✅ Make sure we stop the loading state
+      setLoadingUser(false); // Make sure we stop the loading state
     }
   };
   

@@ -16,14 +16,13 @@ const LanguageSelector = ({ selectedLanguages, setSelectedLanguages,style }) => 
     setSelectedItems(selectedItems);
     handleSelectedLanguages(selectedItems)
   };
-//trying to send the name of the language and not the code to the signup page
+//send the name of the language and not the code to the signup page
 const handleSelectedLanguages = (selectedItems) => {
     const selectedLanguages = selectedItems
       .map(code => languages.find(lang => lang.code === code))
       .filter(lang => lang !== undefined);
     setSelectedLanguages(selectedLanguages.map(lang => lang.name)); // Store names instead of objects
   };
-////התוספת
   useEffect(() => {
     if (selectedLanguages && selectedLanguages.length > 0) {
       const codes = selectedLanguages
@@ -36,7 +35,6 @@ const handleSelectedLanguages = (selectedItems) => {
       setSelectedItems(codes);
     }
   }, [selectedLanguages]);
-//////התוספת
 
   const [fontsLoaded] = useFonts({
         Inter_400Regular,
@@ -93,7 +91,6 @@ const handleSelectedLanguages = (selectedItems) => {
 const styles = StyleSheet.create({
   multiSelectWrapper: {
     width: '100%',
-    //paddingHorizontal: 10,
   },
   listContainer: {
     maxHeight: 150,
@@ -103,7 +100,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 10,
-    paddingLeft: 10, // 👈 Add this
+    paddingLeft: 10, 
 
   },
   selectorContainer: {
@@ -122,12 +119,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   dropdownText: {
-    color: '#888', // Customize the text color
+    color: '#888', 
     fontSize: 13,
     fontFamily: 'Inter_200ExtraLight',
   },
   dropdownTextSelected: {
-    color: '#888', // Customize the selected text color
+    color: '#888', 
     fontSize: 13,
     fontFamily: 'Inter_200ExtraLight',
   },

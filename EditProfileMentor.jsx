@@ -17,10 +17,8 @@ import defaultProfile from './assets/defaultProfileImage.jpg'; // make sure this
 
 
 const EditProfileMentor = () => {
-    const { Loggeduser ,setLoggedUser} = useContext(UserContext);
-  
+const { Loggeduser ,setLoggedUser} = useContext(UserContext);
 const [popupVisible, setPopupVisible] = useState(false);
- 
 const navigation = useNavigation();
 //fonts
   const [fontsLoaded] = useFonts({
@@ -133,20 +131,17 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
   }
 };
 
- 
-  
-     const [mentoringModalVisible, setMentoringModalVisible] = React.useState(false);
-       const [selectedMentoring, setSelectedMentoring] = React.useState([]);
-       const mentoringtypes = [
+const [mentoringModalVisible, setMentoringModalVisible] = React.useState(false);
+const [selectedMentoring, setSelectedMentoring] = React.useState([]);
+const mentoringtypes = [
          "Journey ",
          "One-time Session",
          "All-in-One"
        ];
-  //const theme = useTheme();  // הגדרת ה-theme
   const [fieldModalVisible, setFieldModalVisible] = React.useState(false);
   const [selectedFields, setSelectedFields] = React.useState([]);
   const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
-  ///
+  ///כל לחיצה על תחום = לבחור או לבטל בחירה
   const toggleField = (field) => {
     setSelectedFields((prev) =>
       prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
@@ -164,17 +159,19 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
     "I'm a seasoned expert in my area. (10+ years)"
   ];
   const [selectedLanguages, setSelectedLanguages] = useState([]);
-
-    const [userID, setUserID] = useState(null); // To store userID
+  const [userID, setUserID] = useState(null); // To store userID
   
+
   useEffect(() => {
     if (Loggeduser) {
       setUserID(Loggeduser.id);
         console.log(Loggeduser);
       }
     }, [Loggeduser]);
-useEffect(() => {
-  const fetchUserDetails = async () => {
+
+    //Get the user information and display it in inputs
+    useEffect(() => {
+    const fetchUserDetails = async () => {
     try {
     console.log("id",userID)
       // קריאה ל-API לפי ID כדי לקבל את כל הנתונים (כולל תחומים ושפות)
@@ -206,6 +203,8 @@ useEffect(() => {
       });
 
       // עדכון התחומים והשפות לתצוגה
+      //נעשה להם set -עדכון התחומים והשפות לתצוגה
+      //בנפרד מאחר ויש להם מספר ערכים שיכולים להישמר ונעדיף לשים אותם בstate נפרד
       setSelectedFields(fullUserData.careerField || []);
       setSelectedLanguages(fullUserData.language || []);
     } catch (error) {
@@ -216,6 +215,10 @@ useEffect(() => {
   fetchUserDetails();
 }, [userID]);
 
+//ברגע שנטענו שפות חדשות למשתמש → הן יועתקו אל
+//ה־State של בחירת השפות במסך
+//אם המערך של השפות לא ריק, תעביר את הבחירות לselectedlanguages
+//כלומר לעדכן את הבחירות על המסך
 useEffect(() => {
   if (user.language.length > 0) {
     setSelectedLanguages(user.language);
@@ -226,7 +229,7 @@ useEffect(() => {
 const [base64Image, setBase64Image] = useState(null);
 const pickImage = async () => {
   let result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,//בשביל לקחת תמונה מהגלריה
     allowsEditing: true,
     aspect: [1, 1],
     quality: 1,
@@ -246,7 +249,7 @@ const pickImage = async () => {
     try {
   
   
-      // 2. יצירת אובייקט עדכון המשתמש
+      //  יצירת אובייקט עדכון המשתמש
       const updatedUser = {
         firstName: user.firstName,
         lastName: user.lastName,
@@ -257,14 +260,14 @@ const pickImage = async () => {
         linkedinLink: user.linkedinLink,
         careerField: selectedFields,
         language: selectedLanguages,
-        picture: base64Image || user.picture,
+        picture: base64Image || (user.picture.uri || user.picture),       
         company:user.company,
         mentoringType:user.mentoringType,
         isMentor:true
       };
-      console.log('Sending updated user:', updatedUser); // ← Log before sending
+      console.log('Sending updated user:', updatedUser); 
 
-      // 3. ביצוע קריאת PUT עם ה- userId מתוך AsyncStorage
+      //ביצוע קריאת PUT עם ה- userId מתוך AsyncStorage
       const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Mentors/${userID}`, {
         method: "PUT",
         headers: {
@@ -276,16 +279,16 @@ const pickImage = async () => {
       if (response.ok) {
         const responseData = await response.json();
         console.log("User updated successfully:", responseData);
-        // ✅ Add userID only to the local object you're storing
+        // Add userID only to the local object you're storing
         const filteredUserData = {
-          password: updatedUser.password, // This is just an example; never store raw passwords without encryption
+          password: updatedUser.password, 
           email: updatedUser.email,       // Store the email if needed
           id: userID,      // Store the user id if needed
           // Add other fields you want to save here
         };
-        // ✅ Save to AsyncStorage with userID included
+        // Save to AsyncStorage with userID included
         await AsyncStorage.setItem("user", JSON.stringify(filteredUserData));
-        setLoggedUser(filteredUserData); // ← This updates the context immediately!
+        setLoggedUser(filteredUserData);
 
         setPopupVisible(true);
       } else {
@@ -296,10 +299,6 @@ const pickImage = async () => {
       console.error("Error:", error);
     }
   };
-  
-  
-  
-
   
   const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
   return (
@@ -493,10 +492,7 @@ const pickImage = async () => {
             {/* Languages */}
             <View style={appliedStyles.inputContainer}>
               <Text style={appliedStyles.label}>Languages</Text>
-             {/* <Text style={ { backgroundColor: "#FFFFF", padding: 10, borderRadius: 5 }}>
-                {selectedLanguages.length > 0 ? selectedLanguages.join(", ") : "Pick Items (0 selected)"}
-              </Text>*/}
-              
+       
               <LanguageSelector 
                 selectedLanguages={selectedLanguages} 
                 setSelectedLanguages={setSelectedLanguages}
@@ -600,7 +596,6 @@ const styles = StyleSheet.create({
   profileImage: {width: 150,height:  150,
   borderRadius:  80,borderWidth: 3,borderColor: "white",},
   inputContainer: { width: "80%", marginBottom: 10, },
-  //input: { backgroundColor: "#F2F2F2", padding: 15, borderRadius: 20, width: "100%", color: "#A9A9A9",fontFamily:"Inter_300Light", },
   input:{width: '100%',padding:1,marginVertical: 8,borderWidth: 1,fontFamily:'Inter_200ExtraLight',borderColor: '#ccc',
   borderRadius: 6,backgroundColor: '#f9f9f9',paddingLeft:0,height: 50,  paddingLeft: 10,},
   label: { fontSize: 14, color: "#003D5B", marginBottom: 5,fontFamily:"Inter_300Light",},
@@ -621,7 +616,6 @@ const styles = StyleSheet.create({
 const Webstyles = StyleSheet.create({
   overlay: {position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
   justifyContent: "center",alignItems: "center",zIndex: 9999,},
-  //placeholderText:{color:"#A9A9A9",fontFamily:"Inter_300Light"},
   container: { flexGrow: 1, backgroundColor: "#FFFFFF", alignItems: "center", paddingTop: 190, },
   title: { fontSize: 22,  color: "#003D5B",fontFamily:"Inter_400Regular",marginBottom:8,},
   imageContainer: {flexDirection:'row',marginLeft: 20,marginBottom:20},
