@@ -100,25 +100,7 @@ export default function HomePageMentor() {
     const [error, setError] = useState(null);
     const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users" 
   
-        //this is the real pic from the server 
-        {/* 
-    useEffect(() => {
-        fetch(`${API_URL}?userId=30`)
-            .then(response => response.text())
-            .then(text => text ? JSON.parse(text) : {})
-            .then(data => {
-                if (data.picture) {
-                    setProfileImage(`${data.picture}`);
-                }
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error("Error fetching image:", error);
-                setError("לא הצלחנו לטעון את התמונה");
-                setLoading(false);
-            });
-    }, []);
-*/}
+      
     const LogoImage = () => {
         if (Platform.OS === "ios") {
             return <Image source={require('./assets/prepWise Logo.png')} style={appliedStyles.logo} />;
@@ -133,28 +115,9 @@ export default function HomePageMentor() {
                 {/** logo component is here only for mobile*/}
                 <LogoImage />
                 <View style={appliedStyles.container}>
-                     {/**Success popup */}
-                     {/*}
-              <CustomPopup
-          visible={successPopupVisible}
-          onDismiss={() => setSuccessPopupVisible(false)}
-          icon="check-circle" // Success icon
-          message="Action completed successfully!"
-        />
-        */}
+             
                     <View style={appliedStyles.header}>
-                       {/*  {loading ? (
-                            <Text>Loading image...</Text>
-                        ) : error ? (
-                            <Text>{error}</Text>
-                        ) : profileImage ? (
-                            <Image source={{ uri: profileImage }} 
-                                style={{ height: 100, width: 100 }}
-                                resizeMode={"contain"} />
-                        ) : (
-                            <Text>אין תמונה זמינה</Text>
-                        )}
-                            */}
+                  
 
                         {/*this is for now only */}
                         <View style={appliedStyles.profileImageContainer}>

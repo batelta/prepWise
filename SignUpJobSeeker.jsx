@@ -26,8 +26,8 @@ const SignUpJobSeeker = ({navigation}) => {
 
      ///////////////////////////////
 
-     const [FirstNametext, setFirstNameText] = React.useState("");
-     const [FirstNameError, setFirstNameError] = React.useState(""); //for validating the first name
+     const [FirstNametext, setFirstNameText] = useState("");
+     const [FirstNameError, setFirstNameError] = useState(""); //for validating the first name
    
      const handleFirstNameChange = (text) => {
        setFirstNameText(text);
@@ -42,8 +42,8 @@ const SignUpJobSeeker = ({navigation}) => {
        }
      };
    
-     const [LastNametext, setLastNameText] = React.useState("");
-     const [LastNameError, setLastNameError] = React.useState(""); //for validating the Last name
+     const [LastNametext, setLastNameText] = useState("");
+     const [LastNameError, setLastNameError] = useState(""); //for validating the Last name
    
      const handleLastNameChange = (text) => {
        setLastNameText(text);
@@ -57,8 +57,8 @@ const SignUpJobSeeker = ({navigation}) => {
      }
    };
    
-     const [Emailtext, setEmailText] = React.useState("");
-     const [EmailError, setEmailError] = React.useState(""); //for validating the Email
+     const [Emailtext, setEmailText] = useState("");
+     const [EmailError, setEmailError] =useState(""); //for validating the Email
    
      const handleEmailChange = (text) => {
        setEmailText(text);
@@ -72,9 +72,9 @@ const SignUpJobSeeker = ({navigation}) => {
      }
    };
    
-   const [secureText, setSecureText] = React.useState(true); // State to toggle password visibility
-     const [Passwordtext, setPasswordText] = React.useState("");
-     const [PasswordError, setPasswordError] = React.useState(""); //for validating the password
+   const [secureText, setSecureText] = useState(true); // State to toggle password visibility
+     const [Passwordtext, setPasswordText] = useState("");
+     const [PasswordError, setPasswordError] = useState(""); //for validating the password
      const handlePasswordChange = (text) => {
        setPasswordText(text);
       // If input is empty, clear the error message
@@ -88,10 +88,10 @@ const SignUpJobSeeker = ({navigation}) => {
    };
    
    //this is sent as a prop to language selector component
-   const [selectedLanguages, setSelectedLanguages] = React.useState([]);
+   const [selectedLanguages, setSelectedLanguages] = useState([]);
    
-     const [FacebookLink, setFacebookLink] = React.useState("");
-     const [FacebookLinkError, setFacebookLinkError] = React.useState(""); 
+     const [FacebookLink, setFacebookLink] = useState("");
+     const [FacebookLinkError, setFacebookLinkError] = useState(""); 
      const handleFacebookLinkChange = (text) => {
        setFacebookLink(text);
        if (!text.trim()) {
@@ -103,8 +103,8 @@ const SignUpJobSeeker = ({navigation}) => {
        }
      };
    
-     const [LinkedInLink, setLinkedInLink] = React.useState("");
-     const [LinkedInLinkError, setLinkedInLinkError] = React.useState(""); 
+     const [LinkedInLink, setLinkedInLink] = useState("");
+     const [LinkedInLinkError, setLinkedInLinkError] = useState(""); 
    
      const handleLinkedInLinkChange = (text) => {
        setLinkedInLink(text);
@@ -117,12 +117,12 @@ const SignUpJobSeeker = ({navigation}) => {
        }
      };
    
-     const [fieldModalVisible, setFieldModalVisible] = React.useState(false);
-     const [selectedFields, setSelectedFields] = React.useState([]);
+     const [fieldModalVisible, setFieldModalVisible] = useState(false);
+     const [selectedFields, setSelectedFields] = useState([]);
      const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
    
-     const [statusModalVisible, setStatusModalVisible] = React.useState(false);
-     const [selectedStatuses, setSelectedStatuses] = React.useState([]);
+     const [statusModalVisible, setStatusModalVisible] = useState(false);
+     const [selectedStatus, setSelectedStatus] = useState("");
      const statuses = [
        "I'm just getting started! (0 years)",
        "I have some experience, but I'm still learning! (1-2 years)",
@@ -159,14 +159,14 @@ const SignUpJobSeeker = ({navigation}) => {
      };
    
      const toggleStatus = (status) => {
-       setSelectedStatuses([status]); // Only allow one status at a time
-     };
+      setSelectedStatus(status); // תשמור סטטוס אחד בלבד
+    };
    
 
  
     
      const addNewUser=async (FirstNametext,LastNametext,Emailtext,Passwordtext,selectedFields,
-       selectedStatuses,selectedLanguages,
+      selectedStatus,selectedLanguages,
        FacebookLink,LinkedInLink )=>{
          try{
            console.log("Sending request to API...");
@@ -184,7 +184,7 @@ const SignUpJobSeeker = ({navigation}) => {
                Email: Emailtext,
                Password: Passwordtext,
                CareerField: selectedFields, 
-               Experience: selectedStatuses[0] ,// Send only one status
+               Experience: selectedStatus ,
                Picture: base64Image, 
                Language: selectedLanguages,  
                FacebookLink: FacebookLink,  
@@ -445,7 +445,7 @@ const loginAsUser = async (email, password) => {
     contentStyle={appliedStyles.modalText} 
     labelStyle={appliedStyles.modalLabelText}
   >
-    {selectedStatuses.length ? selectedStatuses.join(', ') : 'Select Your Professional Status'}
+  {selectedStatus ? selectedStatus : 'Select Your Professional Status'}
   </Button>
   </View>
 
@@ -461,7 +461,7 @@ const loginAsUser = async (email, password) => {
         <Checkbox.Item 
           key={index} 
           label={status} 
-          status={selectedStatuses.includes(status) ? 'checked' : 'unchecked'} 
+          status={selectedStatus === status ? 'checked' : 'unchecked'} 
           onPress={() => toggleStatus(status)} 
         />
       ))}
@@ -513,7 +513,7 @@ const loginAsUser = async (email, password) => {
       </View>
         <TouchableOpacity style={appliedStyles.loginButton}>
           <Text style={appliedStyles.loginText} onPress={() => {addNewUser(FirstNametext, LastNametext, Emailtext, Passwordtext, selectedFields, 
-                      selectedStatuses, selectedLanguages, FacebookLink, LinkedInLink) }}>SIGN UP</Text>
+                      selectedStatus, selectedLanguages, FacebookLink, LinkedInLink) }}>SIGN UP</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -139,7 +139,7 @@ export default function Application({ applicationID: propID }) {
     /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
   const validatePhone = (phone) => /^[0-9+\-\s]{6,15}$/.test(phone);
 
-  // get conected user inforamtion
+  // get conected user information
   useEffect(() => {
     if (Loggeduser) {
       console.log("Logged user:", Loggeduser);
@@ -148,58 +148,7 @@ export default function Application({ applicationID: propID }) {
     }
   }, [Loggeduser]);
 
-  // המשך הקוד עם ה-useEffect לטעינת המשרה
-  /* useEffect(() => {
-    if (!applicationID || !User) {
-      console.log("Missing applicationID or user data, skipping fetch");
-      setLoading(false);
-      return;
-    }
-    // איפוס ערכי המשרה לפני טעינת נתונים חדשים
-    /*setApplication({
-      applicationID: null,
-      title: "",
-      companyName: "",
-      location: "",
-      url: "",
-      companySummary: "",
-      jobDescription: "",
-      notes: "",
-      jobType: "",
-      isHybrid: false,
-      isRemote: false,
-      contacts: [],
-    });*/
 
-  /*const fetchApplication = async () => {
-      try {
-        console.log("API call with ID:", applicationID, "User ID:", User.id);
-
-        const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}`;
-
-        console.log("Fetch URL:", API_URL);
-
-        const response = await fetch(API_URL);
-
-        if (!response.ok) {
-          throw new Error(`API responded with status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Fetched application data:", data);
-
-        setOriginalApplication({ ...data, contacts: data.contacts || [] });
-        setApplication({ ...data, contacts: data.contacts || [] });
-      } catch (error) {
-        console.error("Failed to fetch application", error);
-        Alert.alert("Error", "Failed to load application");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchApplication();
-  }, [applicationID, User]);*/
 
   useEffect(() => {
     if (!applicationID || !Loggeduser) {
@@ -212,7 +161,7 @@ export default function Application({ applicationID: propID }) {
 
     const fetchApplication = async () => {
       try {
-        const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}`;
+        const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}`;
         const response = await fetch(API_URL);
         const data = await response.json();
         console.log("Fetched application data:", data);
@@ -228,7 +177,7 @@ export default function Application({ applicationID: propID }) {
     };
 
     fetchApplication();
-  }, [applicationID, Loggeduser]);
+  }, [applicationID, User.id]);
 
   const handleChange = (field, value) => {
     setApplication((prev) => ({ ...prev, [field]: value }));
@@ -237,7 +186,7 @@ export default function Application({ applicationID: propID }) {
   const handleUpdate = async () => {
     try {
       console.log("updating applicationID:", applicationID);
-      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}`;
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}`;
 
       const response = await fetch(API_URL, {
         method: "PUT",
@@ -366,7 +315,7 @@ export default function Application({ applicationID: propID }) {
         contacts: updatedContacts,
       }));
 
-      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}/contacts/${contactToEdit.contactID}`;
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}/contacts/${contactToEdit.contactID}`;
 
       const response = await fetch(API_URL, {
         method: "PUT",
@@ -392,7 +341,7 @@ export default function Application({ applicationID: propID }) {
     try {
       console.log("Attempting to delete contact with ID:", contactID);
       // עדכון ה-API URL עם ה-contactID שנשלח
-      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteContact/${Loggeduser.id}/applications/${applicationID}/contacts/${contactID}`;
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteContact/${User.id}/applications/${applicationID}/contacts/${contactID}`;
 
       const response = await fetch(API_URL, {
         method: "DELETE",
@@ -437,7 +386,7 @@ export default function Application({ applicationID: propID }) {
         contactNotes: contactToEdit.contactNotes,
       };
 
-      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}/contacts`;
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}/contacts`;
 
       const response = await fetch(API_URL, {
         method: "POST",

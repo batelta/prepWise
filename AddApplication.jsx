@@ -841,8 +841,5 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginLeft: 5,
   },
-  /*inputError: {
-    borderColor: "#BFB4FF",
-    borderWidth: 1,
-  },*/
+
 });

@@ -122,7 +122,7 @@ const SignUpMentor = ({navigation}) => {
      const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
    
      const [statusModalVisible, setStatusModalVisible] = React.useState(false);
-     const [selectedStatuses, setSelectedStatuses] = React.useState([]);
+     const [selectedStatus, setSelectedStatus] = React.useState([]);
      const statuses = [
        "I'm just getting started! (0 years)",
        "I have some experience, but I'm still learning! (1-2 years)",
@@ -182,11 +182,11 @@ const SignUpMentor = ({navigation}) => {
         setSelectedMentoring([mentoring])
       };
      const toggleStatus = (status) => {
-       setSelectedStatuses([status]); // Only allow one status at a time
+      setSelectedStatus(status); // תשמור סטטוס אחד בלבד
      };
    
      const addNewUser=async (FirstNametext,LastNametext,Emailtext,Passwordtext,selectedFields,
-       selectedStatuses,selectedLanguages,
+      selectedStatus,selectedLanguages,
        FacebookLink,LinkedInLink,Companytext ,selectedMentoring)=>{
          try{
            console.log("Sending request to API...");
@@ -204,7 +204,7 @@ const SignUpMentor = ({navigation}) => {
                Email: Emailtext,
                Password: Passwordtext,
                CareerField: selectedFields, 
-               Experience: selectedStatuses[0] ,// Send only one status
+               Experience: selectedStatus ,
                Picture: base64Image, 
                Language: selectedLanguages,  
                FacebookLink: FacebookLink,  
@@ -465,7 +465,7 @@ const loginAsUser = async (email, password) => {
     contentStyle={appliedStyles.modalText} 
     labelStyle={appliedStyles.modalLabelText}
   >
-    {selectedStatuses.length ? selectedStatuses.join(', ') : 'Select Your Professional Status'}
+    {selectedStatus ? selectedStatus : 'Select Your Professional Status'}
   </Button>
   </View>
 
@@ -481,7 +481,7 @@ const loginAsUser = async (email, password) => {
         <Checkbox.Item 
           key={index} 
           label={status} 
-          status={selectedStatuses.includes(status) ? 'checked' : 'unchecked'} 
+          status={selectedStatus === status ? 'checked' : 'unchecked'} 
           onPress={() => toggleStatus(status)} 
         />
       ))}
@@ -580,7 +580,7 @@ const loginAsUser = async (email, password) => {
       </View>
         <TouchableOpacity style={appliedStyles.loginButton}>
           <Text style={appliedStyles.loginText} onPress={() => {addNewUser(FirstNametext, LastNametext, Emailtext, Passwordtext, selectedFields, 
-                      selectedStatuses, selectedLanguages, FacebookLink, LinkedInLink,Companytext,selectedMentoring) }}>SIGN UP</Text>
+                      selectedStatus, selectedLanguages, FacebookLink, LinkedInLink,Companytext,selectedMentoring) }}>SIGN UP</Text>
         </TouchableOpacity>
       </View>
 
