@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { View, Text, Image, StyleSheet, Animated, Pressable } from "react-native";
 import { Button } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient"; // Correct import
+import { LinearGradient } from "expo-linear-gradient"; 
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_700Bold, Inter_100Thin, Inter_200ExtraLight, Inter_300Light } from '@expo-google-fonts/inter';
 
 export default function LandingPage({ navigation }) {
   const [isHovered, setIsHovered] = useState(false);
-  const [fillWidth] = useState(new Animated.Value(0)); // Animated width for button fill
+  const [fillWidth] = useState(new Animated.Value(0)); 
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,

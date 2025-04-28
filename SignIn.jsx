@@ -46,22 +46,20 @@ const SignIn = ({navigation}) => {
             })
           });
   
-          //const responseBody = await response.text();  // Use text() instead of json() to handle any response format
-          //console.log("Response Body:", responseBody);
           console.log("response ok?", response.ok);
 
           if (response.ok) {
             const rawText = await response.text();
-            console.log("🧾 Raw response text:", rawText);
+            console.log("response text:", rawText);
       
             if (rawText === "") {
-              console.warn("❗ User not found (empty response)");
-              setErrorPopupVisible(true); // Show your custom popup
+              console.log("User not found (empty response)");
+              setErrorPopupVisible(true); // Show custom popup
               return;
             }
       
             const userData = JSON.parse(rawText); // Safe to parse now
-            console.log("✅ Parsed user:", userData);
+            console.log("Parsed user:", userData);
       
             const filteredUserData = {
               password: userData.password,
@@ -74,13 +72,12 @@ const SignIn = ({navigation}) => {
             setIsMentor(userData.isMentor);
             setSuccessPopupVisible(true); // Success popup
           } else {
-            // If response is not ok (e.g., 400 or 500)
-            console.error("❌ API response not OK");
+            console.error("API response not OK");
             setErrorPopupVisible(true);
           }
       
         } catch (error) {
-          console.error("🚨 Error in loginAsUser:", error);
+          console.error("Error in loginAsUser:", error);
           setErrorPopupVisible(true);
         }
       };
@@ -110,7 +107,7 @@ const SignIn = ({navigation}) => {
             <View style={styles.overlay}>
                     <CustomPopup visible={successPopupVisible}
                   onDismiss={() => {
-                            // ✅ Move navigation here:
+   
   setTimeout(() => {
     navigation.navigate(isMentor ? "HomePageMentor" : "HomePage");
   }, 150); // Wait a bit so the popup can show
@@ -134,9 +131,7 @@ const SignIn = ({navigation}) => {
     {/**  <Image source={require('./assets/prepWise Logo.png')}
       style={styles.logo}/> */}
       <View style={appliedStyles.loginBox}>
-        <View style={appliedStyles.popup}>
-     
-                     </View>
+       
         <View  style={appliedStyles.avatarContainer}>
         <AntDesign name="user" size={60} color="white"/>
         </View>
@@ -158,9 +153,7 @@ const SignIn = ({navigation}) => {
           <TouchableOpacity onPress={() => setSecureText(!secureText)} style={appliedStyles.eyeIcon}>
             <Icon name={secureText ? 'eye-off' : 'eye'} size={24} color="#BFB4FF" />
           </TouchableOpacity>
-     {/**   <View style={styles.rowContainer}>
-          <Text style={styles.forgotText}>Forgot Password?</Text>  
-        </View> */}
+  
         <View style={{flexDirection:'row',marginTop:30,marginBottom:20}}>
       <Text style={appliedStyles.footer}>Don't have an account? </Text>
       <Text style={appliedStyles.CreateAccounttext}
@@ -170,17 +163,14 @@ const SignIn = ({navigation}) => {
           <Text style={appliedStyles.loginText} >LOGIN</Text>
         </TouchableOpacity>
       </View>
-
-
-    
     </View>
     </ScrollView>
   );
 };
 const styles = StyleSheet.create({
   container: {
-    justifyContent: 'center',    // Vertical center
-    alignItems: 'center',        // Horizontal center
+    justifyContent: 'center',    
+    alignItems: 'center',       
     backgroundColor: '#f9f9f9',
     height:height
   },
@@ -189,7 +179,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
-    //alignItems: 'center',
     justifyContent: 'center',
     elevation: 5,
 
@@ -203,7 +192,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf:'center',
     alignItems: 'center',
-    marginBottom: 20,  // Add space below avatar
+    marginBottom: 20,  
   },
   input: {
     width: '100%',
@@ -221,7 +210,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     width: '100%',
     alignItems: 'center',
-    marginTop: 20,  // Add margin to separate button from inputs
+    marginTop: 20,  
   },
   CreateAccounttext: {
     textDecorationLine: 'underline',
@@ -267,9 +256,9 @@ const Webstyles = StyleSheet.create({
   },
   avatarContainer: {
     backgroundColor: '#BFB4FF',
-    width: 80, // Set a fixed width
-    height: 80, // Set a fixed height (same as width)
-    borderRadius: 40, // Half of width/height to make it round
+    width: 80, 
+    height: 80, 
+    borderRadius: 40, 
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -284,17 +273,9 @@ const Webstyles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#f9f9f9',
   },
-  rowContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginVertical: 10,
-  },
-
-  forgotText: {
-    color: '#BFB4FF',
-    fontFamily:'Inter_200ExtraLight',
-
+  overlay: 
+  {position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",alignItems: "center",zIndex: 9999,
   },
   loginButton: {
     backgroundColor: '#BFB4FF',
@@ -306,20 +287,22 @@ const Webstyles = StyleSheet.create({
   CreateAccounttext:{
     textDecorationLine:'underline',
     color:'#003D5B',
+    bottom:3
   },
   loginText: {
     color: 'white',
     fontFamily:'Inter_400Regular',
 
   },
-  popup:{
-zIndex:1000
+  footer: {
+    fontFamily: 'Inter_200ExtraLight',
+    fontSize: 13,
+    color: '#555',
   },
   eyeIcon: {
     position: 'absolute',
     right:30,
-    top: '54%',
-    transform: [{ translateY: -12 }],
+    top: '50%',
     zIndex: 1
   },
 });

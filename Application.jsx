@@ -43,24 +43,22 @@ export default function Application({ applicationID: propID }) {
   });
 
   const route = useRoute();
-  const applicationID = route.params?.applicationID || propID;
+  const applicationID = route.params?.applicationID || propID; //if there is no applicationID from the navigate use propID
+
   const [originalApplication, setOriginalApplication] = useState({}); //for setting the right infoamntion in ui when user edit and did not save
 
-  console.log("🔎 route.params:", route.params);
-  console.log("📦 applicationID:", applicationID);
+  //console.log(" route.params:", route.params);
+  //console.log(" applicationID:", applicationID);
 
   const [showChat, setShowChat] = useState(false);
-  const appliedStyles = Platform.OS === "web" ? Webstyles : styles; //need to change this in pages that only in web/IOS
 
-  const navigation = useNavigation(); // להשתמש בנavigaion ע
+  const navigation = useNavigation();
 
   const [contactErrors, setContactErrors] = useState({
     contactName: "",
     contactEmail: "",
     contactPhone: "",
   });
-
-
 
   const [application, setApplication] = useState({
     applicationID: null,
@@ -77,26 +75,55 @@ export default function Application({ applicationID: propID }) {
     contacts: [],
   });
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [isEditingContact, setIsEditingContact] = useState(false); // מצב עריכת איש קשר
-  const [contactToEdit, setContactToEdit] = useState(null); // איש הקשר שנמצא במצב עריכה
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  //const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false); //application in edit mode?
+
+  const [isEditingContact, setIsEditingContact] = useState(false); // conatct in edit mode?
   const [contactEditMode, setContactEditMode] = useState("edit");
-  const [jobTypeModalVisible, setJobTypeModalVisible] = useState(false);
 
-  const [contactModalVisible, setContactModalVisible] = useState(false); //modal
+  const [contactToEdit, setContactToEdit] = useState(null); // current conatct in edit mode
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
 
-  //popup states
-  const [customPopupVisible, setCustomPopupVisible] = useState(false);
-  const [customPopupMessage, setCustomPopupMessage] = useState("");
-  const [customPopupIcon, setCustomPopupIcon] = useState("information");
-  const [customPopupConfirmation, setCustomPopupConfirmation] = useState(false);
-  const [onConfirmAction, setOnConfirmAction] = useState(() => () => {});
-  //////
-  const [onPopupOk, setOnPopupOk] = useState(() => () => {});
+  const [jobTypeModalVisible, setJobTypeModalVisible] = useState(false); //job type modal
 
+  const [contactModalVisible, setContactModalVisible] = useState(false); //modal conatcts
 
+  const [popup, setPopup] = useState({
+    visible: false,
+    message: "",
+    icon: "information",
+    isConfirmation: false,
+    onConfirm: () => {},
+    onOk: () => {},
+  });
+
+  // only to show messages
+  const showMessage = (message, icon = "information", onOk = () => {}) => {
+    setPopup({
+      visible: true,
+      message,
+      icon,
+      isConfirmation: false,
+      onConfirm: () => {},
+      onOk,
+    });
+  };
+
+  // ask for a confirmation
+  const showConfirmation = (message, onConfirm, icon = "alert-circle") => {
+    setPopup({
+      visible: true,
+      message,
+      icon,
+      isConfirmation: true,
+      onConfirm,
+      onOk: () => {},
+    });
+  };
+
+  // פונקציה לסגירת הפופאפ
+  const closePopup = () => {
+    setPopup((prev) => ({ ...prev, visible: false }));
+  };
 
   const jobTypeList = [
     { label: "Full Time", value: "FullTime" },
@@ -107,75 +134,101 @@ export default function Application({ applicationID: propID }) {
     { label: "Student", value: "Student" },
   ];
 
+  const validateName = (name) => /^[A-Za-z\u0590-\u05FF\s]{1,30}$/.test(name);
+  const validateEmail = (email) =>
+    /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+  const validatePhone = (phone) => /^[0-9+\-\s]{6,15}$/.test(phone);
 
-
-  
-// useEffect לקבלת הנתונים של המשתמש המחובר
-useEffect(() => {
-  if (Loggeduser) {
-    console.log("Logged user:", Loggeduser);
-    console.log("User ID:", Loggeduser.id);
-    setUser(Loggeduser);
-  }
-}, [Loggeduser]);
-
-// המשך הקוד עם ה-useEffect לטעינת המשרה
-useEffect(() => {
-  // תוודא שיש מזהה משרה לפני ניסיון טעינה
-  if (!applicationID || !User) {
-    console.log("Missing applicationID or user data, skipping fetch");
-    setLoading(false);
-    return;
-  }
-   // איפוס ערכי המשרה לפני טעינת נתונים חדשים
-   setApplication({
-    applicationID: null,
-    title: "",
-    companyName: "",
-    location: "",
-    url: "",
-    companySummary: "",
-    jobDescription: "",
-    notes: "",
-    jobType: "",
-    isHybrid: false,
-    isRemote: false,
-    contacts: [],
-  });
-
-  console.log("Fetching application in Application component, ID:", applicationID);
-  
-  const fetchApplication = async () => {
-    try {
-      console.log("API call with ID:", applicationID, "User ID:", User.id);
-      
-      const API_URL =
-        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}`
-          
-      console.log("Fetch URL:", API_URL);
-      
-      const response = await fetch(API_URL);
-      
-      if (!response.ok) {
-        throw new Error(`API responded with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log("Fetched application data:", data);
-      
-      setOriginalApplication({ ...data, contacts: data.contacts || [] });
-      setApplication({ ...data, contacts: data.contacts || [] });
-    } catch (error) {
-      console.error("Failed to fetch application", error);
-      Alert.alert("Error", "Failed to load application");
-    } finally {
-      setLoading(false);
+  // get conected user inforamtion
+  useEffect(() => {
+    if (Loggeduser) {
+      console.log("Logged user:", Loggeduser);
+      console.log("User ID:", Loggeduser.id);
+      setUser(Loggeduser);
     }
-  };
-  
-  fetchApplication();
-}, [applicationID, User]); // תלות גם ב-applicationID וגם ב-User
-  // כפתור חזור
+  }, [Loggeduser]);
+
+  // המשך הקוד עם ה-useEffect לטעינת המשרה
+  /* useEffect(() => {
+    if (!applicationID || !User) {
+      console.log("Missing applicationID or user data, skipping fetch");
+      setLoading(false);
+      return;
+    }
+    // איפוס ערכי המשרה לפני טעינת נתונים חדשים
+    /*setApplication({
+      applicationID: null,
+      title: "",
+      companyName: "",
+      location: "",
+      url: "",
+      companySummary: "",
+      jobDescription: "",
+      notes: "",
+      jobType: "",
+      isHybrid: false,
+      isRemote: false,
+      contacts: [],
+    });*/
+
+  /*const fetchApplication = async () => {
+      try {
+        console.log("API call with ID:", applicationID, "User ID:", User.id);
+
+        const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}`;
+
+        console.log("Fetch URL:", API_URL);
+
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          throw new Error(`API responded with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Fetched application data:", data);
+
+        setOriginalApplication({ ...data, contacts: data.contacts || [] });
+        setApplication({ ...data, contacts: data.contacts || [] });
+      } catch (error) {
+        console.error("Failed to fetch application", error);
+        Alert.alert("Error", "Failed to load application");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApplication();
+  }, [applicationID, User]);*/
+
+  useEffect(() => {
+    if (!applicationID || !Loggeduser) {
+      console.log("Missing applicationID or logged user, skipping fetch");
+      setLoading(false);
+      return;
+    }
+
+    console.log("Fetching application:", applicationID); //for checking
+
+    const fetchApplication = async () => {
+      try {
+        const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}`;
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        console.log("Fetched application data:", data);
+
+        setOriginalApplication({ ...data, contacts: data.contacts || [] });
+        setApplication({ ...data, contacts: data.contacts || [] });
+      } catch (error) {
+        console.error("Error loading application", error);
+        Alert.alert("Error", "Failed to load application");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApplication();
+  }, [applicationID, Loggeduser]);
 
   const handleChange = (field, value) => {
     setApplication((prev) => ({ ...prev, [field]: value }));
@@ -184,8 +237,7 @@ useEffect(() => {
   const handleUpdate = async () => {
     try {
       console.log("updating applicationID:", applicationID);
-      const API_URL =
-         `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}`
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}`;
 
       const response = await fetch(API_URL, {
         method: "PUT",
@@ -207,37 +259,15 @@ useEffect(() => {
 
   const handleDeleteApplication = async () => {
     try {
-      const API_URL =
-         `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${User.id}/${applicationID}`
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${User.id}/${applicationID}`;
 
       const response = await fetch(API_URL, {
         method: "DELETE",
       });
 
-      if (!response.ok) 
-      throw new Error("Failed to delete application");
-  
-      setCustomPopupMessage("Application deleted successfully!");
-      setCustomPopupIcon("check-circle");
-      setCustomPopupConfirmation(false);
-      setCustomPopupVisible(true);
+      if (!response.ok) throw new Error("Failed to delete application");
 
-      
-   /* if (Platform.OS === "web") {
-        //////////change now 
-       // window.location.reload(); // לרענן רשימה ב־SplitView
-
-       setTimeout(() => {
-        navigation.replace("ApplicationSplitView");
-      }, 1000); 
-
-
-      } else {
-        // אם במובייל, נחזור לדף הקודם
-        navigation.goBack();
-      }
-       */
-      setOnPopupOk(() => () => {
+      showMessage("Application deleted successfully!", "check-circle", () => {
         if (Platform.OS === "web") {
           navigation.replace("ApplicationSplitView");
         } else {
@@ -246,111 +276,76 @@ useEffect(() => {
       });
     } catch (error) {
       console.error("Error deleting application:", error);
-      // הצג פופאפ שגיאה
-      setCustomPopupMessage("Failed to delete application");
-      setCustomPopupIcon("alert-circle");
-      setCustomPopupConfirmation(false);
-      setCustomPopupVisible(true);
-      setOnPopupOk(() => () => {}); 
+
+      showMessage("Failed to delete application", "alert-circle");
     }
   };
 
   const handleContactChange = (field, value) => {
+    //check every filed while the user type
     setContactToEdit((prev) => ({
       ...prev,
       [field]: value,
     }));
 
-    // בדיקות תקינות לפי סוג השדה
-    if (field === "contactName") {
-      if (!value.trim()) {
-        setContactErrors((prevErrors) => ({ ...prevErrors, contactName: "" }));
-      } else if (!/^[A-Za-z\u0590-\u05FF\s]{1,30}$/.test(value)) {
-        // תומך גם בעברית
-        setContactErrors((prevErrors) => ({
-          ...prevErrors,
-          contactName: "Only letters and spaces, up to 30 characters.",
-        }));
-      } else {
-        setContactErrors((prevErrors) => ({ ...prevErrors, contactName: "" }));
-      }
-    }
+    setContactErrors((prevErrors) => {
+      const updatedErrors = { ...prevErrors };
 
-    if (field === "contactEmail") {
-      if (!value.trim()) {
-        setContactErrors((prevErrors) => ({ ...prevErrors, contactEmail: "" }));
-      } else if (
-        !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)
-      ) {
-        setContactErrors((prevErrors) => ({
-          ...prevErrors,
-          contactEmail: "Enter a valid email address.",
-        }));
-      } else {
-        setContactErrors((prevErrors) => ({ ...prevErrors, contactEmail: "" }));
+      switch (field) {
+        case "contactName":
+          updatedErrors.contactName = value.trim()
+            ? validateName(value)
+              ? "" //if there is a name -> no error
+              : "Only letters and spaces, up to 30 characters." //error
+            : ""; // no text at all -> no error
+          break;
+        case "contactEmail":
+          updatedErrors.contactEmail = value.trim()
+            ? validateEmail(value)
+              ? ""
+              : "Enter a valid email address."
+            : "";
+          break;
+        case "contactPhone":
+          updatedErrors.contactPhone = value.trim()
+            ? validatePhone(value)
+              ? ""
+              : "Enter a valid phone number (6-15 digits)."
+            : "";
+          break;
       }
-    }
 
-    if (field === "contactPhone") {
-      if (!value.trim()) {
-        setContactErrors((prevErrors) => ({ ...prevErrors, contactPhone: "" }));
-      } else if (!/^[0-9+\-\s]{6,15}$/.test(value)) {
-        setContactErrors((prevErrors) => ({
-          ...prevErrors,
-          contactPhone: "Enter a valid phone number (6-15 digits).",
-        }));
-      } else {
-        setContactErrors((prevErrors) => ({ ...prevErrors, contactPhone: "" }));
-      }
-    }
+      return updatedErrors;
+    });
   };
 
   const validateContact = () => {
-    let hasValidationError = false;
-    let updatedErrors = { ...contactErrors };
+    //validate the full contact who will send to the server
+    const { contactName, contactEmail, contactPhone } = contactToEdit;
+    let updatedErrors = {};
 
-    // בדיקה שיש לפחות שם
-    if (!contactToEdit.contactName.trim()) {
-      updatedErrors.contactName = "Contact name is required";
-      hasValidationError = true;
-    } else if (
-      !/^[A-Za-z\u0590-\u05FF\s]{1,30}$/.test(contactToEdit.contactName)
-    ) {
-      updatedErrors.contactName =
-        "Only letters and spaces, up to 30 characters.";
-      hasValidationError = true;
-    } else {
-      updatedErrors.contactName = "";
-    }
+    updatedErrors.contactName = contactName.trim()
+      ? validateName(contactName)
+        ? ""
+        : "Only letters and spaces, up to 30 characters."
+      : "Contact name is required";
 
-    // בדיקת אימייל אם קיים
-    if (
-      contactToEdit.contactEmail.trim() &&
-      !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(
-        contactToEdit.contactEmail
-      )
-    ) {
-      updatedErrors.contactEmail = "Enter a valid email address.";
-      hasValidationError = true;
-    } else {
-      updatedErrors.contactEmail = "";
-    }
+    updatedErrors.contactEmail =
+      contactEmail.trim() && !validateEmail(contactEmail)
+        ? "Enter a valid email address."
+        : "";
 
-    // בדיקת טלפון אם קיים
-    if (
-      contactToEdit.contactPhone.trim() &&
-      !/^[0-9+\-\s]{6,15}$/.test(contactToEdit.contactPhone)
-    ) {
-      updatedErrors.contactPhone = "Enter a valid phone number (6-15 digits).";
-      hasValidationError = true;
-    } else {
-      updatedErrors.contactPhone = "";
-    }
+    updatedErrors.contactPhone =
+      contactPhone.trim() && !validatePhone(contactPhone)
+        ? "Enter a valid phone number (6-15 digits)."
+        : "";
 
-    // עדכון השגיאות בתצוגה
     setContactErrors(updatedErrors);
 
-    return !hasValidationError;
+    const hasErrors = Object.values(updatedErrors).some(
+      (error) => error !== ""
+    );
+    return !hasErrors;
   };
 
   const handleUpdateContact = async () => {
@@ -371,8 +366,7 @@ useEffect(() => {
         contacts: updatedContacts,
       }));
 
-      const API_URL =
-         `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}/contacts/${contactToEdit.contactID}`
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}/contacts/${contactToEdit.contactID}`;
 
       const response = await fetch(API_URL, {
         method: "PUT",
@@ -398,8 +392,7 @@ useEffect(() => {
     try {
       console.log("Attempting to delete contact with ID:", contactID);
       // עדכון ה-API URL עם ה-contactID שנשלח
-      const API_URL =
-        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteContact/${User.id}/applications/${applicationID}/contacts/${contactID}`
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteContact/${Loggeduser.id}/applications/${applicationID}/contacts/${contactID}`;
 
       const response = await fetch(API_URL, {
         method: "DELETE",
@@ -423,18 +416,11 @@ useEffect(() => {
       setContactModalVisible(false);
       setContactToEdit(null);
 
-      // הצג פופאפ הצלחה
-      setCustomPopupMessage("Contact deleted successfully!");
-      setCustomPopupIcon("check-circle");
-      setCustomPopupConfirmation(false);
-      setCustomPopupVisible(true);
+      showMessage("Contact deleted successfully!", "check-circle");
     } catch (error) {
       console.error("Error deleting contact:", error);
 
-      setCustomPopupMessage("Failed to delete contact");
-      setCustomPopupIcon("alert-circle");
-      setCustomPopupConfirmation(false);
-      setCustomPopupVisible(true);
+      showMessage("Failed to delete contact", "alert-circle");
     }
   };
 
@@ -444,12 +430,6 @@ useEffect(() => {
     }
 
     try {
-      // וודא שיש שם תקין לאיש הקשר לפני השליחה
-      if (!contactToEdit.contactName) {
-        Alert.alert("Error", "Contact name is required");
-        return;
-      }
-
       const newContact = {
         contactName: contactToEdit.contactName,
         contactEmail: contactToEdit.contactEmail,
@@ -457,8 +437,7 @@ useEffect(() => {
         contactNotes: contactToEdit.contactNotes,
       };
 
-      const API_URL =
-        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}/contacts`
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}/contacts`;
 
       const response = await fetch(API_URL, {
         method: "POST",
@@ -472,11 +451,11 @@ useEffect(() => {
         throw new Error("Failed to add contact");
       }
 
-      // קבל את התשובה המלאה מהשרת (כולל ID חדש)
+      // get full answer from teh server
       const addedContact = await response.json();
       console.log("Added contact from server:", addedContact);
 
-      // עכשיו שנקבל את איש הקשר שנוסף, נעדכן את הסטייט
+      // state update
       setApplication((prevApp) => {
         const updatedContacts = [...prevApp.contacts, addedContact];
         console.log("Updated contacts array:", updatedContacts);
@@ -486,19 +465,19 @@ useEffect(() => {
         };
       });
 
-      // סגור את מסך העריכה רק אחרי שהכל הושלם בהצלחה
+      //close contact edit mode after all updated בהצלחה
       setIsEditingContact(false);
       setContactToEdit(null);
       setContactEditMode("edit");
-      setContactModalVisible(false); // סגירת המודל
+      setContactModalVisible(false);
     } catch (error) {
       console.error("Error adding contact:", error);
     }
   };
 
-  useEffect(() => {
+  /*useEffect(() => {
     console.log("Contacts after add:", application.contacts);
-  }, [application.contacts]);
+  }, [application.contacts]);*/
 
   const renderDisplayMode = () => (
     <ScrollView contentContainerStyle={styles.container}>
@@ -529,7 +508,7 @@ useEffect(() => {
         </TouchableOpacity>
       )}
 
-      {/*a[[lication title*/}
+      {/*application title*/}
       <Text style={styles.header}>{application.title || "No Title"}</Text>
 
       <Text style={styles.company}>{application.companyName}</Text>
@@ -556,13 +535,11 @@ useEffect(() => {
       <Text style={styles.text}>{application.jobDescription}</Text>
 
       <View style={styles.notesBox}>
-        {/* Add Notes icon */}
         <View style={styles.addIconButton}>
-          <Text style={styles.addText}>
-            <Icon name="note-add" size={30} color="#b9a7f2" /> Notes
-          </Text>
+          <Icon name="note-add" size={30} color="#b9a7f2" />
+          <Text style={styles.addText}>Notes</Text>
         </View>
-        <Text style={styles.text}>{application.notes}Notes</Text>
+        <Text style={styles.text}>{application.notes}</Text>
       </View>
 
       <View>
@@ -645,16 +622,12 @@ useEffect(() => {
                         contactToEdit.contactID
                       );
                       setContactModalVisible(false);
-                      setCustomPopupMessage(
-                        "Are you sure you want to delete this contact?"
+
+                      showConfirmation(
+                        "Are you sure you want to delete this contact?",
+                        () => deleteContact(contactToEdit.contactID),
+                        "alert-circle"
                       );
-                      setCustomPopupIcon("alert-circle");
-                      setCustomPopupConfirmation(true);
-                      // שלח את ה־ID לפופאפ כך שפונקציית המחיקה תוכל לפעול ישירות.
-                      setOnConfirmAction(
-                        () => () => deleteContact(contactToEdit.contactID)
-                      ); // העברת ה־ID ישירות לפונקציה
-                      setCustomPopupVisible(true);
                     }}
                     style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
                     labelStyle={styles.buttonLabel}
@@ -700,7 +673,7 @@ useEffect(() => {
       <Button
         mode="outlined"
         onPress={() => {
-          // שמור את המצב הנוכחי לפני העריכה
+          // save the current state before editing
           setOriginalApplication({ ...application });
           setIsEditing(true);
         }}
@@ -712,13 +685,11 @@ useEffect(() => {
       <Button
         mode="outlined"
         onPress={() => {
-          setCustomPopupMessage(
-            "Are you sure you want to delete this application?"
+          showConfirmation(
+            "Are you sure you want to delete this application?",
+            handleDeleteApplication,
+            "alert-circle"
           );
-          setCustomPopupIcon("alert-circle");
-          setCustomPopupConfirmation(true);
-          setOnConfirmAction(() => handleDeleteApplication); // שימו לב: אנחנו צריכים לשמור את הפונקציה עצמה
-          setCustomPopupVisible(true);
         }}
         style={styles.button}
       >
@@ -726,19 +697,6 @@ useEffect(() => {
       </Button>
     </ScrollView>
   );
-
-  /*const inputTheme = {
-    colors: {
-      text: "#003D5B", // צבע הטקסט בתוך השדה
-      primary: "#BFB4FF", // צבע התווית כשהשדה בפוקוס
-      placeholder: "#003D5B", // צבע הפלייסהולדר
-    },
-    fonts: {
-      regular: {
-        fontFamily: "Inter_400Regular",
-      },
-    },
-  };*/
 
   const renderEditMode = () => (
     <ScrollView contentContainerStyle={styles.container}>
@@ -803,6 +761,11 @@ useEffect(() => {
         style={styles.input}
         textColor="#003D5B"
         fontFamily="Inter_400Regular"
+        multiline={true}
+        numberOfLines={3}
+        mode="outlined"
+        outlineColor="#ccc"
+        activeOutlineColor="#BFB4FF"
       />
       <TextInput
         label={
@@ -815,15 +778,19 @@ useEffect(() => {
         style={styles.input}
         textColor="#003D5B"
         fontFamily="Inter_400Regular"
+        multiline={true}
+        numberOfLines={3}
+        mode="outlined"
+        outlineColor="#ccc"
+        activeOutlineColor="#BFB4FF"
       />
 
       <View style={styles.notesBox}>
         <View style={styles.addIconButton}>
           <Icon name="note-add" size={28} color="#b9a7f2" />
-          <Text style={styles.addText}></Text>
+          <Text style={styles.addText}>Notes</Text>
         </View>
 
-        {/* שדה ה־Notes */}
         <TextInput
           label={
             <Text style={{ color: "#003D5B", fontFamily: "Inter_400Regular" }}>
@@ -836,6 +803,12 @@ useEffect(() => {
           style={styles.notesInput}
           textColor="#003D5B"
           fontFamily="Inter_400Regular"
+          numberOfLines={3}
+          mode="flat"
+          outlineColor="#ccc"
+          activeOutlineColor="#BFB4FF"
+          dense
+          theme={{ colors: { background: "#FFFFFF" } }}
         />
       </View>
 
@@ -854,7 +827,6 @@ useEffect(() => {
         </Text>
       </TouchableOpacity>
 
-      {/* Modal JobType */}
       <Modal
         visible={jobTypeModalVisible}
         transparent={true}
@@ -862,10 +834,8 @@ useEffect(() => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {/* כותרת המודל */}
             <Text style={styles.modalHeader}>Select Job Type</Text>
 
-            {/* רשימת האפשרויות */}
             <ScrollView>
               {jobTypeList.map((item) => (
                 <TouchableOpacity
@@ -919,7 +889,7 @@ useEffect(() => {
       </Button>
       <Button
         onPress={() => {
-          // החזר את המצב המקורי
+          // חזרת המצב המקורי
           setApplication({ ...originalApplication });
           setIsEditing(false);
         }}
@@ -1052,7 +1022,6 @@ useEffect(() => {
         : isEditing
         ? renderEditMode()
         : renderDisplayMode()}
-      {/*Platform.OS === "ios" && !isEditing && <NavBar />*/}
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
@@ -1060,49 +1029,25 @@ useEffect(() => {
       >
         Application updated successfully!
       </Snackbar>
-      {/* הוספת הפופאפ המותאם */}
-      <View
-        style={[
-          styles.popupOverlay,
-          !customPopupVisible && { display: "none" },
-        ]}
-      >
-        {/*<CustomPopup
-          visible={customPopupVisible}
-          onDismiss={() => setCustomPopupVisible(false)}
-          icon={customPopupIcon}
-          message={customPopupMessage}
-          isConfirmation={customPopupConfirmation}
-          onConfirm={() => {
-            setCustomPopupVisible(false);
-            onConfirmAction(); // מבצע את הפעולה אחרי אישור
-          }}
-          onCancel={() => setCustomPopupVisible(false)}
-        />*/}
-        <CustomPopup
-  visible={customPopupVisible}
-  onDismiss={() => {
-    setCustomPopupVisible(false);
-    onPopupOk(); // קורא לפעולה שהוגדרה אחרי לחיצה על OK
-  }}
-  icon={customPopupIcon}
-  message={customPopupMessage}
-  isConfirmation={customPopupConfirmation}
-  onConfirm={() => {
-    setCustomPopupVisible(false);
-    onConfirmAction(); // מיועד לפופאפ מסוג Yes/No
-  }}
-  onCancel={() => setCustomPopupVisible(false)}
-/>
-
-        
-        
-
-
-
-
-
-      </View>
+      {popup.visible && (
+        <View style={styles.popupOverlay}>
+          <CustomPopup
+            visible={popup.visible}
+            onDismiss={() => {
+              closePopup();
+              if (!popup.isConfirmation) popup.onOk();
+            }}
+            icon={popup.icon}
+            message={popup.message}
+            isConfirmation={popup.isConfirmation}
+            onConfirm={() => {
+              closePopup();
+              popup.onConfirm();
+            }}
+            onCancel={closePopup}
+          />
+        </View>
+      )}
       {Platform.OS !== "web" && (
         <TouchableOpacity
           style={styles.chatIcon}
@@ -1112,8 +1057,8 @@ useEffect(() => {
         </TouchableOpacity>
       )}
       {showChat && (
-        <View style={appliedStyles.overlay}>
-          <View style={appliedStyles.chatModal}>
+        <View style={styles.overlay}>
+          <View style={styles.chatModal}>
             <TouchableOpacity
               onPress={() => setShowChat(false)}
               style={{ alignSelf: "flex-end", padding: 5 }}
@@ -1141,11 +1086,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
-    elevation: 5, // צל ב-Android
+    elevation: 5,
   },
   chatModal: {
     position: "absolute",
-    bottom: 80, // שינוי מ-90 ל-80 להתאמה למיקום החדש
+    bottom: 80,
     right: 10,
     width: "90%",
     height: 500,
@@ -1160,7 +1105,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     backgroundColor: "white",
-    position: Platform.OS === "web" ? "static" : "relative", // תעשה את ה־position relative רק במובייל
+    position: Platform.OS === "web" ? "static" : "relative", //osition relative only for OS
   },
   header: {
     fontSize: 24,
@@ -1169,10 +1114,10 @@ const styles = StyleSheet.create({
     color: "#003D5B",
     fontFamily: "Inter_400Regular",
     textAlign: Platform.OS === "web" ? "left" : "center",
-    marginTop: Platform.OS === "web" ? 0 : 20, // במובייל נשאיר רווח קטן מעל הכותרת כדי לתת מקום לכפתור
+    marginTop: Platform.OS === "web" ? 0 : 20,
   },
   label: {
-    fontWeight: 800, //need to add more bold
+    fontWeight: 800,
     fontSize: 18,
     marginTop: 10,
     fontFamily: "Inter_400Regular",
@@ -1196,7 +1141,7 @@ const styles = StyleSheet.create({
     marginLeft: 170,
     width: "50%",
     marginLeft:
-      Platform.OS === "ios" || Platform.OS === "android" ? "25%" : 170, // במובייל נמרכז את הכפתור
+      Platform.OS === "ios" || Platform.OS === "android" ? "25%" : 170,
   },
 
   cancelButton: {
@@ -1237,10 +1182,10 @@ const styles = StyleSheet.create({
     position:
       Platform.OS === "ios" || Platform.OS === "android"
         ? "relative"
-        : "absolute", // ב־iOS ו־Android, נשים את ה־notesBox מתחת לשדות
-    top: Platform.OS === "ios" || Platform.OS === "android" ? 20 : 30, // Adjust top margin for mobile
-    right: Platform.OS === "ios" || Platform.OS === "android" ? 5 : 10, // הזזת ה־right
-    left: Platform.OS === "ios" || Platform.OS === "android" ? 2 : undefined, // הוספת left במובייל כדי להזיז ימינה
+        : "absolute",
+    top: Platform.OS === "ios" || Platform.OS === "android" ? 20 : 30,
+    right: Platform.OS === "ios" || Platform.OS === "android" ? 5 : 10,
+    left: Platform.OS === "ios" || Platform.OS === "android" ? 2 : undefined,
     backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
@@ -1256,8 +1201,8 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     minHeight: 150,
     maxHeight: 350,
-    marginTop: Platform.OS === "ios" || Platform.OS === "android" ? 20 : 0, // הוספת רווח במובייל
-    marginBottom: Platform.OS === "ios" || Platform.OS === "android" ? 40 : 0, // הוספת רווח נוסף בין ה־notesBox לכפתורים במובייל
+    marginTop: Platform.OS === "ios" || Platform.OS === "android" ? 20 : 0,
+    marginBottom: Platform.OS === "ios" || Platform.OS === "android" ? 40 : 0,
   },
   addIconButton: {
     flexDirection: "row",
@@ -1306,8 +1251,8 @@ const styles = StyleSheet.create({
   },
 
   navBar: {
-    position: "relative", // מבנה המיקום של ה־NavBar
-    marginTop: 20, // רווח אחרי ה־notesBox
+    position: "relative",
+    marginTop: 20,
   },
 
   modalOverlay: {
@@ -1391,7 +1336,6 @@ const styles = StyleSheet.create({
   input: {
     marginBottom: 12,
     backgroundColor: "#fff",
-    //fontFamily: "Inter_300Light",
   },
   dropdown: {
     borderWidth: 1,
@@ -1411,13 +1355,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee", // גבול בין כל אפשרות באותו המודל
+    borderBottomColor: "#eee",
     justifyContent: "center",
     alignItems: "center",
     color: "#003D5B",
   },
 
-  // סגנון לכפתור ביטול
   modalCancelButton: {
     marginTop: 15,
     paddingVertical: 12,
@@ -1448,60 +1391,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
-    marginTop: Platform.OS === "web" ? 0 : 20, // ריווח עליון במצב נייד
+    marginTop: Platform.OS === "web" ? 0 : 20,
   },
   backButtonHeader: {
     marginRight: 15,
     paddingRight: 5,
-  },
-});
-
-const Webstyles = StyleSheet.create({
-  chatIcon: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    padding: 12,
-    zIndex: 10,
-  },
-  chatModal: {
-    position: "absolute",
-    bottom: 0,
-    right: 10,
-    width: "40%",
-    height: 450,
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 9999,
-  },
-  errorText: {
-    color: "#BFB4FF",
-    fontSize: 12,
-    marginTop: -8,
-    marginBottom: 12,
-    marginLeft: 5,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  inputError: {
-    borderColor: "#BFB4FF",
-    borderWidth: 1,
   },
 });

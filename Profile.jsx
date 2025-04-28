@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { View, Text, Image, Switch, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView,Platform,Alert} from "react-native";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
-//import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import NavBar from './NavBar';
@@ -11,17 +10,16 @@ import NavBarMentor from './NavBarMentor';
 import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
 import CustomPopup from "./CustomPopup"; 
-import AsyncStorage from '@react-native-async-storage/async-storage';//
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; // adjust the path
 
 
-//
+
 
 const Profile = () => {
-    const { Loggeduser,setLoggedUser} = useContext(UserContext);
-  
+  const { Loggeduser,setLoggedUser} = useContext(UserContext);
   const [IsMentor, setIsMentor]=useState(false)
   const [firstName,setFirstName]=useState("")
   const [lastName,setLastName]=useState("")
@@ -88,8 +86,6 @@ const Profile = () => {
         })
       });
 
-      //const responseBody = await response.text();  // Use text() instead of json() to handle any response format
-      //console.log("Response Body:", responseBody);
       console.log("response ok?", response.ok);
 
       if(response.ok)
@@ -122,12 +118,9 @@ const Profile = () => {
   console.log(error)
     }
 }     
-
+//delete user function
   const handleConfirmDelete = async () => {
     try {
-    
-    
-
       const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Users/Deletebyid?userid=${userID}`, {
         method: "DELETE",
       });
@@ -136,7 +129,6 @@ const Profile = () => {
         Alert.alert("Success", "Your profile has been deleted.");
   
         await AsyncStorage.removeItem('user');//מחיקת המשתמש מהלוקל סטורג
-        //setPopupVisible(true);
       } else {
         Alert.alert("Error", "Failed to delete your profile.");
       }
@@ -150,7 +142,8 @@ const Profile = () => {
   const deleteUserProfile = () => {
     setPopupVisible(true); // רק פותח את הפופאפ, לא מוחק
   };
-  
+
+  //log out function
   const handleLogOut=async ()=>{
     await AsyncStorage.removeItem('user');//מחיקת המשתמש מהלוקל סטורג
     setLoggedUser(null)
@@ -165,34 +158,18 @@ const Profile = () => {
 
             <View style={styles.cardContainer}>
             <View style={styles.detailsContainer}>
-        {/* תמונת הפרופיל */}
+        {/* פרטי משתמש ,תמונת הפרופיל */}
         <Image source={ profileImage } style={styles.profileImage} />
-        {/** 
-        {Platform.OS === 'web' ? (
-        profileImage ? (
-          <Image source={{ uri: profileImage }} style={styles.profileImage} />
-        ) : (
-          <Text>Loading image...</Text>
-        )
-      ) : (
-        <Image source={profileImage} style={styles.profileImage} />
-      )}
-*/}
-        {/* שם המשתמש ואימייל }
-        {user.firstName ? <Text style={styles.name}>{user.firstName} {user.lastName}</Text> : null}
-        {user.email ? <Text style={styles.email}>{user.email}</Text> : null}
-        {*/}
-
-        {/* -בדיקה לטלפון שם המשתמש ואימייל */}
         <Text style={styles.name}>{firstName} {lastName} 
        </Text>
-
         <Text style={styles.email}>{email}
         </Text>
         </View>
         <View style={styles.boxContainer}>
-        {/* תיבה ראשונה - הגדרות */}
+
+        {/* תיבה ראשונה - עליונה */}
         <View style={styles.box}> 
+          {/**NAVIGATION TO EDIT PROFILE PAGE */}
           <TouchableOpacity style={styles.option} onPress={() => 
             { if(IsMentor)
               navigation.navigate("EditProfileMentor")
@@ -202,6 +179,7 @@ const Profile = () => {
               <AntDesign name="edit" size={20} color="black" /> Edit profile information
             </Text>
           </TouchableOpacity>
+            {/**NOTIFICATION */}
           <TouchableOpacity style={styles.option} onPress={() => setNotificationsEnabled(!notificationsEnabled)}>
             <Text style={styles.optionText}>
               <Ionicons name="notifications-outline" size={20} color={notificationsEnabled ? "black" : "gray"} /> Notifications
@@ -209,6 +187,7 @@ const Profile = () => {
             <Switch value={notificationsEnabled} onValueChange={() => setNotificationsEnabled(!notificationsEnabled)}
              trackColor={{ false: "#D3D3D3", true: "#9FF9D5" }}
             />
+            {/**DELETE ACCOUNT */}
           </TouchableOpacity>
           <TouchableOpacity style={styles.option} onPress={() => deleteUserProfile()}>
             <Text style={styles.optionText}>
@@ -217,23 +196,21 @@ const Profile = () => {
           </TouchableOpacity>
         </View>
 
-        {/* תיבה שנייה - עזרה */}
+        {/* תיבה שנייה - תחתונה */}
         <View style={styles.box}>
-          <TouchableOpacity style={styles.option}>
-            <Text style={styles.optionText}>
-           {/*}   <MaterialIcons name="support-agent" size={20} color="black" /> Help & Support */}
-            </Text>
-          </TouchableOpacity>
+          {/**LOG OUT */}
           <TouchableOpacity style={styles.option} onPress={() => handleLogOut()}>
             <Text style={styles.optionText}>
               <MaterialCommunityIcons name="logout-variant" size={20} color="black" /> Log Out
             </Text>
           </TouchableOpacity>
+          {/**CONTACT US */}
           <TouchableOpacity style={styles.option}>
             <Text style={styles.optionText}>
               <MaterialCommunityIcons name="message-processing-outline" size={20} color="black" /> Contact us
             </Text>
           </TouchableOpacity>
+          {/**PRIVACY POLICY */}
           <TouchableOpacity style={styles.option}>
             <Text style={styles.optionText}>
               <AntDesign name="lock" size={20} color="black" /> Privacy policy
@@ -253,7 +230,6 @@ visible={popupVisible}
   icon="alert-circle-outline"
   message="Are you sure?"
   onConfirm={() => {
-    //setPopupVisible(false);
     handleConfirmDelete()
     navigation.navigate("SignIn"); 
   }}
@@ -377,7 +353,6 @@ position: "absolute",
   width: Platform.OS === "web" ? "90%" : "100%",
   marginLeft:Platform.OS === "web" ? "500px" : 40,
   marginRight:Platform.OS === "web" ? 0 : 0, 
-  //marginTop:Platform.OS === "web" ?"-300px":0,
   transform: Platform.OS === "web" ? [{ translateY: -400 }] : []
   },
 
@@ -397,10 +372,9 @@ position: "absolute",
     boxShadow: Platform.OS === "web" ?"0 6px 12px rgba(0, 0, 0, 0.2)":"0",
     padding: Platform.OS === "web" ?"20px":"0px",
     //check for the mobile
-alignItems:'center',
-transform: Platform.OS === "web" ? [{ translateY: -90 }] : []
-
-  }
+  alignItems:'center',
+  transform: Platform.OS === "web" ? [{ translateY: -90 }] : []
+}
 
 });
 

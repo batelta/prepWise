@@ -24,24 +24,42 @@ export default function AllUserApplications() {
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
-  //states for popup
-  const [customPopupVisible, setCustomPopupVisible] = useState(false);
-  const [customPopupMessage, setCustomPopupMessage] = useState("");
-  const [customPopupIcon, setCustomPopupIcon] = useState("information");
-  const [customPopupConfirmation, setCustomPopupConfirmation] = useState(false);
-  const [applicationToDelete, setApplicationToDelete] = useState(null);
+  const [popup, setPopup] = useState({
+    visible: false,
+    message: "",
+    icon: "information",
+    isConfirmation: false,
+    onConfirm: () => {},
+    onOk: () => {},
+  });
 
-  //const userId = 6;
+  const showMessage = (message, icon = "information", onOk = () => {}) => {
+    setPopup({
+      visible: true,
+      message,
+      icon,
+      isConfirmation: false,
+      onConfirm: () => {},
+      onOk,
+    });
+  };
+
+  const showConfirmation = (message, onConfirm, icon = "alert-circle") => {
+    setPopup({
+      visible: true,
+      message,
+      icon,
+      isConfirmation: true,
+      onConfirm,
+      onOk: () => {},
+    });
+  };
+
+  const closePopup = () => {
+    setPopup((prev) => ({ ...prev, visible: false }));
+  };
 
   const { Loggeduser } = useContext(UserContext);
-
-  /*const sampleApplication = {
-    applicationID: 1,
-    title: "Software Engineer",
-    companyName: "TechCorp",
-    location: "New York, NY",
-    jobType: "Full Time",
-  };*/
 
   const [showChat, setShowChat] = useState(false);
   const appliedStyles = Platform.OS === "web" ? Webstyles : styles;
@@ -54,15 +72,13 @@ export default function AllUserApplications() {
         console.log("No user found, redirecting to SignIn");
         navigation.reset({
           index: 0,
-          routes: [{ name: 'SignIn' }]
+          routes: [{ name: "SignIn" }],
         });
         return;
       }
 
       try {
-        const API_URL =
-          `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications`
-     
+        const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications`;
 
         const response = await fetch(API_URL);
         const data = await response.json();
@@ -79,29 +95,6 @@ export default function AllUserApplications() {
     fetchApplications();
   }, [Loggeduser]);
 
-  /*useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        const API_URL =
-          Platform.OS === "web"
-            ? `https://localhost:7137/api/JobSeekers/${userId}/applications`
-            : `http://10.0.0.18:7137/api/JobSeekers/${userId}/applications`;
-
-      
-        const response = await fetch(API_URL);
-        const data = await response.json();
-        console.log("Applications from API:", data);
-        setApplications(data);
-      } catch (error) {
-        console.error("Failed to fetch applications", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchApplications();
-  }, []);*/
-
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -113,11 +106,7 @@ export default function AllUserApplications() {
 
   const handleDelete = async (applicationID) => {
     try {
-      const API_URL =
-        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${Loggeduser.id}/${applicationID}`
-        
-
-      console.log("🔍 Deleting application at URL:", API_URL);
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${Loggeduser.id}/${applicationID}`;
 
       const response = await fetch(API_URL, { method: "DELETE" });
 
@@ -127,127 +116,111 @@ export default function AllUserApplications() {
         prev.filter((app) => app.applicationID !== applicationID)
       );
 
-      // הצגת הודעת הצלחה
-      setCustomPopupMessage("Application deleted successfully!");
-      setCustomPopupIcon("check-circle");
-      setCustomPopupConfirmation(false);
-      setCustomPopupVisible(true);
+      showMessage("Application deleted successfully!", "check-circle");
     } catch (error) {
       console.error(" Error deleting:", error);
-      // הצגת הודעת שגיאה
-      setCustomPopupMessage("Could not delete application.");
-      setCustomPopupIcon("alert-circle");
-      setCustomPopupConfirmation(false);
-      setCustomPopupVisible(true);
+      showMessage("Failed to delete application", "alert-circle");
     }
   };
 
   return (
     <View style={styles.wrapper}>
-      {/* התוכן הגולל */}
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.header}>All Applications</Text>
-        {applications.map((app) => (
-          <View key={app.applicationID} style={styles.cardContainer}>
-            <TouchableOpacity
-              style={styles.deleteIcon}
-              onPress={() => {
-                // שמירת ה-ID של המשרה למחיקה
-                setApplicationToDelete(app.applicationID);
-                // הצגת פופאפ אישור
-                setCustomPopupMessage(
-                  "Are you sure you want to delete this application?"
-                );
-                setCustomPopupIcon("alert-circle");
-                setCustomPopupConfirmation(true);
-                setCustomPopupVisible(true);
+      <View>
+        {popup.visible && (
+          <View style={styles.popupOverlay}>
+            <CustomPopup
+              visible={popup.visible}
+              onDismiss={() => {
+                closePopup();
+                if (!popup.isConfirmation) popup.onOk();
               }}
-            >
-              <Text style={{ fontSize: 16, color: "#9FF9D5" }}>X</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => {
-                console.log("Navigating to:", app.applicationID);
-                navigation.navigate("Application", {
-                  applicationID: app.applicationID,
-                });
+              icon={popup.icon}
+              message={popup.message}
+              isConfirmation={popup.isConfirmation}
+              onConfirm={() => {
+                closePopup();
+                popup.onConfirm();
               }}
-            >
-              <View style={styles.row}>
-                <MaterialIcons
-                  name="work-outline"
-                  size={36}
-                  color="#9FF9D5"
-                  style={{ marginRight: 12 }}
-                />
-                <View>
-                  <Text style={styles.title}>{app.title}</Text>
-                  <Text style={styles.company}>{app.companyName}</Text>
-                </View>
-              </View>
-
-              <MaterialIcons name="chevron-right" size={24} color="#9FF9D5" />
-            </TouchableOpacity>
-          </View>
-        ))}
-
-        <Button
-          mode="contained"
-          onPress={() => navigation.navigate("AddApplication")}
-          style={{ marginTop: 30 }}
-        >
-          Add New Application
-        </Button>
-
-        <TouchableOpacity
-          style={styles.chatIcon}
-          onPress={() => setShowChat(!showChat)}
-        >
-          <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
-        </TouchableOpacity>
-
-        {showChat && (
-          <View style={appliedStyles.overlay}>
-            <View style={appliedStyles.chatModal}>
-              <TouchableOpacity
-                onPress={() => setShowChat(false)}
-                style={{ alignSelf: "flex-end", padding: 5 }}
-              >
-                <Text style={{ fontSize: 18, fontWeight: "bold" }}>✖</Text>
-              </TouchableOpacity>
-              <GeminiChat />
-            </View>
+              onCancel={closePopup}
+            />
           </View>
         )}
-      </ScrollView>
 
-      <NavBar />
-      <View
-        style={[
-          styles.popupOverlay,
-          !customPopupVisible && { display: "none" },
-        ]}
-      >
-        <CustomPopup
-          visible={customPopupVisible}
-          onDismiss={() => setCustomPopupVisible(false)}
-          icon={customPopupIcon}
-          message={customPopupMessage}
-          isConfirmation={customPopupConfirmation}
-          onConfirm={() => {
-            if (applicationToDelete) {
-              handleDelete(applicationToDelete);
-            }
-            setCustomPopupVisible(false);
-            setApplicationToDelete(null);
-          }}
-          onCancel={() => {
-            setCustomPopupVisible(false);
-            setApplicationToDelete(null);
-          }}
-        />
+        <ScrollView contentContainerStyle={styles.container}>
+          <Text style={styles.header}>All Applications</Text>
+          {applications.map((app) => (
+            <View key={app.applicationID} style={styles.cardContainer}>
+              <TouchableOpacity
+                style={styles.deleteIcon}
+                onPress={() => {
+                  showConfirmation(
+                    "Are you sure you want to delete this application?",
+                    () => handleDelete(app.applicationID),
+                    "alert-circle"
+                  );
+                }}
+              >
+                <Text style={{ fontSize: 16, color: "#9FF9D5" }}>X</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() => {
+                  console.log("Navigating to:", app.applicationID);
+                  navigation.navigate("Application", {
+                    applicationID: app.applicationID,
+                  });
+                }}
+              >
+                <View style={styles.row}>
+                  <MaterialIcons
+                    name="work-outline"
+                    size={36}
+                    color="#9FF9D5"
+                    style={{ marginRight: 12 }}
+                  />
+                  <View>
+                    <Text style={styles.title}>{app.title}</Text>
+                    <Text style={styles.company}>{app.companyName}</Text>
+                  </View>
+                </View>
+
+                <MaterialIcons name="chevron-right" size={24} color="#9FF9D5" />
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          <Button
+            mode="contained"
+            onPress={() => navigation.navigate("AddApplication")}
+            style={{ marginTop: 30 }}
+          >
+            Add New Application
+          </Button>
+
+          <TouchableOpacity
+            style={styles.chatIcon}
+            onPress={() => setShowChat(!showChat)}
+          >
+            <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
+          </TouchableOpacity>
+
+          {showChat && (
+            <View style={appliedStyles.overlay}>
+              <View style={appliedStyles.chatModal}>
+                <TouchableOpacity
+                  onPress={() => setShowChat(false)}
+                  style={{ alignSelf: "flex-end", padding: 5 }}
+                >
+                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>✖</Text>
+                </TouchableOpacity>
+                <GeminiChat />
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        <NavBar />
       </View>
     </View>
   );
@@ -335,15 +308,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 30,
     padding: 12,
-    zIndex: 999, // ערך גבוה יותר כדי להבטיח שיופיע מעל כל אלמנט אחר
+    zIndex: 999,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3, // הגדלנו את אטימות הצל
+    shadowOpacity: 0.3,
     shadowRadius: 5,
-    elevation: 8, // הגדלנו את הבליטה ב-Android
-    // הוספת מסגרת דקה להבלטה נוספת
+    elevation: 8,
     borderWidth: 1,
-    borderColor: "rgba(159, 249, 213, 0.3)", // מסגרת בצבע דומה לאייקון
+    borderColor: "rgba(159, 249, 213, 0.3)",
     marginBottom: 75,
   },
   chatModal: {

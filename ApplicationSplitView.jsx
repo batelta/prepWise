@@ -36,7 +36,7 @@ export default function ApplicationSplitView() {
 
   const { startWithAddNew } = route?.params || {};
 
-  console.log("🧪 params from navbar", route?.params);
+  console.log(" params from navbar", route?.params);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_700Bold,
@@ -46,37 +46,59 @@ export default function ApplicationSplitView() {
   });
   const [applications, setApplications] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
- 
 
   const [loading, setLoading] = useState(true);
-  const [isAddingNew, setIsAddingNew] = useState(false)
+  const [isAddingNew, setIsAddingNew] = useState(false);
   useEffect(() => {
     if (route.params?.startWithAddNew) {
       setIsAddingNew(true);
     }
   }, [route.params]);
 
-  //delete popup states
-  const [customPopupVisible, setCustomPopupVisible] = useState(false);
-  const [customPopupMessage, setCustomPopupMessage] = useState("");
-  const [customPopupIcon, setCustomPopupIcon] = useState("information");
-  const [customPopupConfirmation, setCustomPopupConfirmation] = useState(false);
-  const [applicationToDelete, setApplicationToDelete] = useState(null);
+  const [popup, setPopup] = useState({
+    visible: false,
+    message: "",
+    icon: "information",
+    isConfirmation: false,
+    onConfirm: () => {},
+    onOk: () => {},
+  });
+
+  const showMessage = (message, icon = "information", onOk = () => {}) => {
+    setPopup({
+      visible: true,
+      message,
+      icon,
+      isConfirmation: false,
+      onConfirm: () => {},
+      onOk,
+    });
+  };
+
+  const showConfirmation = (message, onConfirm, icon = "alert-circle") => {
+    setPopup({
+      visible: true,
+      message,
+      icon,
+      isConfirmation: true,
+      onConfirm,
+      onOk: () => {},
+    });
+  };
+
+  const closePopup = () => {
+    setPopup((prev) => ({ ...prev, visible: false }));
+  };
 
   const [showChat, setShowChat] = useState(false);
   const appliedStyles = Platform.OS === "web" ? Webstyles : styles;
 
-  //const userID = 6;
-
   const { Loggeduser } = useContext(UserContext);
   const [userID, setUserID] = useState(true);
 
-  //  עטיפת fetchApps ב-useCallback
-
   const fetchApps = useCallback(async (userID) => {
     try {
-      const API_URL =
-         `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${userID}/applications`
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${userID}/applications`;
 
       const response = await fetch(API_URL);
       const data = await response.json();
@@ -84,7 +106,7 @@ export default function ApplicationSplitView() {
 
       if (data.length > 0) {
         setApplications(data);
-        // Don't force select if you started in add mode
+
         if (!startWithAddNew) {
           setSelectedId(data[0].applicationID);
           setIsAddingNew(false);
@@ -92,7 +114,6 @@ export default function ApplicationSplitView() {
       } else {
         setIsAddingNew(true);
       }
-      
     } catch (err) {
       console.error("Error fetching applications:", err);
     } finally {
@@ -102,9 +123,9 @@ export default function ApplicationSplitView() {
 
   useEffect(() => {
     if (Loggeduser?.id) {
-      console.log("logged user in SPLIT",Loggeduser)
+      console.log("logged user in SPLIT", Loggeduser);
       fetchApps(Loggeduser.id);
-      setUserID(Loggeduser.id)
+      setUserID(Loggeduser.id);
     }
   }, [Loggeduser]);
 
@@ -127,15 +148,14 @@ export default function ApplicationSplitView() {
 
   const handleDeleteApplication = async (applicationIDToDelete) => {
     try {
-      const API_URL =
-        `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${userID}/${applicationIDToDelete}`
+      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${userID}/${applicationIDToDelete}`;
 
       const response = await fetch(API_URL, { method: "DELETE" });
 
       if (!response.ok) throw new Error("Failed to delete application");
-      console.log("logged user in split",userID)
+      console.log("logged user in split", userID);
 
-      // עדכון רשימה אחרי מחיקה
+      //updated list after delete
       const updated = applications.filter(
         (app) => app.applicationID !== applicationIDToDelete
       );
@@ -149,23 +169,11 @@ export default function ApplicationSplitView() {
         setIsAddingNew(true);
       }
 
-      // הצגת הודעת הצלחה
-
-      setCustomPopupMessage("Application deleted successfully!");
-      setCustomPopupIcon("check-circle");
-      setCustomPopupConfirmation(false);
-      setCustomPopupVisible(true);
-      console.log('🧪 Finished deletion successfully');
-      console.log('🧪 Loggeduser still inside delete handler:', Loggeduser);
-
-
+      showMessage("Application deleted successfully!", "check-circle");
     } catch (error) {
       console.error("Error deleting application:", error);
 
-      setCustomPopupMessage("Failed to delete application");
-      setCustomPopupIcon("alert-circle");
-      setCustomPopupConfirmation(false);
-      setCustomPopupVisible(true);
+      showMessage("Failed to delete application", "alert-circle");
     }
   };
 
@@ -175,7 +183,7 @@ export default function ApplicationSplitView() {
         <View style={styles.splitView}>
           <NavBar style={styles.navbar} />
 
-          {/* 🔹 Left Pane */}
+          {/* Left Pane */}
 
           <View style={styles.leftPane}>
             <Text style={styles.header}>All Applications</Text>
@@ -199,15 +207,11 @@ export default function ApplicationSplitView() {
                 <TouchableOpacity
                   style={styles.deleteIcon}
                   onPress={() => {
-                    // שימור ID המשרה למחיקה
-                    setApplicationToDelete(app.applicationID);
-                    // הצגת פופאפ אישור
-                    setCustomPopupMessage(
-                      "Are you sure you want to delete this application?"
+                    showConfirmation(
+                      "Are you sure you want to delete this application?",
+                      () => handleDeleteApplication(app.applicationID),
+                      "alert-circle"
                     );
-                    setCustomPopupIcon("alert-circle");
-                    setCustomPopupConfirmation(true);
-                    setCustomPopupVisible(true);
                   }}
                 >
                   <Text style={{ fontSize: 14, color: "#9FF9D5" }}>X</Text>
@@ -231,80 +235,54 @@ export default function ApplicationSplitView() {
             </TouchableOpacity>
           </View>
 
-          {/* 🔹 Right Pane */}
-{/***
+          {/* Right Pane */}
+
           <View style={styles.rightPane}>
             {isAddingNew ? (
               <AddApplication
                 onSuccess={() => {
-                  fetchApps(); // רענון רשימה אחרי הוספה
+                  fetchApps(Loggeduser.id);
                   setIsAddingNew(false);
                 }}
               />
             ) : selectedId ? (
-              <Application applicationID={selectedId} />
+              <Application
+                applicationID={selectedId}
+                key={selectedId}
+                onDeleteSuccess={() => {
+                  fetchApps(Loggeduser.id);
+                  setSelectedId(null);
+                }}
+              />
             ) : (
               <Text style={{ padding: 20 }}>
                 Select an application to view details
               </Text>
             )}
           </View>
- */}
-
-<View style={styles.rightPane}>
-  {isAddingNew ? (
-    <AddApplication
-      onSuccess={() => {
-        fetchApps(Loggeduser.id);
-        setIsAddingNew(false);
-      }}
-    />
-  ) : selectedId ? (
-    //////////////////////////////////change now
-    /*<Application 
-      applicationID={selectedId} 
-      key={selectedId} // חשוב מאוד! גורם ל-Application להתאפס כאשר המזהה משתנה
-    />*/
-    <Application  
-    applicationID={selectedId}  
-    key={selectedId}  
-    onDeleteSuccess={() => { fetchApps(Loggeduser.id);
-    setSelectedId(null);  }}/>
-
-  ) : (
-    <Text style={{ padding: 20 }}>
-      Select an application to view details
-    </Text>
-  )}
-</View>
-
         </View>
       </ScrollView>
-      <View
-        style={[
-          styles.popupOverlay,
-          !customPopupVisible && { display: "none" },
-        ]}
-      >
-        <CustomPopup
-          visible={customPopupVisible}
-          onDismiss={() => setCustomPopupVisible(false)}
-          icon={customPopupIcon}
-          message={customPopupMessage}
-          isConfirmation={customPopupConfirmation}
-          onConfirm={() => {
-            if (applicationToDelete) {
-              handleDeleteApplication(applicationToDelete);
-            }
-            setCustomPopupVisible(false);
-            setApplicationToDelete(null);
-          }}
-          onCancel={() => {
-            setCustomPopupVisible(false);
-            setApplicationToDelete(null);
-          }}
-        />
-      </View>
+
+      {popup.visible && (
+        <View style={styles.popupOverlay}>
+          <CustomPopup
+            visible={popup.visible}
+            onDismiss={() => {
+              closePopup();
+              if (!popup.isConfirmation) popup.onOk();
+            }}
+            icon={popup.icon}
+            message={popup.message}
+            isConfirmation={popup.isConfirmation}
+            onConfirm={() => {
+              closePopup();
+              popup.onConfirm();
+            }}
+            onCancel={closePopup}
+          />
+        </View>
+      )}
+
       <TouchableOpacity
         style={styles.chatIcon}
         onPress={() => setShowChat(!showChat)}
@@ -432,8 +410,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: "rgba(0, 0, 0, 0.5)", // רקע חצי שקוף
     justifyContent: "center",
-    alignItems: "center", // מרכז את הפופאפ על המסך
-    zIndex: 1000, // ודא שהפופאפ יהיה מעל כל שאר התוכן
+    alignItems: "center",
+    zIndex: 1000,
   },
   chatIcon: {
     position: "absolute",
@@ -442,15 +420,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 30,
     padding: 12,
-    zIndex: 999, // ערך גבוה יותר כדי להבטיח שיופיע מעל כל אלמנט אחר
+    zIndex: 999,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3, // הגדלנו את אטימות הצל
+    shadowOpacity: 0.3,
     shadowRadius: 5,
-    elevation: 8, // הגדלנו את הבליטה ב-Android
-    // הוספת מסגרת דקה להבלטה נוספת
+    elevation: 8,
     borderWidth: 1,
-    borderColor: "rgba(159, 249, 213, 0.3)", // מסגרת בצבע דומה לאייקון
+    borderColor: "rgba(159, 249, 213, 0.3)",
     marginBottom: 12,
   },
   chatModal: {

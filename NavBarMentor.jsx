@@ -1,8 +1,3 @@
-/**
- * NavBar.js - A responsive navigation bar for web and mobile.
- * - Uses a top navbar for web with React Navigation.
- * - Uses bottom tab navigation for mobile.
- */
 
 import React from "react";
 import { Platform, View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
@@ -19,12 +14,6 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 
-
-const ComingSoonScreen = () => (
-  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-    <Text style={{ fontSize: 16, color: "#888" }}>This feature is coming soon!</Text>
-  </View>
-);
 
 const mobileNavItems = [
   { name: "Home", screen: "HomePageMentor" },
