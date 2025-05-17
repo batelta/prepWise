@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { TextInput, Button, Snackbar, Text, Switch } from "react-native-paper";
-import { TouchableOpacity, Modal } from "react-native";
+import { TouchableOpacity, Modal, Linking } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import {
@@ -19,14 +19,16 @@ import {
   Inter_200ExtraLight,
 } from "@expo-google-fonts/inter";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import NavBar from "./NavBar";
-import CustomPopup from "./CustomPopup";
-import GeminiChat from "./GeminiChat";
+import NavBar from "../NavBar";
+import CustomPopup from "../CustomPopup";
+import GeminiChat from "../GeminiChat";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
-
 import { useContext } from "react";
-import { UserContext } from "./UserContext";
+import { UserContext } from "../UserContext";
+//import FileSelectorModal from "./FilesComps/FileSelectorModal";
+import RenderDisplayModeApplication from "./RenderDisplayModeApplication";
+import EditModeAppliction from "./EditModeAppliction";
 
 export default function Application({ applicationID: propID }) {
   const { Loggeduser } = useContext(UserContext);
@@ -42,13 +44,14 @@ export default function Application({ applicationID: propID }) {
     Inter_300Light,
   });
 
+  //const [resumeFile, setResumeFile] = useState(null);
+  const [showFileSelector, setShowFileSelector] = useState(false);
+  const [linkedFiles, setLinkedFiles] = useState([]); //using to show all application files
+
   const route = useRoute();
   const applicationID = route.params?.applicationID || propID; //if there is no applicationID from the navigate use propID
 
   const [originalApplication, setOriginalApplication] = useState({}); //for setting the right infoamntion in ui when user edit and did not save
-
-  //console.log(" route.params:", route.params);
-  //console.log(" applicationID:", applicationID);
 
   const [showChat, setShowChat] = useState(false);
 
@@ -120,7 +123,6 @@ export default function Application({ applicationID: propID }) {
     });
   };
 
-  // פונקציה לסגירת הפופאפ
   const closePopup = () => {
     setPopup((prev) => ({ ...prev, visible: false }));
   };
@@ -147,59 +149,6 @@ export default function Application({ applicationID: propID }) {
       setUser(Loggeduser);
     }
   }, [Loggeduser]);
-
-  // המשך הקוד עם ה-useEffect לטעינת המשרה
-  /* useEffect(() => {
-    if (!applicationID || !User) {
-      console.log("Missing applicationID or user data, skipping fetch");
-      setLoading(false);
-      return;
-    }
-    // איפוס ערכי המשרה לפני טעינת נתונים חדשים
-    /*setApplication({
-      applicationID: null,
-      title: "",
-      companyName: "",
-      location: "",
-      url: "",
-      companySummary: "",
-      jobDescription: "",
-      notes: "",
-      jobType: "",
-      isHybrid: false,
-      isRemote: false,
-      contacts: [],
-    });*/
-
-  /*const fetchApplication = async () => {
-      try {
-        console.log("API call with ID:", applicationID, "User ID:", User.id);
-
-        const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${User.id}/applications/${applicationID}`;
-
-        console.log("Fetch URL:", API_URL);
-
-        const response = await fetch(API_URL);
-
-        if (!response.ok) {
-          throw new Error(`API responded with status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Fetched application data:", data);
-
-        setOriginalApplication({ ...data, contacts: data.contacts || [] });
-        setApplication({ ...data, contacts: data.contacts || [] });
-      } catch (error) {
-        console.error("Failed to fetch application", error);
-        Alert.alert("Error", "Failed to load application");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchApplication();
-  }, [applicationID, User]);*/
 
   useEffect(() => {
     if (!applicationID || !Loggeduser) {
@@ -350,13 +299,14 @@ export default function Application({ applicationID: propID }) {
 
   const handleUpdateContact = async () => {
     if (!validateContact()) {
+      //check if there is error with the inputs
       return;
     }
 
     try {
       const updatedContacts = application.contacts.map((contact) => {
         if (contact.contactID === contactToEdit.contactID) {
-          return { ...contact, ...contactToEdit };
+          return { ...contact, ...contactToEdit }; //return updated cotact
         }
         return contact;
       });
@@ -387,6 +337,27 @@ export default function Application({ applicationID: propID }) {
       console.error("Error updating contact:", error);
     }
   };
+
+  const fetchLinkedFiles = useCallback(async () => {
+    if (!User?.id || !applicationID) return;
+
+    try {
+      const API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/Users/get-user-files?userId=${User.id}&applicationId=${applicationID}`
+          : `http://192.168.30.157:7137/api/Users/get-user-files?userId=${User.id}&applicationId=${applicationID}`;
+
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setLinkedFiles(data);
+    } catch (error) {
+      console.error("⚠️ Error fetching linked files:", error);
+    }
+  }, [User?.id, applicationID]);
+
+  useEffect(() => {
+    fetchLinkedFiles();
+  }, [fetchLinkedFiles]);
 
   const deleteContact = async (contactID) => {
     try {
@@ -475,13 +446,127 @@ export default function Application({ applicationID: propID }) {
     }
   };
 
-  /*useEffect(() => {
-    console.log("Contacts after add:", application.contacts);
-  }, [application.contacts]);*/
+  const uploadResumeFile = async (userId, file, applicationId = null) => {
+    if (!file) {
+      console.log("No file provided to uploadResumeFile.");
+      return;
+    }
 
-  const renderDisplayMode = () => (
+    try {
+      const formData = new FormData();
+
+      if (Platform.OS === "web") {
+        formData.append("file", file.file, file.name);
+      } else {
+        formData.append("file", {
+          uri: file.uri,
+          name: file.name,
+          type: file.mimeType || "application/pdf",
+        });
+      }
+
+      formData.append("FileType", "Resume");
+
+      let API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/Users/upload-file?userId=${userId}`
+          : `http://192.168.30.157:7137/api/Users/upload-file?userId=${userId}`;
+
+      if (applicationId) API_URL += `&applicationId=${applicationId}`;
+
+      console.log(" Uploading to:", API_URL);
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: formData,
+      });
+
+      const resultText = await response.text();
+      console.log("📬 Upload response status:", response.status);
+      console.log("📬 Upload response body:", resultText);
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const result = JSON.parse(resultText);
+      return result.fileId;
+    } catch (err) {
+      console.error(" Upload error:", err);
+      throw err;
+    }
+  };
+
+  const attachExistingFileToApplication = async (applicationId, fileId) => {
+    try {
+      const API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/Application/link-file-to-application`
+          : `http://192.168.30.157:7137/api/Application/link-file-to-application`;
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId, fileId }),
+      });
+
+      if (response.status === 208) {
+        console.log("ℹ️ File already linked");
+        return false;
+      }
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || "Failed to link file to application");
+      }
+
+      console.log("📎 קובץ שויך בהצלחה");
+      return true;
+    } catch (err) {
+      console.error("❌ שגיאה בשיוך קובץ קיים:", err);
+      throw err;
+    }
+  };
+
+  const unlinkFileFromApplication = async (fileId, fileName) => {
+    setPopup({
+      visible: true,
+      message: `Are you sure you want to remove "${fileName}" from this application?`,
+      icon: "alert-circle-outline",
+      isConfirmation: true,
+      onConfirm: async () => {
+        try {
+          const baseUrl =
+            Platform.OS === "web"
+              ? "https://localhost:7137"
+              : "http://192.168.30.157:7137";
+
+          const url = `${baseUrl}/api/Users/unlink-file-from-application?applicationId=${applicationID}&fileId=${fileId}`;
+          const response = await fetch(url, { method: "DELETE" });
+
+          const resultText = await response.text();
+          console.log("Unlink response:", resultText);
+
+          if (!response.ok) throw new Error(resultText);
+
+          showMessage(
+            `File "${fileName}" removed successfully.`,
+            "check-circle"
+          );
+          await fetchLinkedFiles(); // רענון הרשימה
+        } catch (error) {
+          console.error("Error unlinking file:", error);
+          showMessage(
+            "Failed to remove file from application.",
+            "alert-circle"
+          );
+        }
+      },
+      onOk: () => {}, // לא רלוונטי כאן
+    });
+  };
+
+  /*const renderDisplayMode = () => (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* go back to all applications only for ios*/}
+
       {(Platform.OS === "ios" || Platform.OS === "android") && (
         <TouchableOpacity
           onPress={() => navigation.navigate("AllUserApplications")}
@@ -508,7 +593,7 @@ export default function Application({ applicationID: propID }) {
         </TouchableOpacity>
       )}
 
-      {/*application title*/}
+    
       <Text style={styles.header}>{application.title || "No Title"}</Text>
 
       <Text style={styles.company}>{application.companyName}</Text>
@@ -534,6 +619,62 @@ export default function Application({ applicationID: propID }) {
       <Text style={styles.label}>Job Description:</Text>
       <Text style={styles.text}>{application.jobDescription}</Text>
 
+      <FileSelectorModal
+        visible={showFileSelector}
+        userId={User?.id}
+        onFileSelect={async (fileOrObj) => {
+          try {
+            let fileId = null;
+            let fileName = fileOrObj.name || fileOrObj.fileName;
+
+            //  אם מדובר בקובץ חדש מהמכשיר
+            if (fileOrObj?.uri) {
+              // האם קיים כבר לפי שם קובץ בלבד
+              const alreadyExists = linkedFiles.some(
+                (f) => f.fileName === fileName
+              );
+              if (alreadyExists) {
+                showMessage(
+                  `הקובץ "${fileName}" כבר קיים ברשימה`,
+                  "alert-circle"
+                );
+                return;
+              }
+
+              fileId = await uploadResumeFile(User.id, fileOrObj, null); // לא שולחים applicationID כאן
+            } else {
+              fileId = fileOrObj.fileIdFromDB;
+
+              const alreadyLinked = linkedFiles.some(
+                (f) => f.fileID === fileId
+              );
+              if (alreadyLinked) {
+                showMessage("הקובץ כבר משויך למשרה", "alert-circle");
+                return;
+              }
+            }
+
+            // שיוך בפועל
+            await attachExistingFileToApplication(applicationID, fileId);
+            await fetchLinkedFiles();
+
+            setPopup({
+              visible: true,
+              message: `הקובץ "${fileName}" שויך למשרה בהצלחה`,
+              icon: "check-circle",
+            });
+
+            //setResumeFile({ fileIdFromDB: fileId, fileName }); // אחיד
+          } catch (error) {
+            console.error(" שגיאה בשיוך הקובץ:", error);
+            showMessage("אירעה שגיאה במהלך שיוך הקובץ", "alert-circle");
+          } finally {
+            setShowFileSelector(false);
+          }
+        }}
+        onClose={() => setShowFileSelector(false)}
+      />
+
       <View style={styles.notesBox}>
         <View style={styles.addIconButton}>
           <Icon name="note-add" size={30} color="#b9a7f2" />
@@ -545,7 +686,7 @@ export default function Application({ applicationID: propID }) {
       <View>
         {application.contacts.map((contact, index) => (
           <View key={contact.contactID || index} style={styles.contactRow}>
-            {/* contact icon*/}
+        
             <TouchableOpacity
               style={styles.contactIconButton}
               onPress={() => {
@@ -561,7 +702,7 @@ export default function Application({ applicationID: propID }) {
           </View>
         ))}
 
-        {/* Contacts modal*/}
+       
         <Modal
           visible={contactModalVisible && contactToEdit !== null}
           transparent={true}
@@ -599,7 +740,7 @@ export default function Application({ applicationID: propID }) {
                 </Text>
 
                 <View style={styles.modalButtonsRow}>
-                  {/* Edit Contact btn*/}
+               
                   <Button
                     mode="contained"
                     onPress={() => {
@@ -613,7 +754,7 @@ export default function Application({ applicationID: propID }) {
                     Edit Contact
                   </Button>
 
-                  {/* delte contact btn*/}
+               
                   <Button
                     mode="contained"
                     onPress={() => {
@@ -652,12 +793,53 @@ export default function Application({ applicationID: propID }) {
           </TouchableOpacity>
         </Modal>
 
+        {linkedFiles.length > 0 && (
+          <View style={{ marginTop: 20 }}>
+            <Text style={styles.label}>Attached Files:</Text>
+
+            {linkedFiles.map((file, index) => (
+              <TouchableOpacity
+                key={`${file.FileID || index}-${file.FileName}`}
+                style={styles.selectedFileContainer}
+                onPress={() => {
+                  const fileUrl =
+                    Platform.OS === "web"
+                      ? `https://localhost:7137${file.filePath}`
+                      : `http://192.168.30.157:7137${file.filePath}`;
+                  Linking.openURL(fileUrl);
+                }}
+              >
+                <FontAwesome name="file-text-o" size={20} color="#003D5B" />
+                <Text style={styles.selectedFileName}>{file.fileName}</Text>
+
+                <TouchableOpacity
+                  style={{ marginLeft: 10 }}
+                  onPress={() =>
+                    unlinkFileFromApplication(file.fileID, file.fileName)
+                  }
+                >
+                  <FontAwesome name="trash" size={18} color="#9FF9D5" />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <Button
+          mode="outlined"
+          onPress={() => setShowFileSelector(true)}
+          style={styles.button}
+        >
+          Add File
+        </Button>
+
         <Button
           mode="outlined"
           onPress={() => {
             setIsEditingContact(true);
             setContactEditMode("add");
             setContactToEdit({
+              //crete contact obj
               contactName: "",
               contactEmail: "",
               contactPhone: "",
@@ -696,9 +878,9 @@ export default function Application({ applicationID: propID }) {
         Delete Application
       </Button>
     </ScrollView>
-  );
+  );*/
 
-  const renderEditMode = () => (
+  /*const renderEditMode = () => (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Edit Application</Text>
 
@@ -899,7 +1081,7 @@ export default function Application({ applicationID: propID }) {
         Cancel
       </Button>
     </ScrollView>
-  );
+  );*/
 
   const renderContactEditMode = () => (
     <ScrollView contentContainerStyle={styles.container}>
@@ -1017,11 +1199,44 @@ export default function Application({ applicationID: propID }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {Platform.OS === "web" && <NavBar />} {/* Show NavBar only on web */}
-      {isEditingContact
-        ? renderContactEditMode()
-        : isEditing
-        ? renderEditMode()
-        : renderDisplayMode()}
+      {isEditingContact ? (
+        renderContactEditMode()
+      ) : isEditing ? (
+        <EditModeAppliction
+          styles={styles}
+          application={application}
+          handleChange={handleChange}
+          jobTypeList={jobTypeList}
+          jobTypeModalVisible={jobTypeModalVisible}
+          setJobTypeModalVisible={setJobTypeModalVisible}
+          handleUpdate={handleUpdate}
+          originalApplication={originalApplication}
+          setApplication={setApplication}
+          setIsEditing={setIsEditing}
+        />
+      ) : (
+        <RenderDisplayModeApplication
+          styles={styles}
+          application={application}
+          navigation={navigation}
+          setIsEditing={setIsEditing}
+          setShowFileSelector={setShowFileSelector}
+          showFileSelector={showFileSelector}
+          setPopup={setPopup}
+          showMessage={showMessage}
+          User={User}
+          linkedFiles={linkedFiles}
+          fetchLinkedFiles={fetchLinkedFiles}
+          uploadResumeFile={uploadResumeFile}
+          attachExistingFileToApplication={attachExistingFileToApplication}
+          unlinkFileFromApplication={unlinkFileFromApplication}
+          setContactModalVisible={setContactModalVisible}
+          setContactToEdit={setContactToEdit}
+          setIsEditingContact={setIsEditingContact}
+          setContactEditMode={setContactEditMode}
+          handleDeleteApplication={handleDeleteApplication}
+        />
+      )}
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
@@ -1047,6 +1262,89 @@ export default function Application({ applicationID: propID }) {
             onCancel={closePopup}
           />
         </View>
+      )}
+      {contactModalVisible && contactToEdit && (
+        <Modal
+          visible={true}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => {
+            setContactModalVisible(false);
+            setContactToEdit(null);
+          }}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setContactModalVisible(false);
+              setContactToEdit(null);
+            }}
+          >
+            <View
+              style={styles.modalContent}
+              onStartShouldSetResponder={() => true}
+            >
+              <Text style={styles.modalHeader}>
+                {contactToEdit.contactName || "Contact Details"}
+              </Text>
+
+              <View style={styles.contactDetailsModal}>
+                <Text style={styles.contactDetailItem}>
+                  Email: {contactToEdit.contactEmail}
+                </Text>
+                <Text style={styles.contactDetailItem}>
+                  Phone: {contactToEdit.contactPhone}
+                </Text>
+                <Text style={styles.contactDetailItem}>
+                  Notes: {contactToEdit.contactNotes}
+                </Text>
+
+                <View style={styles.modalButtonsRow}>
+                  <Button
+                    mode="contained"
+                    onPress={() => {
+                      setContactModalVisible(false);
+                      setIsEditingContact(true);
+                    }}
+                    style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
+                    labelStyle={styles.buttonLabel}
+                  >
+                    Edit Contact
+                  </Button>
+
+                  <Button
+                    mode="contained"
+                    onPress={() => {
+                      setContactModalVisible(false);
+                      showConfirmation(
+                        "Are you sure you want to delete this contact?",
+                        () => deleteContact(contactToEdit.contactID),
+                        "alert-circle"
+                      );
+                    }}
+                    style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
+                    labelStyle={styles.buttonLabel}
+                  >
+                    Delete
+                  </Button>
+                </View>
+
+                <Button
+                  mode="outlined"
+                  onPress={() => {
+                    setContactModalVisible(false);
+                    setContactToEdit(null);
+                  }}
+                  style={styles.modalCloseButton}
+                  labelStyle={styles.cancelButtonLabel}
+                >
+                  Close
+                </Button>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       )}
       {Platform.OS !== "web" && (
         <TouchableOpacity
@@ -1396,5 +1694,34 @@ const styles = StyleSheet.create({
   backButtonHeader: {
     marginRight: 15,
     paddingRight: 5,
+  },
+
+  resumeButton: {
+    backgroundColor: "#BFB4FF",
+    borderRadius: 4,
+    paddingVertical: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 30,
+    marginBottom: 50,
+  },
+  resumeButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+  },
+
+  selectedFileContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 10,
+    gap: 8,
+  },
+
+  selectedFileName: {
+    fontSize: 14,
+    color: "#003D5B",
+    fontFamily: "Inter_400Regular",
   },
 });

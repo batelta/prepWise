@@ -11,13 +11,13 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Provider as PaperProvider, Button } from "react-native-paper";
-import NavBar from "./NavBar";
-import CustomPopup from "./CustomPopup";
-import GeminiChat from "./GeminiChat";
+import NavBar from "../NavBar";
+import CustomPopup from "../CustomPopup";
+import GeminiChat from "../GeminiChat";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
 import { useContext } from "react";
-import { UserContext } from "./UserContext";
+import { UserContext } from "../UserContext";
 
 export default function AllUserApplications() {
   const [applications, setApplications] = useState([]);

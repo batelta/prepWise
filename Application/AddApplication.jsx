@@ -26,13 +26,14 @@ import {
   Inter_100Thin,
   Inter_200ExtraLight,
 } from "@expo-google-fonts/inter";
-import GeminiChat from "./GeminiChat";
+import GeminiChat from "../GeminiChat";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
-import NavBar from "./NavBar";
-
+import NavBar from "../NavBar";
 import { useContext } from "react";
-import { UserContext } from "./UserContext";
+import { UserContext } from "../UserContext";
+import FileSelectorModal from "../FilesComps/FileSelectorModal";
+import CustomPopup from "../CustomPopup";
 
 export default function AddApplication({ onSuccess }) {
   const { Loggeduser } = useContext(UserContext);
@@ -100,6 +101,100 @@ export default function AddApplication({ onSuccess }) {
     { label: "Temporary", value: "Temporary" },
     { label: "Student", value: "Student" },
   ];
+
+  const [resumeFile, setResumeFile] = useState(null);
+  const [showFileSelector, setShowFileSelector] = useState(false);
+
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
+
+  const uploadResumeFile = async (userId, file, applicationId = null) => {
+    if (!file) {
+      console.log("No file provided to uploadResumeFile.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+
+      if (Platform.OS === "web") {
+        formData.append("file", file.file, file.name);
+      } else {
+        formData.append("file", {
+          uri: file.uri,
+          name: file.name,
+          type: file.mimeType || "application/pdf",
+        });
+      }
+
+      formData.append("FileType", "Resume");
+
+      let API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/Users/upload-file?userId=${userId}`
+          : `http://192.168.30.157:7137/api/Users/upload-file?userId=${userId}`;
+
+      if (applicationId) API_URL += `&applicationId=${applicationId}`;
+
+      console.log("🌐 Uploading to:", API_URL);
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: formData,
+      });
+
+      const resultText = await response.text();
+      console.log("Upload response status:", response.status);
+      console.log("📬 Upload response body:", resultText);
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const result = JSON.parse(resultText);
+      return result.fileId;
+    } catch (err) {
+      console.error(" Upload error:", err);
+      throw err;
+    }
+  };
+
+  /*const pickResumeFile = async () => {
+    if (Platform.OS === "web") {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".pdf,.doc,.docx";
+      input.onchange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          console.log(" File selected:", file);
+          setResumeFile({
+            uri: URL.createObjectURL(file),
+            name: file.name,
+            type: file.type,
+            file,
+          });
+        } else {
+          console.log(" No file selected");
+        }
+      };
+      input.click();
+    } else {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: [
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.type === "success") {
+        console.log("✅ Picked file:", result);
+        setResumeFile(result);
+      } else {
+        console.log("❌ No file selected or cancelled");
+      }
+    }
+  };*/
 
   const validateName = (name) => /^[A-Za-z\s]{1,30}$/.test(name);
   const validateEmail = (email) =>
@@ -173,72 +268,93 @@ export default function AddApplication({ onSuccess }) {
     });
   };
 
+  const attachExistingFileToApplication = async (applicationId, fileId) => {
+    try {
+      const API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/Application/link-file-to-application`
+          : `http://192.168.30.157:7137/api/Application/link-file-to-application`;
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId, fileId }),
+      });
+
+      const result = await response.json();
+      console.log(" קובץ קיים שויך בהצלחה:", result);
+    } catch (err) {
+      console.error("שגיאה בשיוך קובץ קיים:", err);
+    }
+  };
+
   const addNewApplication = async () => {
     if (!application.Title.trim()) {
       setTitleError(true);
       return;
-    } else {
-      setTitleError(false);
     }
 
-    if (hasContact) {
-      if (!contact.ContactName.trim()) {
-        alert("Contact name is required.");
-        return;
-      }
-
-      if (!validateContact()) {
-        alert(
-          "Please fix the errors in the contact information before submitting."
-        );
-        return;
-      }
+    if (hasContact && !validateContact()) {
+      alert("Please fix contact info");
+      return;
     }
 
-    setIsLoading(true); // מפעיל את מצב הטעינה
+    setIsLoading(true);
+
     try {
-      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${userID}/applications`;
+      const API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/JobSeekers/${userID}/applications`
+          : `https://192.168.30.157:7137/api/JobSeekers/${userID}/applications`;
 
       const appToSend = {
         ...application,
         Contacts: hasContact ? [contact] : [],
       };
 
-      console.log(" appToSend object before sending:", appToSend); //for checking
-      console.log(" contacts value:", appToSend.Contacts); //for checking
-
-      const finalJSON = JSON.stringify(appToSend, null, 2); //for checking
-      console.log(" Final JSON string:", finalJSON); //for checking
-
       const response = await fetch(API_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(appToSend),
       });
 
-      console.log(" Response status:", response.status);
+      const resultText = await response.text();
+      const result = JSON.parse(resultText);
 
-      setIsLoading(false); // ה מבטל את מצב הטעינה אחרי תגובת השרת
+      //const result = await response.json();
+      console.log(" Application response:", result);
 
-      if (response.ok) {
-        setShowSnackbar(true);
-        setTimeout(() => {
-          if (Platform.OS === "web") {
-            onSuccess?.(); // לרענן את רשימת המשרות בווב
-          } else {
-            navigation.navigate("AllUserApplications"); // נווט לעמוד המתאים במובייל
-          }
-        }, 1700);
-      } else {
-        const errorText = await response.text(); // תקבל את הודעת השגיאה מהשרת
-        console.error(" Server response text:", errorText);
-        throw new Error("Failed to submit application" + errorText);
+      const applicationId = result.applicationID;
+
+      if (!response.ok || !applicationId)
+        throw new Error("Failed to create application");
+
+      if (resumeFile) {
+        if (resumeFile.fileIdFromDB) {
+          //  המשתמש בחר קובץ קיים שכבר נמצא בשרת (בחר מתוך הרשימה)
+          await attachExistingFileToApplication(
+            applicationId,
+            resumeFile.fileIdFromDB
+          );
+        } else {
+          //  המשתמש העלה קובץ חדש מהמכשיר שלו
+          await uploadResumeFile(userID, resumeFile, applicationId);
+        }
       }
+
+      setShowSnackbar(true);
+      setTimeout(() => {
+        if (Platform.OS === "web") {
+          onSuccess?.();
+        } else {
+          navigation.navigate("AllUserApplications");
+        }
+      }, 1700);
     } catch (err) {
-      console.error("Error submitting:", err);
-      setIsLoading(false); // ה מבטל את מצב הטעינה במקרה של שגיאה
+      console.error(" Error submitting:", err);
+      alert("Failed to create application");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -513,6 +629,72 @@ export default function AddApplication({ onSuccess }) {
             disabled={isLoading}
           />
         </View>
+        <TouchableOpacity
+          style={styles.resumeButton}
+          onPress={() => setShowFileSelector(true)}
+        >
+          <Text style={styles.resumeButtonText}>Add File</Text>
+        </TouchableOpacity>
+        <FileSelectorModal
+          visible={showFileSelector}
+          userId={userID}
+          onFileSelect={(fileOrObj) => {
+            const selectedFileName = fileOrObj?.fileName || fileOrObj?.name;
+            const selectedFileId = fileOrObj?.fileIdFromDB;
+
+            const isDuplicate =
+              resumeFile &&
+              (resumeFile.fileName === selectedFileName ||
+                resumeFile.fileIdFromDB === selectedFileId);
+
+            if (isDuplicate) {
+              setPopupMessage(`הקובץ "${selectedFileName}" כבר נבחר`);
+              setPopupVisible(true);
+              return; // מונע את המשך הקוד במקרה של כפילות
+            }
+
+            // ✅ ממשיכים רק אם לא כפול
+            if (fileOrObj?.uri) {
+              setResumeFile(fileOrObj);
+              setPopupMessage(`קובץ "${fileOrObj.fileName}" נוסף מהמכשיר`);
+            } else {
+              setResumeFile({
+                fileIdFromDB: fileOrObj.fileIdFromDB,
+                fileName: fileOrObj.fileName,
+              });
+              setPopupMessage(`הקובץ "${fileOrObj.fileName}" נבחר מהרשימה`);
+            }
+
+            setPopupVisible(true);
+          }}
+          onClose={() => setShowFileSelector(false)}
+        />
+        {/*<FileSelectorModal
+          visible={showFileSelector}
+          userId={userID}
+          onFileSelect={(fileOrObj) => {
+            if (fileOrObj?.uri) {
+              setResumeFile(fileOrObj); // קובץ חדש מהמכשיר
+              setPopupMessage(` קובץ "${fileOrObj.fileName}" נוסף מהמכשיר`);
+            } else {
+              setResumeFile({
+                fileIdFromDB: fileOrObj.fileIdFromDB,
+                fileName: fileOrObj.fileName, // ✅ זה מה שחסר בדוגמה הלא עובדת
+              });
+              setPopupMessage(` הקובץ "${fileOrObj.fileName}" נבחר מהרשימה`);
+            }
+            setPopupVisible(true);
+          }}
+          onClose={() => setShowFileSelector(false)}
+        />*/}
+        {resumeFile && (
+          <View style={styles.selectedFileContainer}>
+            <FontAwesome name="file-text-o" size={20} color="#003D5B" />
+            <Text style={styles.selectedFileName}>
+              {resumeFile.name || resumeFile.fileName || "Selected File"}
+            </Text>
+          </View>
+        )}
         <View style={styles.divider} />
         <View style={styles.switchRow}>
           <Text>Do you have a contact person?</Text>
@@ -536,7 +718,6 @@ export default function AddApplication({ onSuccess }) {
                 contactErrors.ContactName ? styles.inputError : null,
               ]}
               disabled={isLoading}
-              textColor="#003D5B"
               fontFamily="Inter_400Regular"
             />
 
@@ -634,7 +815,12 @@ export default function AddApplication({ onSuccess }) {
           Application details imported successfully!
         </Snackbar>
       </ScrollView>
-
+      <CustomPopup
+        visible={popupVisible}
+        onDismiss={() => setPopupVisible(false)}
+        icon="check-circle-outline"
+        message={popupMessage}
+      />
       {/*chat item */}
       {Platform.OS !== "web" && (
         <TouchableOpacity
@@ -765,7 +951,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(252, 248, 248, 0.91)",
     padding: 15,
     borderRadius: 8,
-    marginTop: 15,
   },
 
   modalOverlay: {
@@ -841,8 +1026,32 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginLeft: 5,
   },
-  /*inputError: {
-    borderColor: "#BFB4FF",
-    borderWidth: 1,
-  },*/
+  resumeButton: {
+    backgroundColor: "#BFB4FF",
+    borderRadius: 4,
+    paddingVertical: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 30,
+    marginBottom: 50,
+  },
+  resumeButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+  },
+
+  selectedFileContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 10,
+    gap: 8,
+  },
+
+  selectedFileName: {
+    fontSize: 14,
+    color: "#003D5B",
+    fontFamily: "Inter_400Regular",
+  },
 });

@@ -12,7 +12,8 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import Application from "./Application";
 import AddApplication from "./AddApplication";
-import NavBar from "./NavBar";
+
+import NavBar from "../NavBar";
 import { useFonts } from "expo-font";
 import {
   Inter_400Regular,
@@ -21,12 +22,12 @@ import {
   Inter_100Thin,
   Inter_200ExtraLight,
 } from "@expo-google-fonts/inter";
-import CustomPopup from "./CustomPopup";
+import CustomPopup from "../CustomPopup";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import GeminiChat from "./GeminiChat";
+import GeminiChat from "../GeminiChat";
 
 import { useContext } from "react";
-import { UserContext } from "./UserContext";
+import { UserContext } from "../UserContext";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 5, // עבור אנדרואיד
+    elevation: 5,
     width: "68%",
     margin: 10,
     overflow: "auto",
