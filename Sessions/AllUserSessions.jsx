@@ -19,12 +19,12 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useContext } from "react";
 import { UserContext } from "../UserContext";
 
-export default function AllUserApplications() {
-  const [applications, setApplications] = useState([]);
+export default function AllUserSessions() {
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
-  const [viewArchived, setViewArchived] = useState(false);
+  //const [viewArchived, setViewArchived] = useState(false);
 
   const [popup, setPopup] = useState({
     visible: false,
@@ -67,51 +67,43 @@ export default function AllUserApplications() {
   const appliedStyles = Platform.OS === "web" ? Webstyles : styles;
 
   useEffect(() => {
-    const fetchApplications = async () => {
-      console.log("Loggeduser changed:", Loggeduser);
-
+    const fetchSessions = async () => {
       if (!Loggeduser?.id) {
-        console.log("No user found, redirecting to SignIn");
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "SignIn" }],
-        });
+        navigation.reset({ index: 0, routes: [{ name: "SignIn" }] });
         return;
       }
 
       try {
-        //const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications?showArchived=${showArchived}`;
-
-        const API_URL =
+        const baseURL =
           Platform.OS === "web"
-            ? `https://localhost:7137/api/JobSeekers/${Loggeduser.id}/applications?showArchived=${showArchived}`
-            : `http://192.168.30.157:7137/api/JobSeekers/${Loggeduser.id}/applications?showArchived=${showArchived}`;
+            ? "https://localhost:7137"
+            : "http://192.168.30.157:7137";
 
-        const response = await fetch(API_URL);
+        const response = await fetch(
+          `${baseURL}/api/sessions/user/${Loggeduser.id}`
+        );
         const data = await response.json();
-
-        console.log("Applications from API:", data);
-        setApplications(data);
+        setSessions(data);
       } catch (error) {
-        console.error("Failed to fetch applications", error);
+        console.error("❌ Failed to fetch sessions", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchApplications();
-  }, [Loggeduser, viewArchived]);
+    fetchSessions();
+  }, [Loggeduser]);
 
   if (loading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#666" />
-        <Text>Loading applications...</Text>
+        <Text>Loading sessions...</Text>
       </View>
     );
   }
 
-  const handleUnarchive = async (applicationID) => {
+  /*const handleUnarchive = async (applicationID) => {
     try {
       const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/unarchiveById/${Loggeduser.id}/${applicationID}`;
 
@@ -128,9 +120,9 @@ export default function AllUserApplications() {
       console.error("Error restoring:", error);
       showMessage("Failed to restore application", "alert-circle");
     }
-  };
+  };*/
 
-  const handleDelete = async (applicationID) => {
+  /*const handleDelete = async (applicationID) => {
     try {
       const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${Loggeduser.id}/${applicationID}`;
 
@@ -146,155 +138,74 @@ export default function AllUserApplications() {
     } catch (error) {
       showMessage("Failed to archive application", "alert-circle");
     }
-  };
+  };*/
 
   return (
     <View style={styles.wrapper}>
-      <View>
-        {popup.visible && (
-          <View style={styles.popupOverlay}>
-            <CustomPopup
-              visible={popup.visible}
-              onDismiss={() => {
-                closePopup();
-                if (!popup.isConfirmation) popup.onOk();
-              }}
-              icon={popup.icon}
-              message={popup.message}
-              isConfirmation={popup.isConfirmation}
-              onConfirm={() => {
-                closePopup();
-                popup.onConfirm();
-              }}
-              onCancel={closePopup}
-            />
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.header}>All Sessions</Text>
+
+        {sessions.map((session) => (
+          <View key={session.sessionID} style={styles.cardContainer}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() =>
+                navigation.navigate("Session", {
+                  sessionID: session.sessionID,
+                })
+              }
+            >
+              <View style={styles.row}>
+                <MaterialIcons
+                  name="event-available"
+                  size={36}
+                  color="#9FF9D5"
+                  style={{ marginRight: 12 }}
+                />
+                <View>
+                  <Text style={styles.title}>
+                    {new Date(session.scheduledAt).toLocaleString()}
+                  </Text>
+                  <Text style={styles.company}>Status: {session.status}</Text>
+                </View>
+              </View>
+
+              <MaterialIcons name="chevron-right" size={24} color="#9FF9D5" />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate("AddSession")}
+          style={{ marginTop: 30 }}
+        >
+          Schedule New Session
+        </Button>
+
+        <TouchableOpacity
+          style={styles.chatIcon}
+          onPress={() => setShowChat(!showChat)}
+        >
+          <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
+        </TouchableOpacity>
+
+        {showChat && (
+          <View style={appliedStyles.overlay}>
+            <View style={appliedStyles.chatModal}>
+              <TouchableOpacity
+                onPress={() => setShowChat(false)}
+                style={{ alignSelf: "flex-end", padding: 5 }}
+              >
+                <Text style={{ fontSize: 18, fontWeight: "bold" }}>✖</Text>
+              </TouchableOpacity>
+              <GeminiChat />
+            </View>
           </View>
         )}
+      </ScrollView>
 
-        <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.header}>All Applications</Text>
-
-          <View style={{ flexDirection: "row", marginBottom: 15 }}>
-            <TouchableOpacity
-              onPress={() => setViewArchived(false)}
-              style={[
-                styles.toggleButton,
-                !viewArchived && styles.activeToggle,
-              ]}
-            >
-              <Text style={styles.toggleText}>Active</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setViewArchived(true)}
-              style={[styles.toggleButton, viewArchived && styles.activeToggle]}
-            >
-              <Text style={styles.toggleText}>Archive</Text>
-            </TouchableOpacity>
-          </View>
-
-          {applications.map((app) => (
-            <View key={app.applicationID} style={styles.cardContainer}>
-              {!viewArchived && (
-                <TouchableOpacity
-                  style={styles.deleteIcon}
-                  onPress={() => {
-                    showConfirmation(
-                      "Move this application to the archive? You can restore it later",
-                      () => handleDelete(app.applicationID),
-                      "alert-circle"
-                    );
-                  }}
-                >
-                  <Text style={{ fontSize: 16, color: "#9FF9D5" }}>X</Text>
-                </TouchableOpacity>
-              )}
-
-              {viewArchived && (
-                <TouchableOpacity
-                  style={styles.restoreIcon}
-                  onPress={() =>
-                    showConfirmation(
-                      "Restore this application?",
-                      () => handleUnarchive(app.applicationID),
-                      "refresh"
-                    )
-                  }
-                >
-                  <MaterialIcons name="restore" size={20} color="#9FF9D5" />
-                </TouchableOpacity>
-              )}
-              {/*<TouchableOpacity
-                style={styles.deleteIcon}
-                onPress={() => {
-                  showConfirmation(
-                    "Are you sure you want to delete this application?",
-                    () => handleDelete(app.applicationID),
-                    "alert-circle"
-                  );
-                }}
-              >
-                <Text style={{ fontSize: 16, color: "#9FF9D5" }}>X</Text>
-              </TouchableOpacity>*/}
-
-              <TouchableOpacity
-                style={styles.card}
-                onPress={() => {
-                  console.log("Navigating to:", app.applicationID);
-                  navigation.navigate("Application", {
-                    applicationID: app.applicationID,
-                  });
-                }}
-              >
-                <View style={styles.row}>
-                  <MaterialIcons
-                    name="work-outline"
-                    size={36}
-                    color="#9FF9D5"
-                    style={{ marginRight: 12 }}
-                  />
-                  <View>
-                    <Text style={styles.title}>{app.title}</Text>
-                    <Text style={styles.company}>{app.companyName}</Text>
-                  </View>
-                </View>
-
-                <MaterialIcons name="chevron-right" size={24} color="#9FF9D5" />
-              </TouchableOpacity>
-            </View>
-          ))}
-
-          <Button
-            mode="contained"
-            onPress={() => navigation.navigate("AddApplication")}
-            style={{ marginTop: 30 }}
-          >
-            Add New Application
-          </Button>
-
-          <TouchableOpacity
-            style={styles.chatIcon}
-            onPress={() => setShowChat(!showChat)}
-          >
-            <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
-          </TouchableOpacity>
-
-          {showChat && (
-            <View style={appliedStyles.overlay}>
-              <View style={appliedStyles.chatModal}>
-                <TouchableOpacity
-                  onPress={() => setShowChat(false)}
-                  style={{ alignSelf: "flex-end", padding: 5 }}
-                >
-                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>✖</Text>
-                </TouchableOpacity>
-                <GeminiChat />
-              </View>
-            </View>
-          )}
-        </ScrollView>
-
-        <NavBar />
-      </View>
+      <NavBar />
     </View>
   );
 }

@@ -16,9 +16,16 @@ import EditProfile from "./EditProfile";
 import SignUpMentor from "./SignUpMentor";
 import HomePageMentor from "./HomePageMentor";
 import Application from "./Application/Application";
+import AdminScreen from "./Admin/AdminScreen";
+import AdminAllUsers from "./Admin/AdminAllUsers";
+import AdminAllApplication from "./Admin/AdminAllApplication";
 import EditProfileMentor from "./EditProfileMentor";
+//import Session from "./Sessions/Session";
+import AllUserSessions from "./Sessions/AllUserSessions";
+
 import AllUserApplications from "./Application/AllUserApplications";
 import ApplicationSplitView from "./Application/ApplicationSplitView";
+import Query from "./Query";
 import { UserProvider } from "./UserContext"; // import the provider
 
 // Define your custom theme
@@ -47,7 +54,7 @@ export default function App() {
       {/* Wrap everything inside this */}
       <NavigationContainer>
         <PaperProvider theme={theme}>
-          <Stack.Navigator initialRouteName="ApplicationSplitView">
+          <Stack.Navigator initialRouteName="AdminScreen">
             <Stack.Screen name="SignIn" component={SignIn} />
             <Stack.Screen name="SignUp" component={SignUp} />
             <Stack.Screen name="GeminiChat" component={GeminiChat} />
@@ -55,11 +62,20 @@ export default function App() {
             <Stack.Screen name="AddApplication" component={AddApplication} />
             <Stack.Screen name="SignUpJobSeeker" component={SignUpJobSeeker} />
             <Stack.Screen name="SignUpMentor" component={SignUpMentor} />
-
+            <Stack.Screen name="Query" component={Query} />
             <Stack.Screen name="HomePage" component={HomePage} />
             <Stack.Screen name="HomePageMentor" component={HomePageMentor} />
             <Stack.Screen name="Profile" component={Profile} />
             <Stack.Screen name="EditProfile" component={EditProfile} />
+            <Stack.Screen name="AdminScreen" component={AdminScreen} />
+            <Stack.Screen name="AdminAllUsers" component={AdminAllUsers} />
+            <Stack.Screen
+              name="AdminAllApplication"
+              component={AdminAllApplication}
+            />
+
+            {/*<Stack.Screen name="Session" component={Session} />*/}
+            <Stack.Screen name="AllUserSessions" component={AllUserSessions} />
             <Stack.Screen
               name="EditProfileMentor"
               component={EditProfileMentor}

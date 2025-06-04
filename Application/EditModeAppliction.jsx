@@ -1,5 +1,4 @@
 // EditModeApplication.js
-import * as React from "react";
 import {
   ScrollView,
   Text,
@@ -10,6 +9,8 @@ import {
 } from "react-native";
 import { TextInput, Button, Switch } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import StatusPickerModal from "./StatusPickerModal";
+import React, { useState } from "react";
 
 export default function EditModeApplication({
   styles,
@@ -23,6 +24,8 @@ export default function EditModeApplication({
   setApplication,
   setIsEditing,
 }) {
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+
   console.log("EditModeApplication loaded ✅");
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -72,6 +75,25 @@ export default function EditModeApplication({
         textColor="#003D5B"
         multiline
         numberOfLines={3}
+      />
+      <TouchableOpacity
+        onPress={() => setStatusModalVisible(true)}
+        style={styles.dropdown}
+      >
+        <Text
+          style={[
+            styles.dropdownText,
+            { color: application.applicationStatus ? "#003D5B" : "#999" },
+          ]}
+        >
+          {application.applicationStatus || "Select Application Status"}
+        </Text>
+      </TouchableOpacity>
+      <StatusPickerModal
+        visible={statusModalVisible}
+        onClose={() => setStatusModalVisible(false)}
+        onSelect={(value) => handleChange("applicationStatus", value)}
+        selectedValue={application.applicationStatus}
       />
       <View style={styles.notesBox}>
         <View style={styles.addIconButton}>

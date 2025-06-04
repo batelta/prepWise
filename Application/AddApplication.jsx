@@ -34,6 +34,7 @@ import { useContext } from "react";
 import { UserContext } from "../UserContext";
 import FileSelectorModal from "../FilesComps/FileSelectorModal";
 import CustomPopup from "../CustomPopup";
+import StatusPickerModal from "./StatusPickerModal";
 
 export default function AddApplication({ onSuccess }) {
   const { Loggeduser } = useContext(UserContext);
@@ -67,6 +68,7 @@ export default function AddApplication({ onSuccess }) {
     IsHybrid: false,
     IsRemote: false,
     Contacts: [],
+    ApplicationStatus: "",
   });
 
   const [hasContact, setHasContact] = useState(false);
@@ -93,6 +95,8 @@ export default function AddApplication({ onSuccess }) {
 
   const [showChat, setShowChat] = useState(false);
 
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+
   const jobTypeList = [
     { label: "Full Time", value: "FullTime" },
     { label: "Part Time", value: "PartTime" },
@@ -107,6 +111,8 @@ export default function AddApplication({ onSuccess }) {
 
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
+
+  const [applicationStatus, setApplicationStatus] = useState("");
 
   const uploadResumeFile = async (userId, file, applicationId = null) => {
     if (!file) {
@@ -145,7 +151,7 @@ export default function AddApplication({ onSuccess }) {
 
       const resultText = await response.text();
       console.log("Upload response status:", response.status);
-      console.log("📬 Upload response body:", resultText);
+      console.log("Upload response body:", resultText);
 
       if (!response.ok) throw new Error("Upload failed");
 
@@ -156,45 +162,6 @@ export default function AddApplication({ onSuccess }) {
       throw err;
     }
   };
-
-  /*const pickResumeFile = async () => {
-    if (Platform.OS === "web") {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".pdf,.doc,.docx";
-      input.onchange = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-          console.log(" File selected:", file);
-          setResumeFile({
-            uri: URL.createObjectURL(file),
-            name: file.name,
-            type: file.type,
-            file,
-          });
-        } else {
-          console.log(" No file selected");
-        }
-      };
-      input.click();
-    } else {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: [
-          "application/pdf",
-          "application/msword",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ],
-        copyToCacheDirectory: true,
-      });
-
-      if (result.type === "success") {
-        console.log("✅ Picked file:", result);
-        setResumeFile(result);
-      } else {
-        console.log("❌ No file selected or cancelled");
-      }
-    }
-  };*/
 
   const validateName = (name) => /^[A-Za-z\s]{1,30}$/.test(name);
   const validateEmail = (email) =>
@@ -611,6 +578,26 @@ export default function AddApplication({ onSuccess }) {
             </View>
           </View>
         </Modal>
+        <TouchableOpacity
+          onPress={() => setStatusModalVisible(true)}
+          style={styles.dropdown}
+        >
+          <Text
+            style={[
+              styles.dropdownText,
+              { color: application.ApplicationStatus ? "#003D5B" : "#999" },
+            ]}
+          >
+            {application.ApplicationStatus || "Select Application Status"}
+          </Text>
+
+          <StatusPickerModal
+            visible={statusModalVisible}
+            onClose={() => setStatusModalVisible(false)}
+            onSelect={(value) => handleAppChange("ApplicationStatus", value)}
+            selectedValue={application.ApplicationStatus}
+          />
+        </TouchableOpacity>
         <View style={styles.switchRow}>
           <Text style={styles.switchText}>Is Hybrid?</Text>
           <Switch
@@ -669,24 +656,6 @@ export default function AddApplication({ onSuccess }) {
           }}
           onClose={() => setShowFileSelector(false)}
         />
-        {/*<FileSelectorModal
-          visible={showFileSelector}
-          userId={userID}
-          onFileSelect={(fileOrObj) => {
-            if (fileOrObj?.uri) {
-              setResumeFile(fileOrObj); // קובץ חדש מהמכשיר
-              setPopupMessage(` קובץ "${fileOrObj.fileName}" נוסף מהמכשיר`);
-            } else {
-              setResumeFile({
-                fileIdFromDB: fileOrObj.fileIdFromDB,
-                fileName: fileOrObj.fileName, // ✅ זה מה שחסר בדוגמה הלא עובדת
-              });
-              setPopupMessage(` הקובץ "${fileOrObj.fileName}" נבחר מהרשימה`);
-            }
-            setPopupVisible(true);
-          }}
-          onClose={() => setShowFileSelector(false)}
-        />*/}
         {resumeFile && (
           <View style={styles.selectedFileContainer}>
             <FontAwesome name="file-text-o" size={20} color="#003D5B" />

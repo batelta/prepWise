@@ -331,7 +331,7 @@ const SignUpJobSeeker = ({ navigation }) => {
 
       if (response.ok) {
         const result = await response.json(); // for checking
-        console.log("✅ User created:", result);
+        console.log(" User created:", result);
         await loginAsUser(Emailtext, Passwordtext);
       } else {
         setErrorPopupVisible(true);

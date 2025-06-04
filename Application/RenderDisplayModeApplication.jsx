@@ -33,7 +33,35 @@ export default function RenderDisplayModeApplication({
   setIsEditingContact,
   setContactEditMode,
   handleDeleteApplication,
+  onRestoreSuccess,
 }) {
+  const handleUnarchive = async (applicationID) => {
+    try {
+      const API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/JobSeekers/unarchiveById/${User.id}/${applicationID}`
+          : `http://192.168.30.157:7137/api/JobSeekers/unarchiveById/${User.id}/${applicationID}`;
+
+      const response = await fetch(API_URL, { method: "PUT" });
+      console.log("Unarchive response status:", response.status);
+
+      if (response.status === 204 || response.status === 200) {
+        showMessage("Application restored successfully!", "check-circle");
+
+        try {
+          onRestoreSuccess?.(); // עטוף גם את זה
+        } catch (innerError) {
+          console.error("Error in onRestoreSuccess:", innerError);
+        }
+      } else {
+        throw new Error(`Unexpected status code: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error restoring application:", error);
+      showMessage("Failed to restore application", "alert-circle");
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {(Platform.OS === "ios" || Platform.OS === "android") && (
@@ -68,6 +96,8 @@ export default function RenderDisplayModeApplication({
       <Text style={styles.text}>{application.companySummary}</Text>
       <Text style={styles.label}>Job Description:</Text>
       <Text style={styles.text}>{application.jobDescription}</Text>
+      <Text style={styles.label}>Application Status:</Text>
+      <Text style={styles.text}>{application.applicationStatus}</Text>
 
       <FileSelectorModal
         visible={showFileSelector}
@@ -214,19 +244,49 @@ export default function RenderDisplayModeApplication({
         Edit Application
       </Button>
 
-      <Button
+      {/*<Button
         mode="outlined"
         onPress={() => {
           showMessage(
-            "Are you sure you want to delete this application?",
+            "Move this application to the archive? You can restore it later.",
             "alert-circle",
             handleDeleteApplication
           );
         }}
         style={styles.button}
       >
-        Delete Application
-      </Button>
+        Move Application to Archive
+      </Button>*/}
+
+      {!application?.isArchived ? (
+        <Button
+          mode="outlined"
+          onPress={() => {
+            showMessage(
+              "Move this application to the archive? You can restore it later",
+              "alert-circle",
+              handleDeleteApplication
+            );
+          }}
+          style={styles.button}
+          icon="archive"
+        >
+          Move Application to Archive
+        </Button>
+      ) : (
+        <Button
+          mode="outlined"
+          onPress={() => {
+            showMessage("Restore this application?", "refresh", () =>
+              handleUnarchive(application.applicationID)
+            );
+          }}
+          style={styles.button}
+          icon="restore"
+        >
+          Restore Application
+        </Button>
+      )}
     </ScrollView>
   );
 }

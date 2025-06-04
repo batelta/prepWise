@@ -12,7 +12,6 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import Application from "./Application";
 import AddApplication from "./AddApplication";
-
 import NavBar from "../NavBar";
 import { useFonts } from "expo-font";
 import {
@@ -47,6 +46,8 @@ export default function ApplicationSplitView() {
   });
   const [applications, setApplications] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+
+  const [viewArchived, setViewArchived] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -97,7 +98,7 @@ export default function ApplicationSplitView() {
   const { Loggeduser } = useContext(UserContext);
   const [userID, setUserID] = useState(true);
 
-  const fetchApps = useCallback(async (userID) => {
+  /*const fetchApps = useCallback(async (userID) => {
     try {
       const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${userID}/applications`;
 
@@ -120,15 +121,47 @@ export default function ApplicationSplitView() {
     } finally {
       setLoading(false);
     }
-  });
+  });*/
+
+  const fetchApps = useCallback(async (userID, showArchived = false) => {
+    try {
+      //const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${userID}/applications?showArchived=${showArchived}`;
+      const API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/JobSeekers/${userID}/applications?showArchived=${showArchived}`
+          : `http://192.168.30.157:7137/api/JobSeekers/${userID}/applications?showArchived=${showArchived}`;
+
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setApplications(data);
+
+      if (data.length > 0 && !startWithAddNew) {
+        setSelectedId(data[0].applicationID);
+        setIsAddingNew(false);
+      } else {
+        setIsAddingNew(true);
+      }
+    } catch (err) {
+      console.error("Error fetching applications:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
+    if (Loggeduser?.id) {
+      fetchApps(Loggeduser.id, viewArchived);
+      setUserID(Loggeduser.id);
+    }
+  }, [Loggeduser, viewArchived]);
+
+  /*useEffect(() => {
     if (Loggeduser?.id) {
       console.log("logged user in SPLIT", Loggeduser);
       fetchApps(Loggeduser.id);
       setUserID(Loggeduser.id);
     }
-  }, [Loggeduser]);
+  }, [Loggeduser]);*/
 
   if (Platform.OS !== "web") {
     return (
@@ -147,13 +180,35 @@ export default function ApplicationSplitView() {
     );
   }
 
+  const handleUnarchive = async (applicationID) => {
+    try {
+      const API_URL =
+        Platform.OS === "web"
+          ? `https://localhost:7137/api/JobSeekers/unarchiveById/${userID}/${applicationID}`
+          : `http://192.168.30.157:7137/api/JobSeekers/unarchiveById/${userID}/${applicationID}`;
+
+      const response = await fetch(API_URL, { method: "PUT" });
+
+      if (!response.ok) throw new Error("Failed to unarchive");
+      // עדכון הרשימה לאחר השחזור
+      const updated = applications.filter(
+        (app) => app.applicationID !== applicationID
+      );
+      setApplications(updated);
+      showMessage("Application restored successfully!", "check-circle");
+    } catch (error) {
+      console.error("Error restoring application:", error);
+      showMessage("Failed to restore application", "alert-circle");
+    }
+  };
+
   const handleDeleteApplication = async (applicationIDToDelete) => {
     try {
       const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${userID}/${applicationIDToDelete}`;
 
       const response = await fetch(API_URL, { method: "DELETE" });
 
-      if (!response.ok) throw new Error("Failed to delete application");
+      if (!response.ok) throw new Error("Failed to archive application");
       console.log("logged user in split", userID);
 
       //updated list after delete
@@ -170,11 +225,14 @@ export default function ApplicationSplitView() {
         setIsAddingNew(true);
       }
 
-      showMessage("Application deleted successfully!", "check-circle");
+      showMessage(
+        "Application archived successfully! You can restore it anytime",
+        "check-circle"
+      );
     } catch (error) {
-      console.error("Error deleting application:", error);
+      console.error("Error archive application:", error);
 
-      showMessage("Failed to delete application", "alert-circle");
+      showMessage("Failed to archive application", "alert-circle");
     }
   };
 
@@ -188,36 +246,154 @@ export default function ApplicationSplitView() {
 
           <View style={styles.leftPane}>
             <Text style={styles.header}>All Applications</Text>
-            {applications.map((app) => (
+
+            <View //archive
+              style={{
+                flexDirection: "row",
+                marginBottom: 10,
+                justifyContent: "space-between",
+              }}
+            >
               <TouchableOpacity
-                key={app.applicationID}
+                onPress={() => setViewArchived(false)}
                 style={[
-                  styles.card,
-                  selectedId === app.applicationID && styles.activeCard,
+                  styles.toggleButton,
+                  !viewArchived && styles.activeToggle,
                 ]}
-                onPress={() => {
-                  setSelectedId(app.applicationID);
-                  setIsAddingNew(false);
-                }}
               >
-                <MaterialIcons name="work-outline" size={34} color="#9FF9D5" />
-                <View style={{ marginLeft: 10, flex: 1 }}>
-                  <Text style={styles.title}>{app.title}</Text>
-                  <Text style={styles.subtitle}>{app.companyName}</Text>
-                </View>
+                <Text style={styles.toggleText}>Active</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setViewArchived(true)}
+                style={[
+                  styles.toggleButton,
+                  viewArchived && styles.activeToggle,
+                ]}
+              >
+                <Text style={styles.toggleText}>Archive</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* {applications.map((app) => (
+              <View key={app.applicationID} style={{ marginBottom: 10 }}>
                 <TouchableOpacity
-                  style={styles.deleteIcon}
+                  key={app.applicationID}
+                  style={[
+                    styles.card,
+                    selectedId === app.applicationID && styles.activeCard,
+                  ]}
                   onPress={() => {
-                    showConfirmation(
-                      "Are you sure you want to delete this application?",
-                      () => handleDeleteApplication(app.applicationID),
-                      "alert-circle"
-                    );
+                    setSelectedId(app.applicationID);
+                    setIsAddingNew(false);
                   }}
                 >
-                  <Text style={{ fontSize: 14, color: "#9FF9D5" }}>X</Text>
+                  <MaterialIcons
+                    name="work-outline"
+                    size={34}
+                    color="#9FF9D5"
+                  />
+                  <View style={{ marginLeft: 10, flex: 1 }}>
+                    <Text style={styles.title}>{app.title}</Text>
+                    <Text style={styles.subtitle}>{app.companyName}</Text>
+                  </View>
+                  {!viewArchived && (
+                    <TouchableOpacity
+                      style={styles.deleteIcon}
+                      onPress={() => {
+                        showConfirmation(
+                          "Are you sure you want to delete this application?",
+                          () => handleDeleteApplication(app.applicationID),
+                          "alert-circle"
+                        );
+                      }}
+                    >
+                      <Text style={{ fontSize: 14, color: "#9FF9D5" }}>X</Text>
+                    </TouchableOpacity>
+                  )}
                 </TouchableOpacity>
-              </TouchableOpacity>
+                {viewArchived && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      showConfirmation(
+                        "Restore this application?",
+                        () => handleUnarchive(app.applicationID),
+                        "refresh"
+                      )
+                    }
+                    style={{
+                      padding: 6,
+                      borderWidth: 1,
+                      borderColor: "#9FF9D5",
+                      borderRadius: 4,
+                      marginTop: 5,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text style={{ color: "#163349" }}>Restore</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+*/}
+
+            {applications.map((app) => (
+              <View key={app.applicationID} style={{ marginBottom: 2 }}>
+                <TouchableOpacity
+                  style={[
+                    styles.card,
+                    selectedId === app.applicationID && styles.activeCard,
+                  ]}
+                  onPress={() => {
+                    setSelectedId(app.applicationID);
+                    setIsAddingNew(false);
+                  }}
+                >
+                  {/* Restore button - RIGHT CORNER */}
+                  {viewArchived && (
+                    <TouchableOpacity
+                      onPress={() =>
+                        showConfirmation(
+                          "Restore this application?",
+                          () => handleUnarchive(app.applicationID),
+                          "refresh"
+                        )
+                      }
+                      style={styles.restoreButton}
+                    >
+                      <MaterialIcons name="restore" size={20} color="#9FF9D5" />
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Work icon */}
+                  <MaterialIcons
+                    name="work-outline"
+                    size={34}
+                    color="#9FF9D5"
+                  />
+
+                  {/* Application details */}
+                  <View style={{ marginLeft: 10, flex: 1 }}>
+                    <Text style={styles.title}>{app.title}</Text>
+                    <Text style={styles.subtitle}>{app.companyName}</Text>
+                  </View>
+
+                  {/* Delete button - only if not archived */}
+                  {!viewArchived && (
+                    <TouchableOpacity
+                      style={styles.deleteIcon}
+                      onPress={() => {
+                        showConfirmation(
+                          "Move this application to the archive? You can restore it later",
+                          () => handleDeleteApplication(app.applicationID),
+                          "alert-circle"
+                        );
+                      }}
+                    >
+                      <Text style={{ fontSize: 14, color: "#9FF9D5" }}>X</Text>
+                    </TouchableOpacity>
+                  )}
+                </TouchableOpacity>
+              </View>
             ))}
 
             <TouchableOpacity
@@ -455,6 +631,36 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 9999,
+  },
+  toggleButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#b9a7f2",
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    flex: 1,
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
+
+  activeToggle: {
+    backgroundColor: "#b9a7f2",
+  },
+
+  toggleText: {
+    color: "#163349",
+    fontWeight: "bold",
+  },
+  restoreButton: {
+    position: "absolute",
+    right: 10,
+    top: 10,
+    padding: 6,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#9FF9D5",
+    zIndex: 2,
   },
 });
 

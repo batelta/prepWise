@@ -30,7 +30,7 @@ import { UserContext } from "../UserContext";
 import RenderDisplayModeApplication from "./RenderDisplayModeApplication";
 import EditModeAppliction from "./EditModeAppliction";
 
-export default function Application({ applicationID: propID }) {
+export default function Session({ SessionID: propID }) {
   const { Loggeduser } = useContext(UserContext);
 
   const [User, setUser] = useState("");
@@ -48,47 +48,24 @@ export default function Application({ applicationID: propID }) {
   const [linkedFiles, setLinkedFiles] = useState([]); //using to show all application files
 
   const route = useRoute();
-  const applicationID = route.params?.applicationID || propID; //if there is no applicationID from the navigate use propID
+  const sessionID = route.params?.sessionIDID || propID; //if there is no applicationID from the navigate use propID
 
-  const [originalApplication, setOriginalApplication] = useState({}); //for setting the right infoamntion in ui when user edit and did not save
+  //const [originalApplication, setOriginalApplication] = useState({}); //for setting the right infoamntion in ui when user edit and did not save
 
   const [showChat, setShowChat] = useState(false);
 
   const navigation = useNavigation();
 
-  const [contactErrors, setContactErrors] = useState({
-    contactName: "",
-    contactEmail: "",
-    contactPhone: "",
-  });
-
-  const [application, setApplication] = useState({
-    applicationID: null,
-    title: "",
-    companyName: "",
-    location: "",
-    url: "",
-    companySummary: "",
-    jobDescription: "",
-    notes: "",
-    jobType: "",
-    isHybrid: false,
-    isRemote: false,
-    contacts: [],
-    applicationStatus: "",
+  const [session, setSession] = useState({
+    matchID: null, // יש לבחור Match קיים
+    scheduledAt: "", // תאריך+שעה בפורמט ISO
+    status: "scheduled", // ברירת מחדל
+    notes: "", // הערות חופשיות לפגישה
   });
 
   const [isEditing, setIsEditing] = useState(false); //application in edit mode?
 
-  const [isEditingContact, setIsEditingContact] = useState(false); // conatct in edit mode?
-  const [contactEditMode, setContactEditMode] = useState("edit");
-
-  const [contactToEdit, setContactToEdit] = useState(null); // current conatct in edit mode
   const [snackbarVisible, setSnackbarVisible] = useState(false);
-
-  const [jobTypeModalVisible, setJobTypeModalVisible] = useState(false); //job type modal
-
-  const [contactModalVisible, setContactModalVisible] = useState(false); //modal conatcts
 
   const [popup, setPopup] = useState({
     visible: false,
@@ -127,20 +104,6 @@ export default function Application({ applicationID: propID }) {
     setPopup((prev) => ({ ...prev, visible: false }));
   };
 
-  const jobTypeList = [
-    { label: "Full Time", value: "FullTime" },
-    { label: "Part Time", value: "PartTime" },
-    { label: "Internship", value: "Internship" },
-    { label: "Freelance", value: "Freelance" },
-    { label: "Temporary", value: "Temporary" },
-    { label: "Student", value: "Student" },
-  ];
-
-  const validateName = (name) => /^[A-Za-z\u0590-\u05FF\s]{1,30}$/.test(name);
-  const validateEmail = (email) =>
-    /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-  const validatePhone = (phone) => /^[0-9+\-\s]{6,15}$/.test(phone);
-
   // get conected user inforamtion
   useEffect(() => {
     if (Loggeduser) {
@@ -151,43 +114,67 @@ export default function Application({ applicationID: propID }) {
   }, [Loggeduser]);
 
   useEffect(() => {
-    if (!applicationID || !Loggeduser) {
-      console.log("Missing applicationID or logged user, skipping fetch");
-      setLoading(false);
-      return;
-    }
+    if (!sessionID || !User?.id) return;
 
-    console.log("Fetching application:", applicationID); //for checking
-
-    const fetchApplication = async () => {
+    const fetchSession = async () => {
       try {
-        const API_URL =
+        const baseURL =
           Platform.OS === "web"
-            ? `https://localhost:7137/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}`
-            : `http://192.168.30.157:7137/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}`;
-        //const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}`;
-        const response = await fetch(API_URL);
-        const data = await response.json();
-        console.log("Fetched application data:", data);
+            ? "https://localhost:7137"
+            : "http://192.168.30.157:7137";
 
-        setOriginalApplication({ ...data, contacts: data.contacts || [] });
-        setApplication({ ...data, contacts: data.contacts || [] });
-      } catch (error) {
-        console.error("Error loading application", error);
-        Alert.alert("Error", "Failed to load application");
+        /*const response = await fetch(
+          `${baseURL}/api/sessions/${sessionID}/user/${User.id}`
+        );*/
+
+        const response = await fetch(`${baseURL}/api/sessions/${3}/user/${1}`);
+
+        if (!response.ok) throw new Error("Failed to fetch session");
+
+        const data = await response.json();
+        setSession(data);
+      } catch (err) {
+        console.error("❌ Error loading session:", err);
+        Alert.alert("Error", "Failed to load session data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchApplication();
-  }, [applicationID, Loggeduser]);
+    fetchSession();
+  }, [sessionID, User?.id]);
+
+  /*const updateSessionStatus = async (newStatus) => {
+    try {
+      const baseURL =
+        Platform.OS === "web"
+          ? "https://localhost:7137"
+          : "http://192.168.30.157:7137";
+
+      const response = await fetch(
+        `${baseURL}/api/sessions/${sessionID}/status`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newStatus),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update session status");
+
+      showMessage("Session status updated!", "check-circle");
+      setSession((prev) => ({ ...prev, status: newStatus }));
+    } catch (err) {
+      console.error("❌ Update error:", err);
+      showMessage("Error updating session status", "alert-circle");
+    }
+  };
 
   const handleChange = (field, value) => {
     setApplication((prev) => ({ ...prev, [field]: value }));
-  };
+  };*/
 
-  const handleUpdate = async () => {
+  /* const handleUpdate = async () => {
     try {
       console.log("updating applicationID:", applicationID);
       //const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}`;
@@ -212,9 +199,9 @@ export default function Application({ applicationID: propID }) {
       console.error("Error updating:", error);
       Alert.alert("Error", `Something went wrong: ${error.message}`);
     }
-  };
+  };*/
 
-  const handleDeleteApplication = async () => {
+  /*const handleDeleteApplication = async () => {
     try {
       const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${User.id}/${applicationID}`;
 
@@ -236,115 +223,30 @@ export default function Application({ applicationID: propID }) {
 
       showMessage("Failed to delete application", "alert-circle");
     }
-  };
+  };*/
 
-  const handleContactChange = (field, value) => {
-    //check every filed while the user type
-    setContactToEdit((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  /*const deleteSession = async () => {
+  try {
+    const baseURL =
+      Platform.OS === "web"
+        ? "https://localhost:7137"
+        : "http://192.168.30.157:7137";
 
-    setContactErrors((prevErrors) => {
-      const updatedErrors = { ...prevErrors };
-
-      switch (field) {
-        case "contactName":
-          updatedErrors.contactName = value.trim()
-            ? validateName(value)
-              ? "" //if there is a name -> no error
-              : "Only letters and spaces, up to 30 characters." //error
-            : ""; // no text at all -> no error
-          break;
-        case "contactEmail":
-          updatedErrors.contactEmail = value.trim()
-            ? validateEmail(value)
-              ? ""
-              : "Enter a valid email address."
-            : "";
-          break;
-        case "contactPhone":
-          updatedErrors.contactPhone = value.trim()
-            ? validatePhone(value)
-              ? ""
-              : "Enter a valid phone number (6-15 digits)."
-            : "";
-          break;
-      }
-
-      return updatedErrors;
-    });
-  };
-
-  const validateContact = () => {
-    //validate the full contact who will send to the server
-    const { contactName, contactEmail, contactPhone } = contactToEdit;
-    let updatedErrors = {};
-
-    updatedErrors.contactName = contactName.trim()
-      ? validateName(contactName)
-        ? ""
-        : "Only letters and spaces, up to 30 characters."
-      : "Contact name is required";
-
-    updatedErrors.contactEmail =
-      contactEmail.trim() && !validateEmail(contactEmail)
-        ? "Enter a valid email address."
-        : "";
-
-    updatedErrors.contactPhone =
-      contactPhone.trim() && !validatePhone(contactPhone)
-        ? "Enter a valid phone number (6-15 digits)."
-        : "";
-
-    setContactErrors(updatedErrors);
-
-    const hasErrors = Object.values(updatedErrors).some(
-      (error) => error !== ""
+    const response = await fetch(
+      `${baseURL}/api/sessions/delete/${sessionID}`,
+      { method: "DELETE" }
     );
-    return !hasErrors;
-  };
 
-  const handleUpdateContact = async () => {
-    if (!validateContact()) {
-      //check if there is error with the inputs
-      return;
-    }
+    if (!response.ok) throw new Error("Failed to delete session");
 
-    try {
-      const updatedContacts = application.contacts.map((contact) => {
-        if (contact.contactID === contactToEdit.contactID) {
-          return { ...contact, ...contactToEdit }; //return updated cotact
-        }
-        return contact;
-      });
-
-      setApplication((prev) => ({
-        ...prev,
-        contacts: updatedContacts,
-      }));
-
-      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}/contacts/${contactToEdit.contactID}`;
-
-      const response = await fetch(API_URL, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(contactToEdit),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update contact");
-      }
-
-      setIsEditingContact(false);
-      setContactToEdit(null);
-      setContactModalVisible(false); // סגירת המודל אחרי עדכון מוצלח
-    } catch (error) {
-      console.error("Error updating contact:", error);
-    }
-  };
+    showMessage("Session deleted", "check-circle", () => {
+      navigation.goBack();
+    });
+  } catch (err) {
+    console.error("❌ Delete error:", err);
+    showMessage("Error deleting session", "alert-circle");
+  }
+};*/
 
   const fetchLinkedFiles = useCallback(async () => {
     if (!User?.id || !applicationID) return;
@@ -366,93 +268,6 @@ export default function Application({ applicationID: propID }) {
   useEffect(() => {
     fetchLinkedFiles();
   }, [fetchLinkedFiles]);
-
-  const deleteContact = async (contactID) => {
-    try {
-      console.log("Attempting to delete contact with ID:", contactID);
-      // עדכון ה-API URL עם ה-contactID שנשלח
-      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteContact/${Loggeduser.id}/applications/${applicationID}/contacts/${contactID}`;
-
-      const response = await fetch(API_URL, {
-        method: "DELETE",
-      });
-
-      console.log("Response status:", response.status);
-
-      if (!response.ok) {
-        throw new Error("Failed to delete contact");
-      }
-
-      // עדכון הסטייט של אנשי הקשר אחרי מחיקה
-      setApplication((prevApp) => ({
-        ...prevApp,
-        contacts: prevApp.contacts.filter(
-          (contact) => contact.contactID !== contactID
-        ),
-      }));
-
-      // סגירת המודל אחרי מחיקה מוצלחת
-      setContactModalVisible(false);
-      setContactToEdit(null);
-
-      showMessage("Contact deleted successfully!", "check-circle");
-    } catch (error) {
-      console.error("Error deleting contact:", error);
-
-      showMessage("Failed to delete contact", "alert-circle");
-    }
-  };
-
-  const addContact = async () => {
-    if (!validateContact()) {
-      return;
-    }
-
-    try {
-      const newContact = {
-        contactName: contactToEdit.contactName,
-        contactEmail: contactToEdit.contactEmail,
-        contactPhone: contactToEdit.contactPhone,
-        contactNotes: contactToEdit.contactNotes,
-      };
-
-      const API_URL = `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications/${applicationID}/contacts`;
-
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newContact),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to add contact");
-      }
-
-      // get full answer from teh server
-      const addedContact = await response.json();
-      console.log("Added contact from server:", addedContact);
-
-      // state update
-      setApplication((prevApp) => {
-        const updatedContacts = [...prevApp.contacts, addedContact];
-        console.log("Updated contacts array:", updatedContacts);
-        return {
-          ...prevApp,
-          contacts: updatedContacts,
-        };
-      });
-
-      //close contact edit mode after all updated בהצלחה
-      setIsEditingContact(false);
-      setContactToEdit(null);
-      setContactEditMode("edit");
-      setContactModalVisible(false);
-    } catch (error) {
-      console.error("Error adding contact:", error);
-    }
-  };
 
   const uploadResumeFile = async (userId, file, applicationId = null) => {
     if (!file) {
@@ -490,8 +305,8 @@ export default function Application({ applicationID: propID }) {
       });
 
       const resultText = await response.text();
-      console.log("📬 Upload response status:", response.status);
-      console.log("📬 Upload response body:", resultText);
+      console.log(" Upload response status:", response.status);
+      console.log("Upload response body:", resultText);
 
       if (!response.ok) throw new Error("Upload failed");
 
@@ -503,7 +318,7 @@ export default function Application({ applicationID: propID }) {
     }
   };
 
-  const attachExistingFileToApplication = async (applicationId, fileId) => {
+  /* const attachExistingFileToApplication = async (applicationId, fileId) => {
     try {
       const API_URL =
         Platform.OS === "web"
@@ -532,7 +347,7 @@ export default function Application({ applicationID: propID }) {
       console.error("❌ שגיאה בשיוך קובץ קיים:", err);
       throw err;
     }
-  };
+  };/*
 
   const unlinkFileFromApplication = async (fileId, fileName) => {
     setPopup({
@@ -570,14 +385,13 @@ export default function Application({ applicationID: propID }) {
       },
       onOk: () => {}, // לא רלוונטי כאן
     });
-  };
+  };*/
 
-  /*const renderDisplayMode = () => (
+  const renderDisplayMode = () => (
     <ScrollView contentContainerStyle={styles.container}>
-
       {(Platform.OS === "ios" || Platform.OS === "android") && (
         <TouchableOpacity
-          onPress={() => navigation.navigate("AllUserApplications")}
+          onPress={() => navigation.navigate("AllUserSessions")}
           style={{
             marginTop: 10,
             marginBottom: 10,
@@ -601,31 +415,16 @@ export default function Application({ applicationID: propID }) {
         </TouchableOpacity>
       )}
 
-    
-      <Text style={styles.header}>{application.title || "No Title"}</Text>
+      {/*<Text style={styles.header}>{session.title || "No Title"}</Text>*/}
 
-      <Text style={styles.company}>{application.companyName}</Text>
+      <Text style={styles.header}>
+        Session on: {new Date(session.scheduledAt).toLocaleString()}
+      </Text>
+      <Text style={styles.label}>Status:</Text>
+      <Text style={styles.text}>{session.status}</Text>
 
-      <Text style={styles.label}>Location:</Text>
-      <Text style={styles.text}>{application.location}</Text>
-
-      <Text style={styles.label}>Job Type:</Text>
-      <Text style={styles.text}>{application.jobType}</Text>
-
-      <Text style={styles.label}>Remote:</Text>
-      <Text style={styles.text}>{application.isRemote ? "Yes" : "No"}</Text>
-
-      <Text style={styles.label}>Hybrid:</Text>
-      <Text style={styles.text}>{application.isHybrid ? "Yes" : "No"}</Text>
-
-      <Text style={styles.label}>URL:</Text>
-      <Text style={styles.text}>{application.url}</Text>
-
-      <Text style={styles.label}>Company Summary:</Text>
-      <Text style={styles.text}>{application.companySummary}</Text>
-
-      <Text style={styles.label}>Job Description:</Text>
-      <Text style={styles.text}>{application.jobDescription}</Text>
+      <Text style={styles.label}>Notes:</Text>
+      <Text style={styles.text}>{session.notes || "No notes provided"}</Text>
 
       <FileSelectorModal
         visible={showFileSelector}
@@ -692,115 +491,6 @@ export default function Application({ applicationID: propID }) {
       </View>
 
       <View>
-        {application.contacts.map((contact, index) => (
-          <View key={contact.contactID || index} style={styles.contactRow}>
-        
-            <TouchableOpacity
-              style={styles.contactIconButton}
-              onPress={() => {
-                setContactToEdit(contact);
-                setContactModalVisible(true);
-              }}
-            >
-              <Icon name="person" size={28} color="#b9a7f2" />
-              <Text style={styles.contactName}>
-                {contact.contactName || "Contact"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-
-       
-        <Modal
-          visible={contactModalVisible && contactToEdit !== null}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => {
-            setContactModalVisible(false);
-            setContactToEdit(null);
-          }}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => {
-              setContactModalVisible(false);
-              setContactToEdit(null);
-            }}
-          >
-            <View
-              style={styles.modalContent}
-              onStartShouldSetResponder={() => true}
-            >
-              <Text style={styles.modalHeader}>
-                {contactToEdit?.contactName || "Contact Details"}
-              </Text>
-
-              <View style={styles.contactDetailsModal}>
-                <Text style={styles.contactDetailItem}>
-                  Email: {contactToEdit?.contactEmail || ""}
-                </Text>
-                <Text style={styles.contactDetailItem}>
-                  Phone: {contactToEdit?.contactPhone || ""}
-                </Text>
-                <Text style={styles.contactDetailItem}>
-                  Notes: {contactToEdit?.contactNotes || ""}
-                </Text>
-
-                <View style={styles.modalButtonsRow}>
-               
-                  <Button
-                    mode="contained"
-                    onPress={() => {
-                      setContactModalVisible(false);
-                      setIsEditingContact(true);
-                    }}
-                    style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
-                    //labelStyle={{ color: "#003D5B" }}
-                    labelStyle={styles.buttonLabel}
-                  >
-                    Edit Contact
-                  </Button>
-
-               
-                  <Button
-                    mode="contained"
-                    onPress={() => {
-                      console.log(
-                        "Deleting contact with ID:",
-                        contactToEdit.contactID
-                      );
-                      setContactModalVisible(false);
-
-                      showConfirmation(
-                        "Are you sure you want to delete this contact?",
-                        () => deleteContact(contactToEdit.contactID),
-                        "alert-circle"
-                      );
-                    }}
-                    style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
-                    labelStyle={styles.buttonLabel}
-                  >
-                    Delete
-                  </Button>
-                </View>
-
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    setContactModalVisible(false);
-                    setContactToEdit(null);
-                  }}
-                  style={styles.modalCloseButton}
-                  labelStyle={styles.cancelButtonLabel}
-                >
-                  Close
-                </Button>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Modal>
-
         {linkedFiles.length > 0 && (
           <View style={{ marginTop: 20 }}>
             <Text style={styles.label}>Attached Files:</Text>
@@ -840,27 +530,9 @@ export default function Application({ applicationID: propID }) {
         >
           Add File
         </Button>
-
-        <Button
-          mode="outlined"
-          onPress={() => {
-            setIsEditingContact(true);
-            setContactEditMode("add");
-            setContactToEdit({
-              //crete contact obj
-              contactName: "",
-              contactEmail: "",
-              contactPhone: "",
-              contactNotes: "",
-            });
-          }}
-          style={styles.button}
-        >
-          + Add Contact
-        </Button>
       </View>
 
-      <Button
+      {/*<Button
         mode="outlined"
         onPress={() => {
           // save the current state before editing
@@ -870,23 +542,23 @@ export default function Application({ applicationID: propID }) {
         style={styles.button}
       >
         Edit Application
-      </Button>
+      </Button>*/}
 
-      <Button
+      {/*} <Button
         mode="outlined"
         onPress={() => {
           showConfirmation(
-            "Are you sure you want to delete this application?",
+            "Are you sure you want to delete this session?",
             handleDeleteApplication,
             "alert-circle"
           );
         }}
         style={styles.button}
       >
-        Delete Application
-      </Button>
+        Delete session
+      </Button>*/}
     </ScrollView>
-  );*/
+  );
 
   /*const renderEditMode = () => (
     <ScrollView contentContainerStyle={styles.container}>
@@ -1091,116 +763,6 @@ export default function Application({ applicationID: propID }) {
     </ScrollView>
   );*/
 
-  const renderContactEditMode = () => (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>
-        {contactEditMode === "edit" ? "Edit Contact" : "Add New Contact"}
-      </Text>
-
-      <TextInput
-        label={
-          <Text style={{ color: "#003D5B", fontFamily: "Inter_400Regular" }}>
-            Contact Name
-          </Text>
-        }
-        value={contactToEdit.contactName}
-        onChangeText={(text) => handleContactChange("contactName", text)}
-        style={[
-          styles.input,
-          contactErrors.contactName ? styles.inputError : null,
-        ]}
-        textColor="#003D5B"
-        fontFamily="Inter_400Regular"
-      />
-      {contactErrors.contactName ? (
-        <Text style={styles.errorText}>
-          <FontAwesome name="exclamation-circle" size={12} color="#BFB4FF" />{" "}
-          {contactErrors.contactName}
-        </Text>
-      ) : null}
-
-      <TextInput
-        label={
-          <Text style={{ color: "#003D5B", fontFamily: "Inter_400Regular" }}>
-            Contact Email
-          </Text>
-        }
-        value={contactToEdit.contactEmail}
-        onChangeText={(text) => handleContactChange("contactEmail", text)}
-        style={[
-          styles.input,
-          contactErrors.contactEmail ? styles.inputError : null,
-        ]}
-        textColor="#003D5B"
-        fontFamily="Inter_400Regular"
-      />
-      {contactErrors.contactEmail ? (
-        <Text style={styles.errorText}>
-          <FontAwesome name="exclamation-circle" size={12} color="#BFB4FF" />{" "}
-          {contactErrors.contactEmail}
-        </Text>
-      ) : null}
-      <TextInput
-        label={
-          <Text style={{ color: "#003D5B", fontFamily: "Inter_400Regular" }}>
-            Contact Phone
-          </Text>
-        }
-        value={contactToEdit.contactPhone}
-        onChangeText={(text) => handleContactChange("contactPhone", text)}
-        style={[
-          styles.input,
-          contactErrors.contactPhone ? styles.inputError : null,
-        ]}
-        textColor="#003D5B"
-        fontFamily="Inter_400Regular"
-      />
-      {contactErrors.contactPhone ? (
-        <Text style={styles.errorText}>
-          <FontAwesome name="exclamation-circle" size={12} color="#BFB4FF" />{" "}
-          {contactErrors.contactPhone}
-        </Text>
-      ) : null}
-
-      <TextInput
-        label={
-          <Text style={{ color: "#003D5B", fontFamily: "Inter_400Regular" }}>
-            Contact Notes
-          </Text>
-        }
-        value={contactToEdit.contactNotes}
-        onChangeText={(text) => handleContactChange("contactNotes", text)}
-        style={styles.input}
-        textColor="#003D5B"
-        fontFamily="Inter_400Regular"
-      />
-
-      <Button
-        mode="contained"
-        onPress={contactEditMode === "edit" ? handleUpdateContact : addContact}
-        style={styles.button}
-        labelStyle={styles.buttonLabel}
-      >
-        {contactEditMode === "edit" ? "Save Contact" : "Add Contact"}
-      </Button>
-      <Button
-        onPress={() => {
-          setIsEditingContact(false);
-          setContactToEdit(null);
-          setContactErrors({
-            contactName: "",
-            contactEmail: "",
-            contactPhone: "",
-          });
-        }}
-        style={[styles.button, styles.cancelButton]}
-        labelStyle={styles.cancelButtonLabel}
-      >
-        Cancel
-      </Button>
-    </ScrollView>
-  );
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -1210,50 +772,16 @@ export default function Application({ applicationID: propID }) {
       {isEditingContact ? (
         renderContactEditMode()
       ) : isEditing ? (
-        <EditModeAppliction
-          styles={styles}
-          application={application}
-          handleChange={handleChange}
-          jobTypeList={jobTypeList}
-          jobTypeModalVisible={jobTypeModalVisible}
-          setJobTypeModalVisible={setJobTypeModalVisible}
-          handleUpdate={handleUpdate}
-          originalApplication={originalApplication}
-          setApplication={setApplication}
-          setIsEditing={setIsEditing}
-        />
+        <EditModeAppliction />
       ) : (
-        <RenderDisplayModeApplication
-          styles={styles}
-          application={application}
-          navigation={navigation}
-          setIsEditing={setIsEditing}
-          setShowFileSelector={setShowFileSelector}
-          showFileSelector={showFileSelector}
-          setPopup={setPopup}
-          showMessage={showMessage}
-          User={User}
-          linkedFiles={linkedFiles}
-          fetchLinkedFiles={fetchLinkedFiles}
-          uploadResumeFile={uploadResumeFile}
-          attachExistingFileToApplication={attachExistingFileToApplication}
-          unlinkFileFromApplication={unlinkFileFromApplication}
-          setContactModalVisible={setContactModalVisible}
-          setContactToEdit={setContactToEdit}
-          setIsEditingContact={setIsEditingContact}
-          setContactEditMode={setContactEditMode}
-          handleDeleteApplication={handleDeleteApplication}
-          onRestoreSuccess={() => {
-            setApplication((prev) => ({ ...prev, isArchived: false }));
-          }}
-        />
+        <RenderDisplayModeApplication />
       )}
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
       >
-        Application updated successfully!
+        Session updated successfully!
       </Snackbar>
       {popup.visible && (
         <View style={styles.popupOverlay}>
@@ -1273,89 +801,6 @@ export default function Application({ applicationID: propID }) {
             onCancel={closePopup}
           />
         </View>
-      )}
-      {contactModalVisible && contactToEdit && (
-        <Modal
-          visible={true}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => {
-            setContactModalVisible(false);
-            setContactToEdit(null);
-          }}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => {
-              setContactModalVisible(false);
-              setContactToEdit(null);
-            }}
-          >
-            <View
-              style={styles.modalContent}
-              onStartShouldSetResponder={() => true}
-            >
-              <Text style={styles.modalHeader}>
-                {contactToEdit.contactName || "Contact Details"}
-              </Text>
-
-              <View style={styles.contactDetailsModal}>
-                <Text style={styles.contactDetailItem}>
-                  Email: {contactToEdit.contactEmail}
-                </Text>
-                <Text style={styles.contactDetailItem}>
-                  Phone: {contactToEdit.contactPhone}
-                </Text>
-                <Text style={styles.contactDetailItem}>
-                  Notes: {contactToEdit.contactNotes}
-                </Text>
-
-                <View style={styles.modalButtonsRow}>
-                  <Button
-                    mode="contained"
-                    onPress={() => {
-                      setContactModalVisible(false);
-                      setIsEditingContact(true);
-                    }}
-                    style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
-                    labelStyle={styles.buttonLabel}
-                  >
-                    Edit Contact
-                  </Button>
-
-                  <Button
-                    mode="contained"
-                    onPress={() => {
-                      setContactModalVisible(false);
-                      showConfirmation(
-                        "Are you sure you want to delete this contact?",
-                        () => deleteContact(contactToEdit.contactID),
-                        "alert-circle"
-                      );
-                    }}
-                    style={[styles.modalButton, { backgroundColor: "#d6cbff" }]}
-                    labelStyle={styles.buttonLabel}
-                  >
-                    Delete
-                  </Button>
-                </View>
-
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    setContactModalVisible(false);
-                    setContactToEdit(null);
-                  }}
-                  style={styles.modalCloseButton}
-                  labelStyle={styles.cancelButtonLabel}
-                >
-                  Close
-                </Button>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Modal>
       )}
       {Platform.OS !== "web" && (
         <TouchableOpacity
