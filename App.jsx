@@ -8,17 +8,30 @@ import SignUp from './SignUp';
 import HomePage from './HomePage';
 import GeminiChat from './GeminiChat';
 import LandingPage from './LandingPage';
-import AddApplication from './AddApplication';
+import AddApplication from './Application/AddApplication';
 import SignUpJobSeeker from './SignUpJobSeeker';
 import Profile from './Profile';
 import EditProfile from './EditProfile';
-import SignUpMentor from './SignUpMentor';
-import HomePageMentor from './HomePageMentor';
-import Application from './Application';
-import EditProfileMentor from './EditProfileMentor';
-import AllUserApplications from './AllUserApplications'
-import ApplicationSplitView from './ApplicationSplitView';
+import SignUpMentor from './Mentor/SignUpMentor';
+import HomePageMentor from './Mentor/HomePageMentor';
+import Application from './Application/Application';
+import EditProfileMentor from './Mentor/EditProfileMentor';
+import AllUserApplications from './Application/AllUserApplications'
+import ApplicationSplitView from './Application/ApplicationSplitView';
+import MatchRequestJobSeeker from './Matches/MatchRequestJobSeeker';
 import { UserProvider } from './UserContext'; // 🔥 import the provider
+import MentorMatches from './Matches/MentorMatches';
+import MentorOffer from './Mentor/MentorOffer'
+import CalendarScreen from './CalendarScreen'
+import MessagesScreen from './MessagesScreen'
+import ChatScreen from './ChatScreen'
+import Query from './Query'
+import AllUserSessions from './Sessions/AllUserSessions'
+import Session from './Sessions/Session'
+import AdminScreen from "./Admin/AdminScreen";
+import AdminAllUsers from "./Admin/AdminAllUsers";
+import AdminAllApplications from "./Admin/AdminAllApplications";
+
 // Define your custom theme
 const theme = {
   colors: {
@@ -43,7 +56,7 @@ export default function App() {
 
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='SignIn'>
+     <Stack.Navigator initialRouteName='AdminScreen'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="GeminiChat" component={GeminiChat}/>
@@ -60,6 +73,19 @@ export default function App() {
       <Stack.Screen name="Application" component={Application}/>
       <Stack.Screen name="AllUserApplications" component={AllUserApplications}/>
       <Stack.Screen name="ApplicationSplitView" component={ApplicationSplitView}/>
+      <Stack.Screen name="MatchRequestJobSeeker" component={MatchRequestJobSeeker}/>
+      <Stack.Screen name="MentorMatches" component={MentorMatches}/>
+      <Stack.Screen name="MentorOffer" component={MentorOffer}/>
+      <Stack.Screen name="CalendarScreen" component={CalendarScreen}/>
+      <Stack.Screen name="MessagesScreen" component={MessagesScreen}/>
+      <Stack.Screen name="ChatScreen" component={ChatScreen}/>
+      <Stack.Screen name="Query" component={Query}/>
+      <Stack.Screen name="AllUserSessions" component={AllUserSessions}/>
+      <Stack.Screen name="Session" component={Session}/>
+
+      <Stack.Screen name="AdminScreen" component={AdminScreen} />
+      <Stack.Screen name="AdminAllUsers" component={AdminAllUsers} />
+     <Stack.Screen name="AdminAllApplications" component={AdminAllApplications} />
 
       <Stack.Screen name="ComingSoon" component={ComingSoonScreen} />
       <Stack.Screen name="ComingSoonCalendar" component={ComingSoonScreen} />

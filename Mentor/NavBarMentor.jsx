@@ -17,8 +17,8 @@ import { useRoute } from "@react-navigation/native";
 
 const mobileNavItems = [
   { name: "Home", screen: "HomePageMentor" },
-  { name: "Messenger", screen: "ComingSoonChat", disabled: true },
-  { name: "Add Offer", screen: "ComingSoonOffer" },
+  { name: "Messenger", screen: "MessagesScreen"},
+  { name: "Add Offer", screen: "MentorOffer" },
   { name: "Calendar", screen: "ComingSoonCalendar", disabled: true },
   { name: "Profile", screen: "Profile" },
   { name: "Menu", screen: "ComingSoonMenu", disabled: true },
@@ -112,8 +112,8 @@ const WebNavBar = () => {
 
   const navItems = [
     { name: "Home", screen: "HomePageMentor" },
-    { name: "Messenger", screen: "ComingSoonChat", disabled: true },
-    { name: "Add Offer", screen: "ComingSoonOffer", disabled: true },
+    { name: "Messenger", screen: "MessagesScreen" },
+    { name: "Add Offer", screen: "MentorOffer" },
     { name: "Calendar", screen: "ComingSoonCalendar" , disabled: true},
     { name: "Profile", screen: "Profile" },
     { name: "Menu", screen: "ComingSoonMenu" , disabled: true},
@@ -123,7 +123,7 @@ const WebNavBar = () => {
     <View style={styles.webNavContainer}>
       <View style={styles.webNav}>
         <View style={styles.logoContainer}>
-          <Image source={require("./assets/prepWise Logo.png")} style={styles.logo} />
+          <Image source={require("../assets/prepWise Logo.png")} style={styles.logo} />
         </View>
         <View style={styles.navLinks}>
           {navItems.map((item) => {

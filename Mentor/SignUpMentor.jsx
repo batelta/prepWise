@@ -4,22 +4,26 @@ import { useFonts } from 'expo-font';
 import { Inter_400Regular,
   Inter_300Light, Inter_700Bold,Inter_100Thin,
   Inter_200ExtraLight } from '@expo-google-fonts/inter';
-  import CustomPopup from "./CustomPopup"; 
+  import CustomPopup from "../CustomPopup"; 
   import Ionicons from '@expo/vector-icons/Ionicons';
   import * as ImagePicker from 'expo-image-picker';
   import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
   import ModalRN  from 'react-native-modal';
-  import LanguageSelector from './LanguageSelector';
-import { Button, Checkbox } from 'react-native-paper';
+  import LanguageSelector from '../LanguageSelector';
+    import CareerFieldSelector from '../CareerFieldSelector';
+    import RolesSelector from '../RolesSelector';
+import { Button, Checkbox,Switch,RadioButton } from 'react-native-paper';
   import AsyncStorage from '@react-native-async-storage/async-storage';
  import { useContext } from 'react';
- import { UserContext } from './UserContext'; // adjust the path
+ import { UserContext } from '../UserContext'; // adjust the path
+import CompanySelector from '../CompanySelector';
 
   const { width } = Dimensions.get('window');
 
 
 const SignUpMentor = ({navigation}) => {
   const { setLoggedUser} = useContext(UserContext);
+  const apiUrlStart ="http://localhost:5062"
 
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
   const [errorPopupVisible, setErrorPopupVisible] = useState(false);
@@ -89,7 +93,9 @@ const SignUpMentor = ({navigation}) => {
    
    //this is sent as a prop to language selector component
    const [selectedLanguages, setSelectedLanguages] = React.useState([]);
-   
+
+
+
      const [FacebookLink, setFacebookLink] = React.useState("");
      const [FacebookLinkError, setFacebookLinkError] = React.useState(""); 
      const handleFacebookLinkChange = (text) => {
@@ -117,12 +123,14 @@ const SignUpMentor = ({navigation}) => {
        }
      };
    
-     const [fieldModalVisible, setFieldModalVisible] = React.useState(false);
-     const [selectedFields, setSelectedFields] = React.useState([]);
-     const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
+     //this is sent as a prop to field selector component
+        const [selectedField, setSelectedField] = useState([]);
    
+         //this is sent as a prop to role selector component
+              const [selectedRoles, setSelectedRoles] = useState([]);
+
      const [statusModalVisible, setStatusModalVisible] = React.useState(false);
-     const [selectedStatus, setSelectedStatus] = React.useState([]);
+     const [selectedStatus, setSelectedStatus] = React.useState("");
      const statuses = [
        "I'm just getting started! (0 years)",
        "I have some experience, but I'm still learning! (1-2 years)",
@@ -131,20 +139,43 @@ const SignUpMentor = ({navigation}) => {
        "I have extensive experience and lead projects. (8+ years)",
        "I'm a seasoned expert in my area. (10+ years)"
      ];
+
+   //this is sent as a prop to company selector component 
+   const [selectedCompanies,setSelectedCompanies]=React.useState([]);
+
      const [Companytext, setCompanyText] = React.useState("");
      const [CompanyError, setCompanyError] = React.useState(""); //for validating the company name
    
+     const isOtherSelected = selectedCompanies.includes('Other');
+     console.log('selected companies :',selectedCompanies)
      const handleCompanyChange = (text) => {
-        setCompanyText(text);
-      // If input is empty, clear the error message
-     if (!text.trim()) {
-        setCompanyError(""); // Clear error if input is empty// .test() checks if the input matches the regex pattern
-     } else if (!/^[A-Za-z]{1,15}$/.test(text)) {
-        setCompanyError("Only letters, up to 15 characters.");
-     } else {
-        setCompanyError(""); // Clear error if input becomes valid
-     }
-   };
+       setCompanyText(text);
+     
+       if (!text.trim()) {
+         setCompanyError('');
+       } else if (!/^[A-Za-z]{1,15}$/.test(text)) {
+         setCompanyError('Only letters, up to 15 characters.');
+       } else {
+         setCompanyError('');
+       }
+     };
+     // 🆕 Construct final company list (only include custom company if valid)
+const finalCompanyList = isOtherSelected
+? [
+    ...selectedCompanies.filter((c) => c !== 'Other'),
+    ...(Companytext.trim() && !CompanyError ? [Companytext.trim()] : [])
+  ]
+: selectedCompanies;
+
+   const [isHr, setIsHr] = useState(false); // default is false
+   const handleSwitchChange = (val) => {
+    setIsHr(val);
+    if (val) {
+      setSelectedField([]); // clear career fields if switched to HR
+    }
+  };
+
+  const [mentorGender, setMentorGender] = useState('');
 
    const [mentoringModalVisible, setMentoringModalVisible] = React.useState(false);
      const [selectedMentoring, setSelectedMentoring] = React.useState([]);
@@ -173,25 +204,91 @@ const SignUpMentor = ({navigation}) => {
        }
      };
    
-     const toggleField = (field) => {
-       setSelectedFields((prev) =>
-         prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
-       );
-     };
+    
      const toggleMentoring = (mentoring) => {
         setSelectedMentoring([mentoring])
       };
      const toggleStatus = (status) => {
       setSelectedStatus(status); // תשמור סטטוס אחד בלבד
      };
-   
-     const addNewUser=async (FirstNametext,LastNametext,Emailtext,Passwordtext,selectedFields,
-      selectedStatus,selectedLanguages,
-       FacebookLink,LinkedInLink,Companytext ,selectedMentoring)=>{
+       const [FielderrorPopupVisible, setFieldErrorPopupVisible] = useState(false);
+       const [fieldErrorMessage, setFieldErrorMessage] = useState('');
+       const [fieldErrorIcon, setFieldErrorIcon] = useState('alert-circle-outline');
+
+     const addNewUser=async (FirstNametext,LastNametext,Emailtext,Passwordtext,selectedField,
+      selectedRoles,selectedStatus,selectedLanguages,
+       FacebookLink,LinkedInLink,finalCompanyList ,selectedMentoring,mentorGender)=>{
+        console.log("isHr:", isHr);
+
+        if (!FirstNametext?.trim()) {
+          setFieldErrorMessage("Please enter your first name.");
+          setFieldErrorIcon("account-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+      
+        if (!LastNametext?.trim()) {
+          setFieldErrorMessage("Please enter your last name.");
+          setFieldErrorIcon("account-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+      
+        if (!Emailtext?.trim()) {
+          setFieldErrorMessage("Please enter your email.");
+          setFieldErrorIcon("email-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+      
+        if (!Passwordtext?.trim()) {
+          setFieldErrorMessage("Please enter your password.");
+          setFieldErrorIcon("lock-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+      
+        if (!selectedStatus) {
+          setFieldErrorMessage("Please add your experiece.");
+          setFieldErrorIcon("account-check-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+
+        if (!isHr){
+        if (!selectedField?.name) {
+          setFieldErrorMessage("Please select your career field.");
+          setFieldErrorIcon("briefcase-outline"); // or anything fitting
+          setFieldErrorPopupVisible(true);
+           return;
+        }
+        
+        if (!selectedRoles || selectedRoles.length === 0) {
+          setFieldErrorMessage("Please select at least one role.");
+          setFieldErrorIcon("account-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+      }
+        if (!selectedLanguages || selectedLanguages.length === 0) {
+          setFieldErrorMessage("Please select at least one language.");
+          setFieldErrorIcon("translate");
+          setFieldErrorPopupVisible(true);          
+          return;
+        }
+        if (!selectedMentoring || selectedMentoring.length === 0) {
+          setFieldErrorMessage("Please select at least one mentoring type.");
+          setFieldErrorIcon("account-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
          try{
            console.log("Sending request to API...");
+           console.log("fields:",[selectedField.name]);
+           console.log("company:",selectedCompanies);
+
        const isMentor=true;
-       const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Mentors" 
+       const API_URL = `${apiUrlStart}/api/Mentors` 
 
            const response =await fetch (API_URL, { 
              method: 'POST', // Specify that this is a POST request
@@ -203,15 +300,18 @@ const SignUpMentor = ({navigation}) => {
                LastName:LastNametext,
                Email: Emailtext,
                Password: Passwordtext,
-               CareerField: selectedFields, 
+               CareerField: [selectedField.name], //send as a string array,what the server expects
+               Roles: selectedRoles,           // new field               
                Experience: selectedStatus ,
                Picture: base64Image, 
                Language: selectedLanguages,  
                FacebookLink: FacebookLink,  
                LinkedInLink: LinkedInLink,  
                IsMentor:isMentor,
-               Company:Companytext,
-               MentoringType:selectedMentoring[0]
+               Company:finalCompanyList,
+               MentoringType:selectedMentoring[0],
+               IsHr:isHr,
+               Gender:mentorGender
              })
            });
            console.log(base64Image)
@@ -239,7 +339,7 @@ const SignUpMentor = ({navigation}) => {
 const loginAsUser = async (email, password) => {
     try {
       console.log("Sending request to API...");
-      const API_URL =  "https://proj.ruppin.ac.il/igroup11/prod/api/Users/SearchUser"
+      const API_URL =  `${apiUrlStart}/api/Users/SearchUser`
       
   
       const response = await fetch(API_URL, {
@@ -254,12 +354,15 @@ const loginAsUser = async (email, password) => {
           Email: email,
           Password: password,
           CareerField: ["String"], // Convert to an array
+          Roles: ["String"], // Convert to an array
+          Company: ["String"], // Convert to an array
           Experience: "String",
           Picture: "String",
           Language: ["String"], // Convert to an array
           FacebookLink: "String",
           LinkedInLink: "String",
-          IsMentor: true
+          IsMentor: true,
+          IsHr:false
         })
       });
   
@@ -317,7 +420,7 @@ const loginAsUser = async (email, password) => {
                     <CustomPopup visible={successPopupVisible}
                   onDismiss={() => {
                     setSuccessPopupVisible(false);
-                    navigation.navigate("HomePageMentor"); // Navigate after closing popup
+                    navigation.navigate("Query"); // Navigate after closing popup
                   }}
                     icon="check-circle" message="User Signed Up successfully!"
                      />
@@ -331,6 +434,16 @@ const loginAsUser = async (email, password) => {
                     icon="alert-circle-outline" message="Failed to sign Up!"
                      />
                      </View>   )}
+                     {FielderrorPopupVisible && (
+                    <View style={styles.overlay}>
+                      <CustomPopup
+                        visible={FielderrorPopupVisible}
+                        onDismiss={() => setFieldErrorPopupVisible(false)}
+                        icon={fieldErrorIcon}
+                        message={fieldErrorMessage}
+                      />
+                    </View>
+                  )}
       <View style={appliedStyles.loginBox}>
       
                      {image ? (
@@ -343,7 +456,7 @@ const loginAsUser = async (email, password) => {
 ) : (
   <View style={appliedStyles.imageAndIconContainer}>
     <View style={appliedStyles.avatarContainer}>
-      <Image source={require('./assets/defaultProfileImage.jpg')}style={appliedStyles.profileImage}></Image>
+      <Image source={require('../assets/defaultProfileImage.jpg')}style={appliedStyles.profileImage}></Image>
     </View>
     <TouchableOpacity onPress={pickImage} style={appliedStyles.cameraButtonAfter}>
       <Ionicons name="camera-outline" size={24} color="white" />
@@ -352,7 +465,6 @@ const loginAsUser = async (email, password) => {
 )}
 
 
-<View style={appliedStyles.rowPair}>
   <View style={appliedStyles.inputBlock}>
 <Text style={appliedStyles.inputTitle}>First Name</Text>
 
@@ -379,10 +491,8 @@ const loginAsUser = async (email, password) => {
 {LastNameError ? <Text style={{ color: "#003D5B",marginBottom:'1%' }}>{LastNameError}</Text> : null}
 
   </View>
-</View>
 
 
-<View style={appliedStyles.rowPair}>
 <View style={appliedStyles.inputBlock}>
 <Text style={appliedStyles.inputTitle}>Email</Text>
         <TextInput
@@ -416,44 +526,41 @@ const loginAsUser = async (email, password) => {
 </View>
 
 
-    </View>
    
-<View style={appliedStyles.rowPair}>
 
-  {/* Fields Modal */}
-  <View style={appliedStyles.inputBlock}>
-<Text style={appliedStyles.inputTitle}>Career Fields</Text>
-  <Button 
-    mode="outlined" 
-    onPress={() => setFieldModalVisible(true)} 
-    style={appliedStyles.modalsInput}  
-    contentStyle={appliedStyles.modalText} 
-    labelStyle={appliedStyles.modalLabelText}
-  >
 
-    {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
-  </Button>
-  </View>
-
-  <ModalRN 
-    isVisible={fieldModalVisible} 
-    onBackdropPress={() => setFieldModalVisible(false)} 
-    onBackButtonPress={() => setFieldModalVisible(false)}
-    style={{ justifyContent: 'flex-end', margin: 0 }} // ⬅️ makes it appear from the bottom
-
-  >
-    <View style={appliedStyles.modalBox}>
-      {Fields.map((field, index) => (
-        <Checkbox.Item 
-          key={index} 
-          label={field} 
-          status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
-          onPress={() => toggleField(field)} 
+<View style={appliedStyles.inputBlock}>
+      {/* HR Switch */}
+        <Text style={appliedStyles.hrTitle}>Are you from HR?</Text>
+        <Switch
+          value={isHr}
+          onValueChange={handleSwitchChange}
+          color="#9FF9D5"
         />
-      ))}
-      <Button onPress={() => setFieldModalVisible(false)}>Done</Button>
+
+      {/* Show career fields only if NOT HR */}
+      {!isHr && (
+        <View style={appliedStyles.CareerContainer}>
+          <Text style={appliedStyles.inputTitle}>Career Fields</Text>
+          <CareerFieldSelector
+                selectedField={selectedField} 
+                setSelectedField={setSelectedField}
+              />
+                {console.log('selectedfieldid:',selectedField.id)}
+                {selectedField?.id&&(<Text style={appliedStyles.inputTitle}>Roles</Text>)}
+{selectedField?.id  && (
+ 
+  <RolesSelector   careerFieldId={selectedField.id}
+  selectedRoles={selectedRoles}
+  setSelectedRoles={setSelectedRoles} />
+
+)}
+        </View>
+      )}
     </View>
-  </ModalRN>
+
+
+
 
   {/* Status Modal */}
   <View style={appliedStyles.inputBlock}>
@@ -489,10 +596,8 @@ const loginAsUser = async (email, password) => {
     </View>
   </ModalRN>
 
-</View>
 
           
-<View style={appliedStyles.rowPair}>
 <View style={appliedStyles.inputBlock}>
 <Text style={appliedStyles.inputTitle}>Facebook</Text>
 
@@ -514,20 +619,29 @@ const loginAsUser = async (email, password) => {
                     value={LinkedInLink} />
  {LinkedInLinkError ? <Text style={{ color: "#003D5B",marginBottom:'1%' }}>{LinkedInLinkError}</Text> : null}
                     </View>
-  </View>
-  <View style={appliedStyles.rowPair}>
+                    
   <View style={appliedStyles.inputBlock}>
 <Text style={appliedStyles.inputTitle}>Company</Text>
-
-<TextInput 
+<CompanySelector
+  selectedCompanies={selectedCompanies}
+  setSelectedCompanies={setSelectedCompanies}
+/>  
+      </View>
+      {isOtherSelected && (
+  <View style={{ marginTop: 10 }}>
+    <Text style={appliedStyles.inputTitle}>Enter Company Name</Text>
+    <TextInput 
                     onChangeText={handleCompanyChange}
                     style={appliedStyles.halfInput} 
                     placeholder="Company (Optional)"
                     placeholderTextColor="#888"
+                    contentStyle={{backgroundColor:"#FFF"
+                    }}
+                    mode="outlined"
                     value={Companytext} />
- {CompanyError ? <Text style={{ color: "#003D5B",marginBottom:'1%' }}>{CompanyError}</Text> : null}                 
-      </View>
- 
+    {CompanyError ? <Text style={{ color: 'red' }}>{CompanyError}</Text> : null}
+  </View>
+)}
   {/* Mentoring type Modal */}
   <View style={appliedStyles.inputBlock}>
 <Text style={appliedStyles.inputTitle}>Mentoring Type</Text>
@@ -562,7 +676,7 @@ const loginAsUser = async (email, password) => {
       <Button onPress={() => setMentoringModalVisible(false)}>Done</Button>
     </View>
   </ModalRN>
-</View>
+
 <View style={appliedStyles.languageContainer}>
  <Text style={appliedStyles.inputTitle}>Language</Text>
     <LanguageSelector
@@ -570,6 +684,30 @@ const loginAsUser = async (email, password) => {
                 setSelectedLanguages={setSelectedLanguages}
               />
 </View>
+
+<Text style={appliedStyles.inputTitle}>
+  What is your gender?
+      </Text>
+      <RadioButton.Group
+        onValueChange={value => setMentorGender(value)}
+        value={mentorGender}
+      >
+           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+          <RadioButton value="Female" color='#9FF9D5' />
+          <Text style={appliedStyles.subtitle}>Female</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+          <RadioButton value="Male" color='#9FF9D5' />
+          <Text style={appliedStyles.subtitle}>Male</Text>
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <RadioButton value="No Preference" color='#9FF9D5' />
+          <Text style={appliedStyles.subtitle}>I Prefer Not to say</Text>
+        </View>
+      </RadioButton.Group>
+
+
         <View style={appliedStyles.rowContainer}>
        {/**  <Text style={appliedStyles.forgotText}>Forgot Password?</Text> */}
         </View>
@@ -579,8 +717,8 @@ const loginAsUser = async (email, password) => {
       onPress={()=> navigation.navigate('SignIn')}>Login Here</Text>
       </View>
         <TouchableOpacity style={appliedStyles.loginButton}>
-          <Text style={appliedStyles.loginText} onPress={() => {addNewUser(FirstNametext, LastNametext, Emailtext, Passwordtext, selectedFields, 
-                      selectedStatus, selectedLanguages, FacebookLink, LinkedInLink,Companytext,selectedMentoring) }}>SIGN UP</Text>
+          <Text style={appliedStyles.loginText} onPress={() => {addNewUser(FirstNametext, LastNametext, Emailtext, Passwordtext, selectedField, 
+                     selectedRoles,selectedStatus, selectedLanguages, FacebookLink, LinkedInLink,finalCompanyList,selectedMentoring,mentorGender) }}>SIGN UP</Text>
         </TouchableOpacity>
       </View>
 
@@ -591,18 +729,23 @@ const loginAsUser = async (email, password) => {
 
 const Webstyles = StyleSheet.create({
   scrollViewContent: {
-    paddingBottom: 20,  
+    paddingBottom: 20, 
+    alignItems: 'center', // horizontal centering
+  justifyContent: 'center', // vertical centering 
   },
   container: {
     justifyContent: 'center',
     alignItems: 'center',
   }, 
   loginBox: {
-    width: 700,
+    width: 600,
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+
     elevation: 5,
   },
 
@@ -616,7 +759,6 @@ const Webstyles = StyleSheet.create({
   forgotText: {
     color: '#BFB4FF',
     fontFamily:'Inter_200ExtraLight',
-
   },
   loginButton: {
     backgroundColor: '#BFB4FF',
@@ -673,16 +815,33 @@ const Webstyles = StyleSheet.create({
 
  
   languageContainer:{
-    paddingLeft:20,
+    //paddingLeft:20,
     alignSelf:'center',
     fontFamily:'Inter_200ExtraLight',
     fontSize:13,
-    width: '50%',
+    width: '70%',
     height: 40,
     marginTop:10,
     marginBottom:15,
     flex: 1,
 
+},
+CareerContainer:{
+  //paddingLeft:20,
+  alignSelf:'center',
+  fontFamily:'Inter_200ExtraLight',
+  fontSize:13,
+  width: '100%',
+  height: 40,
+  marginTop:10,
+  marginBottom:15,
+  flex: 1,
+},
+hrTitle:{
+  fontSize: 14,
+  marginBottom: 10,
+  color: '#003D5B',
+  width: '100%',
 },
 modalText:{
   justifyContent: 'left', 
@@ -699,7 +858,10 @@ modalLabelText:{
   },
  
 inputBlock: {
-  width: '50%', 
+  width: '70%',
+  alignSelf:'center' ,
+  marginBottom: 16,
+
 },
 
 inputTitle: {
@@ -708,7 +870,7 @@ inputTitle: {
   color: '#003D5B',
 },
 halfInput: {
-  width: 300,
+  width: '100%', // or a fixed width like 300 if you prefer
   padding: 10,
   borderWidth: 1,
   borderColor: '#ccc',
@@ -727,7 +889,7 @@ marginBottom:10,
 width:'90%'
 },
 modalsInput:{
-  width: 300,
+  width: "100%",
   borderWidth: 1,
   borderColor: '#ccc',
   borderRadius: 5,
@@ -769,6 +931,11 @@ modalsInput:{
     alignItems: 'center',
     marginTop:10
   },
+  subtitle:{
+    fontSize: 13,
+  //  marginTop: 8,
+    fontFamily:"Inter_300Light",
+},
   
 });
 const styles = StyleSheet.create({

@@ -5,15 +5,15 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, Modal, Portal, Checkbox, Provider as PaperProvider } from 'react-native-paper';
-import LanguageSelector from './LanguageSelector';
+import LanguageSelector from '../LanguageSelector';
 import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
 import NavBarMentor from "./NavBarMentor";
-import CustomPopup from "./CustomPopup"; 
+import CustomPopup from "../CustomPopup"; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useContext } from 'react';
-import { UserContext } from './UserContext'; // adjust the path
-import defaultProfile from './assets/defaultProfileImage.jpg'; // make sure this path is correct
+import { UserContext } from '../UserContext'; // adjust the path
+import defaultProfile from '../assets/backgroundProfileImage2.jpg'; // make sure this path is correct
 
 
 const EditProfileMentor = () => {
@@ -316,7 +316,7 @@ const pickImage = async () => {
       </View>
       )}     
     
-          <Image source={require("../prepWise/assets/backgroundProfileImage2.jpg")} style={appliedStyles.headerBackground} />
+          <Image source={require("../assets/backgroundProfileImage2.jpg")} style={appliedStyles.headerBackground} />
           {/**image */}
 
           <View style={appliedStyles.imageContainer}>

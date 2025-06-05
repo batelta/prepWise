@@ -6,19 +6,20 @@ import { useFonts } from 'expo-font';
 import { Inter_400Regular,
   Inter_300Light, Inter_700Bold,Inter_100Thin,
   Inter_200ExtraLight } from '@expo-google-fonts/inter';
-import AnimatedArrow from './AnimatedArrow'
-import AnimatedPlusIcon from "./AnimatedPlusIcon";
+import AnimatedArrow from '../AnimatedArrow'
+import AnimatedPlusIcon from "../AnimatedPlusIcon";
 
-import GeminiChat from './GeminiChat';
+import GeminiChat from '../GeminiChat';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useContext } from 'react';
-import { UserContext } from './UserContext'; 
+import { UserContext } from '../UserContext'; 
 
 const progress = 0; //just for now
 
 
 export default function HomePageMentor() {
     const { Loggeduser } = useContext(UserContext);
+    const apiUrlStart ="http://localhost:5062"
 
     const [showChat, setShowChat] = useState(false);
 
@@ -41,7 +42,7 @@ export default function HomePageMentor() {
     
         try{
           console.log("Sending request to API...");
-      const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users/SearchUser" 
+      const API_URL = `${apiUrlStart}/api/Users/SearchUser` 
           const response =await fetch (API_URL, { 
             method: 'POST', // Specify that this is a POST request
             headers: {
@@ -54,6 +55,8 @@ export default function HomePageMentor() {
                 Email: email,
                 Password: password,
                 CareerField: ["String"], // Convert to an array
+                Roles: ["String"], // Convert to an array
+                Company: ["String"], // Convert to an array
                 Experience: "String",
                 Picture: "String",
                 Language: ["String"], // Convert to an array
@@ -74,7 +77,7 @@ export default function HomePageMentor() {
               // Convert response JSON to an object
             const userData = await response.json();   
             if(userData.picture==="string") 
-                setProfileImage(require('./assets/defaultProfileImage.jpg'))  
+                setProfileImage(require('../assets/defaultProfileImage.jpg'))  
               else
           setProfileImage({ uri: userData.picture })        
         setFirstname(userData.firstName)
@@ -98,12 +101,11 @@ export default function HomePageMentor() {
     const [Name, setName] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users" 
   
       
     const LogoImage = () => {
         if (Platform.OS === "ios") {
-            return <Image source={require('./assets/prepWise Logo.png')} style={appliedStyles.logo} />;
+            return <Image source={require('../assets/prepWise Logo.png')} style={appliedStyles.logo} />;
         }
     };
    
@@ -191,8 +193,8 @@ export default function HomePageMentor() {
                             </View>
                 <View>
 
-                    <NavBarMentor />
                 </View>
+                <NavBarMentor />
 
                 {showChat && (
     <View style={appliedStyles.overlay}>
@@ -215,7 +217,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#fff",
-        padding: 50,
+       // padding: 50,
         flexDirection: 'row', // Ensures text and image are side by side
         //justifyContent:'space-evenly',
     },
@@ -250,11 +252,15 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: "bold",
         fontFamily: "Inter_400Regular",
-        flex: 1, // Allows text to expand properly
+        flex: 1, // Allows text to expand properly,
+        padding:50
+
     },
     subtitle: {
         color: "gray",
-        fontFamily:"Inter_200ExtraLight"
+        fontFamily:"Inter_200ExtraLight",
+        paddingLeft:50
+
     },
     section: {
         flexDirection: "row",
@@ -325,6 +331,8 @@ const styles = StyleSheet.create({
     },
     Applicationcard:{
      width:'100%',
+          elevation:0,
+          shadowColor:'#E4E0E1'
     },
     ApplicationCardcontent:{
 //alignItems: 'center', // Centers items inside Card.Content

@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import NavBar from './NavBar';
-import NavBarMentor from './NavBarMentor';
+import NavBarMentor from './Mentor/NavBarMentor';
 
 import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';

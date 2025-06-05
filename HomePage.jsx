@@ -2,7 +2,7 @@ import { View, Text,ActivityIndicator, ScrollView, Image, TouchableOpacity, Plat
 import NavBar from "./NavBar";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { Card } from "react-native-paper";
-import { useEffect, useState } from "react";
+import { useEffect, useState,useMemo } from "react";
 import { useFonts } from 'expo-font';
 import { Inter_400Regular,
   Inter_300Light, Inter_700Bold,Inter_100Thin,
@@ -17,11 +17,11 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; 
-
 const progress = 0; // just for now
 
 export default function HomePage() {
     const { Loggeduser } = useContext(UserContext);
+    const apiUrlStart ="http://localhost:5062"
 
     const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
   const navigation = useNavigation();
@@ -32,94 +32,154 @@ export default function HomePage() {
    const [profileImage, setProfileImage] = useState(null);
    const [firstname, setFirstname] = useState("Guest");
 
+const[userType,setUserType]=useState("");
+const[userID,setUserID]=useState(null);
+   ////this is a check to know if the job seeker has applications or matchrequests 
+   const hasApplications = applications.length > 0;
+  // const [hasFetchedExtras, setHasFetchedExtras] = useState(false);
+
+
+   ///THIS IS IN ORDER TO CHECK IF THE USER ANSWERED THE QUERY BEFORE,HE DOESNT NEED TO AGAIN 
+   //AND HE HAS OPENED A MATCH REQUEST BEFORE SO HE SHOULD'NT SEE THE BUTTON FOR OPEN YOUR FIRST MATCH REQUEST
+  // FIX 1: Change queryAnswers to a more specific state
+  const [hasAnsweredQuery, setHasAnsweredQuery] = useState(false);
+  const [queryLoading, setQueryLoading] = useState(true);
+
+  // FIX 2: Remove the problematic useMemo and use the boolean state directly
+  const hasMatchRequests = hasAnsweredQuery;
+
+      // FIX 3: Optimize the fetchQuery function with proper error handling
+      const fetchQuery = useCallback(async () => {
+        if (!Loggeduser?.id) return;
+        
+        try {
+            setQueryLoading(true);
+            const response = await fetch(`${apiUrlStart}/api/Users/${Loggeduser.id}/Traits`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log("User traits data:", data);
+                // Check if user has answered the query (adjust this condition based on your API response)
+                setHasAnsweredQuery(data && data.userID > 0);
+            } else if (response.status === 404) {
+                console.log("User has not answered the query yet");
+                setHasAnsweredQuery(false);
+            } else {
+                throw new Error("Failed to fetch traits");
+            }
+        } catch (error) {
+            console.error("Failed to fetch traits", error);
+            setHasAnsweredQuery(false);
+        } finally {
+            setQueryLoading(false);
+        }
+    }, [Loggeduser?.id, apiUrlStart]);
+  
+    // FIX 4: Use useEffect with proper dependencies
+    useEffect(() => {
+      fetchQuery();
+  }, [fetchQuery]);
 
  // This runs only once when Loggeduser is first set
-useEffect(() => {
-    if (Loggeduser?.id) {
+ // FIX 6: Optimize the loginAsUser effect
+ useEffect(() => {
+  if (Loggeduser?.id && Loggeduser?.email && Loggeduser?.password ) {
       loginAsUser(Loggeduser.email, Loggeduser.password);
-    }
-  }, [Loggeduser?.id]);
+  }
+}, [Loggeduser?.id, Loggeduser?.email, Loggeduser?.password]);
   
   // This runs every time the screen is focused
-  useFocusEffect(
+   // FIX 7: Optimize the applications fetch
+   const fetchApplications = useCallback(async () => {
+    if (!Loggeduser?.id) return;
+    
+    try {
+        setLoadingApp(true);
+        const response = await fetch(
+            `${apiUrlStart}/api/JobSeekers/${Loggeduser.id}/applications`
+        );
+        const data = await response.json();
+        setApplications(data);
+    } catch (error) {
+        console.error("Failed to fetch applications", error);
+    } finally {
+        setLoadingApp(false);
+    }
+}, [Loggeduser?.id, apiUrlStart]);
+
+// This runs every time the screen is focused
+useFocusEffect(
     useCallback(() => {
-      const fetchApplications = async () => {
-        try {
-          const response = await fetch(
-            `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/${Loggeduser.id}/applications`
-          );
-          const data = await response.json();
-          setApplications(data);
-        } catch (error) {
-          console.error("Failed to fetch applications", error);
-        } finally {
-          setLoadingApp(false);
-        }
-      };
-  
-      if (Loggeduser?.id) {
         fetchApplications();
-      }
-    }, [Loggeduser?.id])
-  );
-  
+        // Also refetch query status when screen is focused
+        fetchQuery();
+    }, [fetchApplications, fetchQuery])
+);
+
   
     
-  const loginAsUser=async (email,password )=>{
-    console.log(email,password,Loggeduser.password)
+     // FIX 5: Optimize loginAsUser function
+     const loginAsUser = useCallback(async (email, password) => {
+      console.log(email, password, Loggeduser.password);
 
-    try{
-      console.log("Sending request to API...");
-  const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users/SearchUser" 
-      const response =await fetch (API_URL, { 
-        method: 'POST', // Specify that this is a POST request
-        headers: {
-          'Content-Type': 'application/json' // Indicate that you're sending JSON data
-        },
-        body: JSON.stringify({ // Convert the user data into a JSON string
-            UserId: 0,
-            FirstName: "String",
-            LastName: "String",
-            Email: email,
-            Password: password,
-            CareerField: ["String"], // Convert to an array
-            Experience: "String",
-            Picture: "String",
-            Language: ["String"], // Convert to an array
-            FacebookLink: "String",
-            LinkedInLink: "String",
-            IsMentor:false
-        })
-      });
+      try {
+          console.log("Sending request to API...");
+          const API_URL = `${apiUrlStart}/api/Users/SearchUser`;
+          const response = await fetch(API_URL, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                  UserId: 0,
+                  FirstName: "String",
+                  LastName: "String",
+                  Email: email,
+                  Password: password,
+                  CareerField: ["String"],
+                  Roles: ["String"],
+                  Company: ["String"],
+                  Experience: "String",
+                  Picture: "String",
+                  Language: ["String"],
+                  FacebookLink: "String",
+                  LinkedInLink: "String",
+                  IsMentor: false
+              })
+          });
 
-      console.log("response ok?", response.ok);
+          console.log("response ok?", response.ok);
 
-      if(response.ok)
-       {
-        console.log('user found ')
-        
-          // Convert response JSON to an object
-        const userData = await response.json();
-        if(userData.picture==="string") 
-          setProfileImage(require('./assets/defaultProfileImage.jpg'))  
-        else
-    setProfileImage({ uri: userData.picture })
-    setFirstname(userData.firstName)
-       }
-  
-  if(!response.ok){
-    throw new Error('failed to find user')
-  }
-    }catch(error){
-  console.log(error)
-    }
-}     
+          if (response.ok) {
+              console.log('user found');
+              const userData = await response.json();
+              
+              if (userData.picture === "string") {
+                  setProfileImage(require('./assets/defaultProfileImage.jpg'));
+              } else {
+                  setProfileImage({ uri: userData.picture });
+              }
+              
+              setFirstname(userData.firstName);
+              setUserType(userData.isMentor ? "mentor" : "jobSeeker");
+              console.log("user type :",userData.isMentor)
+              setUserID(userData.userID);
+              console.log("user id :",userData.userID)
+
+          } else {
+              throw new Error('failed to find user');
+          }
+      } catch (error) {
+          console.log(error);
+      }
+  }, [apiUrlStart, Loggeduser.password]);
+
 
       const handleDelete = async (applicationID) => {
           try {
             console.log(applicationID)
             const API_URL =
-              `https://proj.ruppin.ac.il/igroup11/prod/api/JobSeekers/deleteById/${Loggeduser.id}/${applicationID}`
+              `${apiUrlStart}/api/JobSeekers/deleteById/${Loggeduser.id}/${applicationID}`
       
             console.log("Deleting application at URL:", API_URL);
       
@@ -136,6 +196,17 @@ useEffect(() => {
           }
         };
       ///
+ // FIX 9: Optimize navigation handler
+ const handleNavigateToQuery = useCallback(() => {
+  // Make sure we have valid userType and userID before navigating
+  if (userType && userID) {
+      navigation.navigate("Query", { userType, userID });
+  } else {
+    console.log(userType,userID)
+      console.error("Missing userType or userID for navigation");
+      Alert.alert("Error", "Unable to navigate. Please try again.");
+  }
+}, [navigation, userType, userID]);
 
     const [fontsLoaded] = useFonts({
         Inter_400Regular,
@@ -147,14 +218,12 @@ useEffect(() => {
     const [Name, setName] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users" 
   
     const LogoImage = () => {
-        if (Platform.OS === "ios") {
-            return <Image source={require('./assets/prepWise Logo.png')} style={appliedStyles.logo} />;
-        }
-    };
-   
+      if (Platform.OS !== "web") {
+          return <Image source={require('./assets/prepWise Logo.png')} style={appliedStyles.logo} />;
+      }
+  };
    
 
     return (
@@ -162,6 +231,7 @@ useEffect(() => {
             <ScrollView>
                 {/** logo component is here only for mobile*/}
                 <LogoImage />
+
                 <View style={appliedStyles.container}>
                  
                     <View style={appliedStyles.header}>
@@ -302,51 +372,53 @@ useEffect(() => {
 >
 <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
 </TouchableOpacity>
-{applications.length === 0 ? (
-  <>
+
     {/* new user section */}
+
+{!hasApplications || !hasMatchRequests ? (
+  <>
     <Text style={appliedStyles.sectionTitle}>Get Started 💫</Text>
     <View style={appliedStyles.pressContainer}>
-      <Card style={appliedStyles.pressCard}>
-        <Card.Content style={appliedStyles.pressCardcontent}>
-        <TouchableOpacity  onPress={() => {
-                                            console.log("Navigating to:in web to splitview");
-                                            if(Platform.OS === 'web' )
-                                            navigation.navigate("ApplicationSplitView"); 
-                                          else  navigation.navigate("AddApplication");  //
-                                        }} >
-          <Text style={appliedStyles.pressText}>
-            Press <Text style={{ marginRight: 10 }}> </Text>
-            <AnimatedPlusIcon />
-            <Text style={{ marginHorizontal: 10 }}>
-              to add your first Job Application
-            </Text>
-          </Text>
-          </TouchableOpacity>
-        </Card.Content>
-      </Card>
+      {/* Job Application Prompt */}
+      {!hasApplications && (
+        <Card style={appliedStyles.pressCard}>
+          <Card.Content style={appliedStyles.pressCardcontent}>
+            <TouchableOpacity
+              onPress={() => {
+                if (Platform.OS === 'web')
+                  navigation.navigate("ApplicationSplitView");
+                else
+                  navigation.navigate("AddApplication");
+              }}
+            >
+              <Text style={appliedStyles.pressText}>
+                Press <AnimatedPlusIcon /> to add your first Job Application
+              </Text>
+            </TouchableOpacity>
+          </Card.Content>
+        </Card>
+      )}
 
-      <Card style={appliedStyles.pressCard}>
-        <Card.Content style={appliedStyles.pressCardcontent}>
-          <Text style={appliedStyles.pressText}>
-            Press <Text style={{ marginRight: 10 }}> </Text>
-            <AnimatedPlusIcon />
-            <Text style={{ marginHorizontal: 10 }}>
-              to Open your first mentor match request
-            </Text>
-          </Text>
-        </Card.Content>
-      </Card>
-    </View>
-
-    <View>
+      {/* Match Request Prompt */}
+      {!hasMatchRequests && (
+        <Card style={appliedStyles.pressCard}>
+          <Card.Content style={appliedStyles.pressCardcontent}>
+            <TouchableOpacity
+              onPress={handleNavigateToQuery}
+            >
+              <Text style={appliedStyles.pressText}>
+                Press <AnimatedPlusIcon /> to open your first mentor match request
+              </Text>
+            </TouchableOpacity>
+          </Card.Content>
+        </Card>
+      )}
     </View>
   </>
-) : (
-  <>
-  </>
-)}
-     <NavBar />
+) : null}
+
+                <NavBar />
+
                 {showChat && (
     <View style={appliedStyles.overlay}>
   <View style={appliedStyles.chatModal}>
@@ -367,7 +439,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#fff",
-        padding: 50,
+       // padding: 50,
         flexDirection: 'row', 
     },
     logo: {
@@ -402,10 +474,13 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         fontFamily: "Inter_400Regular",
         flex: 1, // Allows text to expand properly
+        padding:50
     },
     subtitle: {
         color: "gray",
-        fontFamily:"Inter_200ExtraLight"
+        fontFamily:"Inter_200ExtraLight",
+        paddingLeft:50
+
     },
     section: {
         flexDirection: "row",
@@ -445,8 +520,10 @@ const styles = StyleSheet.create({
         flexWrap: "nowrap", //Prevents wrapping so both cards stay in one row
     },
     ToDocard:{
-        width: "48%", //Adjusted width so both cards fit in one row
+        width: "50%", //Adjusted width so both cards fit in one row
        height:120,
+           elevation:0,
+          shadowColor:'transparent'
        },
        Cardcontent:{
            alignItems: 'center', // Centers items inside Card.Content

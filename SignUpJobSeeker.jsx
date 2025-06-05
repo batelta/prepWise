@@ -10,16 +10,20 @@ import { Inter_400Regular,
   import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
   import ModalRN  from 'react-native-modal';
   import LanguageSelector from './LanguageSelector';
+  import CareerFieldSelector from './CareerFieldSelector';
+  import RolesSelector from './RolesSelector';
 import { Button, Checkbox } from 'react-native-paper';
   import AsyncStorage from '@react-native-async-storage/async-storage';
  import { useContext } from 'react';
  import { UserContext } from './UserContext'; // adjust the path
+ import * as DocumentPicker from "expo-document-picker";
 
   const { width } = Dimensions.get('window');
 
 
 const SignUpJobSeeker = ({navigation}) => {
   const { setLoggedUser} = useContext(UserContext);
+  const apiUrlStart ="http://localhost:5062"
 
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
   const [errorPopupVisible, setErrorPopupVisible] = useState(false);
@@ -116,11 +120,16 @@ const SignUpJobSeeker = ({navigation}) => {
          setLinkedInLinkError(""); 
        }
      };
-   
-     const [fieldModalVisible, setFieldModalVisible] = useState(false);
-     const [selectedFields, setSelectedFields] = useState([]);
-     const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
-   
+   //adding this , to prevent the selectors from being empty (language,careerfield ,roles)
+     const [formErrors, setFormErrors] = useState({});
+
+
+    //this is sent as a prop to field selector component
+    const [selectedField, setSelectedField] = useState([]);
+
+      //this is sent as a prop to role selector component
+      const [selectedRoles, setSelectedRoles] = useState([]);
+
      const [statusModalVisible, setStatusModalVisible] = useState(false);
      const [selectedStatus, setSelectedStatus] = useState("");
      const statuses = [
@@ -152,73 +161,204 @@ const SignUpJobSeeker = ({navigation}) => {
        }
      };
    
-     const toggleField = (field) => {
-       setSelectedFields((prev) =>
-         prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
-       );
-     };
    
      const toggleStatus = (status) => {
       setSelectedStatus(status); // תשמור סטטוס אחד בלבד
     };
    
+    const [resumeFile, setResumeFile] = useState(null);
 
+    const pickResumeFile = async () => {
+      if (Platform.OS === "web") {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".pdf,.doc,.docx";
+        input.onchange = (event) => {
+          const file = event.target.files[0];
+          if (file) {
+            console.log("✅ File selected:", file);
+            setResumeFile({
+              uri: URL.createObjectURL(file),
+              name: file.name,
+              type: file.type,
+              file,
+            });
+          } else {
+            console.log("❌ No file selected");
+          }
+        };
+        input.click();
+      } else {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: [
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          ],
+          copyToCacheDirectory: true,
+        });
+  
+        if (result.type === "success") {
+          console.log("✅ Picked file:", result);
+          setResumeFile(result);
+        } else {
+          console.log("❌ No file selected or cancelled");
+        }
+      }
+    };
+
+
+
+
+    const [FielderrorPopupVisible, setFieldErrorPopupVisible] = useState(false);
+    const [fieldErrorMessage, setFieldErrorMessage] = useState('');
+    const [fieldErrorIcon, setFieldErrorIcon] = useState('alert-circle-outline');
  
     
-     const addNewUser=async (FirstNametext,LastNametext,Emailtext,Passwordtext,selectedFields,
-      selectedStatus,selectedLanguages,
-       FacebookLink,LinkedInLink )=>{
+     const addNewUser=async (FirstNametext,LastNametext,Emailtext,Passwordtext,selectedField,
+      selectedRoles,selectedStatus,selectedLanguages,
+       FacebookLink,LinkedInLink,    MentoringType = "",Company = "",isHr=false
+      )=>{
+        if (!FirstNametext?.trim()) {
+          setFieldErrorMessage("Please enter your first name.");
+          setFieldErrorIcon("account-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+      
+        if (!LastNametext?.trim()) {
+          setFieldErrorMessage("Please enter your last name.");
+          setFieldErrorIcon("account-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+      
+        if (!Emailtext?.trim()) {
+          setFieldErrorMessage("Please enter your email.");
+          setFieldErrorIcon("email-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+      
+        if (!Passwordtext?.trim()) {
+          setFieldErrorMessage("Please enter your password.");
+          setFieldErrorIcon("lock-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+      
+        if (!selectedStatus) {
+          setFieldErrorMessage("Please add your experiece.");
+          setFieldErrorIcon("account-check-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+        if (!selectedField?.name) {
+          setFieldErrorMessage("Please select your career field.");
+          setFieldErrorIcon("briefcase-outline"); // or anything fitting
+          setFieldErrorPopupVisible(true);
+           return;
+        }
+        
+        if (!selectedRoles || selectedRoles.length === 0) {
+          setFieldErrorMessage("Please select at least one role.");
+          setFieldErrorIcon("account-outline");
+          setFieldErrorPopupVisible(true);
+          return;
+        }
+        
+        if (!selectedLanguages || selectedLanguages.length === 0) {
+          setFieldErrorMessage("Please select at least one language.");
+          setFieldErrorIcon("translate");
+          setFieldErrorPopupVisible(true);          
+          return;
+        }
+        
          try{
            console.log("Sending request to API...");
+           console.log('field:', [selectedField.name])
+           console.log('roles:',selectedRoles)
+           console.log('language:',selectedLanguages)
+
+
        const isMentor=false;
-       const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users" 
+       const API_URL = `${apiUrlStart}/api/Users` 
+console.log('url:',API_URL)
 
-           const response =await fetch (API_URL, { 
-             method: 'POST', // Specify that this is a POST request
-             headers: {
-               'Content-Type': 'application/json' // Indicate that you're sending JSON data
-             },
-             body: JSON.stringify({ // Convert the user data into a JSON string
-               FirstName: FirstNametext,
-               LastName:LastNametext,
-               Email: Emailtext,
-               Password: Passwordtext,
-               CareerField: selectedFields, 
-               Experience: selectedStatus ,
-               Picture: base64Image, 
-               Language: selectedLanguages,  
-               FacebookLink: FacebookLink,  
-               LinkedInLink: LinkedInLink,  
-               IsMentor:isMentor
-             })
-           });
-           console.log(base64Image)
-           console.log("response ok?", response.ok);
 
-           if(response.ok)
-            {
-             console.log('user found ')
-             console.log('User successfully added');
-             // Now login to get full user data and save it
-             await loginAsUser(Emailtext, Passwordtext);
-       
-            }
-       
-       if(!response.ok){
-         setErrorPopupVisible(true)
-         throw new Error('failed to post new user')
-       }
-         }catch(error){
-       console.log(error)
-         }
-     }
+const formData = new FormData();
+
+formData.append("FirstName", FirstNametext);
+formData.append("LastName", LastNametext);
+formData.append("Email", Emailtext);
+formData.append("Password", Passwordtext);
+formData.append("CareerField", [selectedField.name]);
+formData.append("Roles", selectedRoles);
+formData.append("Experience", selectedStatus);
+formData.append("Company",  ["string"] );
+formData.append("Picture", base64Image);
+formData.append("Language",selectedLanguages);
+formData.append("FacebookLink", FacebookLink);
+formData.append("LinkedInLink", LinkedInLink);
+formData.append("IsMentor", isMentor);
+formData.append("IsHr", isMentor);
+formData.append("MentoringType", "");
+formData.append("Gender", "Male");
+
+// הוספת הקובץ אם נבחר
+if (!isMentor && resumeFile) {
+  if (Platform.OS === "web") {
+    // Web file (אמיתי מתוך DOM)
+    formData.append("File", resumeFile.file); // זה האובייקט האמיתי של File מה-DOM
+  } else {
+    // Mobile file
+    formData.append("File", {
+      uri: resumeFile.uri,
+      name: resumeFile.name,
+      //type: resumeFile.mimeType || "application/pdf",
+    });
+  }
+
+  formData.append("FileType", "Resume"); // אם יש צורך
+}
+
+console.log("FormData content:");
+formData.forEach((value, key) => {
+  console.log(`${key}:`, value);
+});
+const response = await fetch(API_URL, {
+  method: "POST",
+  body: formData,
+});
+
+const responseClone = response.clone(); // for checking
+const text = await responseClone.text(); // for checking
+
+console.log("Response status:", response.status);
+console.log("Response body:", text);
+
+if (response.ok) {
+  const result = await response.json(); // for checking
+  console.log("✅ User created:", result);
+  await loginAsUser(Emailtext, Passwordtext);
+} else {
+  setErrorPopupVisible(true);
+  throw new Error("Failed to register user");
+}
+} catch (error) {
+console.log("Registration error:", error);
+}
+};
    
+
+
+
   //////////////////////////
 ///here we are fetching the new user info from our database in order to save his info in the local storage
 const loginAsUser = async (email, password) => {
     try {
       console.log("Sending request to API...");
-      const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users/SearchUser"
+      const API_URL = `${apiUrlStart}/api/Users/SearchUser`
   
       const response = await fetch(API_URL, {
         method: 'POST', // Specify that this is a POST request
@@ -232,7 +372,9 @@ const loginAsUser = async (email, password) => {
           Email: email,
           Password: password,
           CareerField: ["String"], // Convert to an array
+          Roles: ["String"], // Convert to an array
           Experience: "String",
+          Company: ["String"],
           Picture: "String",
           Language: ["String"], // Convert to an array
           FacebookLink: "String",
@@ -269,7 +411,6 @@ const loginAsUser = async (email, password) => {
       console.log(error);
     }
   };
-
   const [fontsLoaded] = useFonts({
       Inter_400Regular,
       Inter_700Bold,
@@ -278,8 +419,7 @@ const loginAsUser = async (email, password) => {
       Inter_300Light
     });
   
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+
 
 
   const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
@@ -311,6 +451,16 @@ const loginAsUser = async (email, password) => {
                     icon="alert-circle-outline" message="Failed to sign Up!"
                      />
                      </View>   )}
+                     {FielderrorPopupVisible && (
+                    <View style={styles.overlay}>
+                      <CustomPopup
+                        visible={FielderrorPopupVisible}
+                        onDismiss={() => setFieldErrorPopupVisible(false)}
+                        icon={fieldErrorIcon}
+                        message={fieldErrorMessage}
+                      />
+                    </View>
+                  )}
       <View style={appliedStyles.loginBox}>
       
                      {image ? (
@@ -402,39 +552,21 @@ const loginAsUser = async (email, password) => {
 
   {/* Fields Modal */}
   <View style={appliedStyles.inputBlock}>
-<Text style={appliedStyles.inputTitle}>Career Fields</Text>
-  <Button 
-    mode="outlined" 
-    onPress={() => setFieldModalVisible(true)} 
-    style={appliedStyles.modalsInput}  
-    contentStyle={appliedStyles.modalText} 
-    labelStyle={appliedStyles.modalLabelText}
-  >
+<Text style={appliedStyles.inputTitle}>Career Field</Text>
+<CareerFieldSelector
+                selectedField={selectedField} 
+                setSelectedField={setSelectedField}
+              />
+                {console.log('selectedfieldid:',selectedField.id)}
+                {selectedField?.id&&(<Text style={appliedStyles.inputTitle}>Roles</Text>)}
+{selectedField?.id  && (
+ 
+  <RolesSelector   careerFieldId={selectedField.id}
+  selectedRoles={selectedRoles}
+  setSelectedRoles={setSelectedRoles} />
 
-    {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
-  </Button>
-  </View>
-
-  <ModalRN 
-    isVisible={fieldModalVisible} 
-    onBackdropPress={() => setFieldModalVisible(false)} 
-    onBackButtonPress={() => setFieldModalVisible(false)}
-    style={{ justifyContent: 'flex-end', margin: 0 }} 
-
-  >
-    <View style={appliedStyles.modalBox}>
-      {Fields.map((field, index) => (
-        <Checkbox.Item 
-          key={index} 
-          label={field} 
-          status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
-          onPress={() => toggleField(field)} 
-        />
-      ))}
-      <Button onPress={() => setFieldModalVisible(false)}>Done</Button>
-    </View>
-  </ModalRN>
-
+)}
+</View>
   {/* Status Modal */}
   <View style={appliedStyles.inputBlock}>
 <Text style={appliedStyles.inputTitle}>Years Of Experience</Text>
@@ -503,6 +635,14 @@ const loginAsUser = async (email, password) => {
                 setSelectedLanguages={setSelectedLanguages}
               />
 </View>
+<TouchableOpacity
+            style={appliedStyles.loginButton}
+            onPress={pickResumeFile}
+          >
+            <Text style={appliedStyles.loginText}>
+              {resumeFile ? "Resume Selected ✅" : "Upload Resume (PDF/Word)"}
+            </Text>
+          </TouchableOpacity>
         <View style={appliedStyles.rowContainer}>
        {/**  <Text style={appliedStyles.forgotText}>Forgot Password?</Text> */}
         </View>
@@ -512,8 +652,8 @@ const loginAsUser = async (email, password) => {
       onPress={()=> navigation.navigate('SignIn')}>Login Here</Text>
       </View>
         <TouchableOpacity style={appliedStyles.loginButton}>
-          <Text style={appliedStyles.loginText} onPress={() => {addNewUser(FirstNametext, LastNametext, Emailtext, Passwordtext, selectedFields, 
-                      selectedStatus, selectedLanguages, FacebookLink, LinkedInLink) }}>SIGN UP</Text>
+          <Text style={appliedStyles.loginText} onPress={() => {addNewUser(FirstNametext, LastNametext, Emailtext, Passwordtext, selectedField, 
+                      selectedRoles,selectedStatus, selectedLanguages, FacebookLink, LinkedInLink) }}>SIGN UP</Text>
         </TouchableOpacity>
       </View>
     </View>

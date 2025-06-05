@@ -16,6 +16,7 @@ import { Inter_400Regular,
 
 const SignIn = ({navigation}) => {
     const { setLoggedUser} = useContext(UserContext);
+    const apiUrlStart ="http://localhost:5062"
 
   const [isMentor, setIsMentor]=useState(false)
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
@@ -24,7 +25,7 @@ const SignIn = ({navigation}) => {
    const loginAsUser=async (email,password )=>{
         try{
           console.log("Sending request to API...");
-      const API_URL = "https://proj.ruppin.ac.il/igroup11/prod/api/Users/SearchUser" 
+      const API_URL = `${apiUrlStart}/api/Users/SearchUser` 
           const response =await fetch (API_URL, { 
             method: 'POST', // Specify that this is a POST request
             headers: {
@@ -37,6 +38,8 @@ const SignIn = ({navigation}) => {
                 Email: email,
                 Password: password,
                 CareerField: ["String"], // Convert to an array
+                Roles: ["String"], // Convert to an array
+                Company: ["String"], // Convert to an array
                 Experience: "String",
                 Picture: "String",
                 Language: ["String"], // Convert to an array

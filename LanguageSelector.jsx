@@ -18,10 +18,10 @@ const LanguageSelector = ({ selectedLanguages, setSelectedLanguages,style }) => 
   };
 //send the name of the language and not the code to the signup page
 const handleSelectedLanguages = (selectedItems) => {
-    const selectedLanguages = selectedItems
+    const selectedLanguageObjects = selectedItems
       .map(code => languages.find(lang => lang.code === code))
       .filter(lang => lang !== undefined);
-    setSelectedLanguages(selectedLanguages.map(lang => lang.name)); // Store names instead of objects
+    setSelectedLanguages(selectedLanguageObjects.map(lang => lang.name)); // Store names instead of objects
   };
   useEffect(() => {
     if (selectedLanguages && selectedLanguages.length > 0) {

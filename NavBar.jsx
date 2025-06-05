@@ -17,9 +17,9 @@ import { useRoute } from "@react-navigation/native";
 
 const mobileNavItems = [
   { name: "Home", screen: "HomePage" },
-  { name: "Messenger", screen: "ComingSoonChat", disabled: true },
+  { name: "Messenger", screen: "MessagesScreen" },
   { name: "Add Job", screen: "AddApplication" },
-  { name: "Calendar", screen: "ComingSoonCalendar", disabled: true },
+  { name: "Calendar", screen: "CalendarScreen", disabled: true },
   { name: "Profile", screen: "Profile" },
   { name: "Menu", screen: "ComingSoonMenu", disabled: true },
 ];
@@ -110,9 +110,9 @@ const WebNavBar = () => {
 
   const navItems = [
     { name: "Home", screen: "HomePage" },
-    { name: "Messenger ", screen: "ComingSoonChat", disabled: true },
+    { name: "Messenger ", screen: "MessagesScreen"},
     { name: "Add Job", screen: "ApplicationSplitView", params: { startWithAddNew: true } },
-    { name: "Calendar", screen: "ComingSoonCalendar" , disabled: true},
+    { name: "Calendar", screen: "CalendarScreen" , disabled: true},
     { name: "Profile", screen: "Profile" },
     { name: "Menu", screen: "ComingSoonMenu", disabled: true },
   ];

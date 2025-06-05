@@ -79,7 +79,8 @@ const styles = StyleSheet.create({
     marginTop: 20,  
   },
   buttonsContainer:{
-    justifyContent:'space-evenly'
+    justifyContent:'space-evenly',
+    alignItems:'center'
   }
   
 });
