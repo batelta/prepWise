@@ -109,7 +109,7 @@ const MentorMatches = () => {
 )}  
 </Card>
     
-    {selectedMentor && (
+    {mentorModalVisible &&selectedMentor && (
         <View style={appliedStyles.overlay}>
   <MentorProfileDialog 
     visible={mentorModalVisible} 
@@ -142,10 +142,9 @@ const styles = StyleSheet.create({
          shadowColor:'#E4E0E1'
      },
     title: {
-      fontSize: 20,
-      fontWeight: '700',
-      textAlign: 'center',
-      color: '#1F1F1F',
+        fontSize: 20,
+        marginTop: 8,
+        fontFamily:"Inter_300Light",
       marginBottom: 30,
     },
     list: {
@@ -248,15 +247,16 @@ const Webstyles = StyleSheet.create({
   },
   screenCard:{
     margin: 20,
-     padding: 16 
+     padding: 16 ,
+
  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#1F1F1F',
-    marginBottom: 30,
-  },
+ title: {
+  fontSize: 20,
+  marginTop: 8,
+  fontFamily:"Inter_300Light",
+marginBottom: 30,
+alignSelf:'center'
+},
   list: {
     paddingBottom: 100,
   },
@@ -284,11 +284,12 @@ const Webstyles = StyleSheet.create({
     marginRight: 15,
   },
   name: {
-    fontWeight: '600',
+    fontFamily:'Inter_200ExtraLight',
     fontSize: 16,
     color: '#333',
   },
   role: {
+    fontFamily:'Inter_200ExtraLight',
     color: '#777',
     fontSize: 14,
   },

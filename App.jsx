@@ -28,6 +28,7 @@ import ChatScreen from './ChatScreen'
 import Query from './Query'
 import AllUserSessions from './Sessions/AllUserSessions'
 import Session from './Sessions/Session'
+import SessionSplitView from './Sessions/SessionSplitView'
 import AdminScreen from "./Admin/AdminScreen";
 import AdminAllUsers from "./Admin/AdminAllUsers";
 import AdminAllApplications from "./Admin/AdminAllApplications";
@@ -56,7 +57,7 @@ export default function App() {
 
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='AdminScreen'>
+     <Stack.Navigator initialRouteName='AllUserSessions'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="GeminiChat" component={GeminiChat}/>
@@ -82,6 +83,7 @@ export default function App() {
       <Stack.Screen name="Query" component={Query}/>
       <Stack.Screen name="AllUserSessions" component={AllUserSessions}/>
       <Stack.Screen name="Session" component={Session}/>
+      <Stack.Screen name="SessionSplitView" component={SessionSplitView}/>
 
       <Stack.Screen name="AdminScreen" component={AdminScreen} />
       <Stack.Screen name="AdminAllUsers" component={AdminAllUsers} />

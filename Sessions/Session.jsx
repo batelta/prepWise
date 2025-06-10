@@ -19,12 +19,20 @@ import { useNavigation } from "@react-navigation/native";
 import CalendarScreen from '../CalendarScreen'
 import StarRating from 'react-native-star-rating-widget';
 import { FileUp } from 'lucide-react-native'; // optional icon
+import FileSelectorModal from './FileSelectorModal'; // Add this import
 
-export default function Query(){
+export default function Session({ hideNavbar , sessionId, isNewSession, jobseekerID, mentorID, matchID }){
     const { Loggeduser } = useContext(UserContext);
-    const navigation = useNavigation();
-
     const apiUrlStart ="http://localhost:5062"
+console.log("navbar",hideNavbar ,"sessid" ,sessionId,"isnew", isNewSession, jobseekerID, mentorID, matchID);
+
+
+
+    useEffect(() => {
+        if (!isNewSession && sessionId) {
+          fetchSessionDetails();
+        }
+      }, []);
 
     const [userType, setUserType] = useState('');
 
@@ -123,12 +131,7 @@ useEffect(() => {
     contentContainerStyle={{ paddingBottom: 60 }}
     style={{ flex: 1 }}
   >
-    <View>
-    <Appbar.Header>
-        <Appbar.Content title="My App" />
-        <Appbar.Action icon={() => <Icon name="bell-outline" size={24} color="white" />} onPress={() => {}} />
-    </Appbar.Header>
-    </View>
+
                 {/** logo component is here only for mobile*/}
                 <LogoImage />
   
@@ -228,21 +231,23 @@ useEffect(() => {
 
 
                        {/* Bot Icon */}
- <TouchableOpacity
+                       {!hideNavbar &&<TouchableOpacity
   style={appliedStyles.chatIcon}
   onPress={() => setShowChat(!showChat)}
 >
 <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
-</TouchableOpacity>
-<NavBar />
-
-      {showChat && (
+</TouchableOpacity>}
+{!hideNavbar && <NavBar/>}
+{console.log('hideNavbar:', hideNavbar)}
+{console.log('showChat:', showChat)}
+{ showChat && (
     <View style={appliedStyles.overlay}>
   <View style={appliedStyles.chatModal}>
+
   <TouchableOpacity onPress={() => setShowChat(false)} style={{ alignSelf: 'flex-end', padding: 5 }}>
   <Text style={{ fontSize: 18, fontWeight: 'bold' }}>✖</Text>
 </TouchableOpacity>
-    <GeminiChat />
+{!hideNavbar && <GeminiChat />}
     </View>
 
   </View>

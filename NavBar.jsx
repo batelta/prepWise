@@ -19,7 +19,7 @@ const mobileNavItems = [
   { name: "Home", screen: "HomePage" },
   { name: "Messenger", screen: "MessagesScreen" },
   { name: "Add Job", screen: "AddApplication" },
-  { name: "Calendar", screen: "CalendarScreen", disabled: true },
+  { name: "My Sessions", screen: "AllUserSessions" },
   { name: "Profile", screen: "Profile" },
   { name: "Menu", screen: "ComingSoonMenu", disabled: true },
 ];
@@ -59,7 +59,7 @@ const MobileNavBar = () => {
           if (route.name === "Home") iconName = isActive ? "home" : "home-outline";
           else if (route.name === "Messenger") iconName = isActive ? "chatbubble" : "chatbubble-outline";
           else if (route.name === "Add Job") iconName = isActive ? "add-circle" : "add-circle-outline";
-          else if (route.name === "Calendar") iconName = isActive ? "calendar" : "calendar-outline";
+          else if (route.name === "My Sessions") iconName = isActive ? "calendar" : "calendar-outline";
           else if (route.name === "Profile") iconName = isActive ? "person" : "person-outline";
           else if (route.name === "Menu") iconName = isActive ? "menu" : "menu-outline";
           
@@ -112,7 +112,7 @@ const WebNavBar = () => {
     { name: "Home", screen: "HomePage" },
     { name: "Messenger ", screen: "MessagesScreen"},
     { name: "Add Job", screen: "ApplicationSplitView", params: { startWithAddNew: true } },
-    { name: "Calendar", screen: "CalendarScreen" , disabled: true},
+    { name: "My Sessions", screen: "AllUserSessions"},
     { name: "Profile", screen: "Profile" },
     { name: "Menu", screen: "ComingSoonMenu", disabled: true },
   ];

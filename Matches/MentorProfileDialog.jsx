@@ -15,6 +15,8 @@ const MentorProfileDialog = ({ visible, onClose, mentor }) => {
     const { Loggeduser } = useContext(UserContext);
     const apiUrlStart ="http://localhost:5062"
 
+
+
   const imageSource =
     mentor?.picture === "string"
       ? require('../assets/defaultProfileImage.jpg')
@@ -76,20 +78,42 @@ const MentorProfileDialog = ({ visible, onClose, mentor }) => {
                 </View>
 
                 {/* Career Fields as Profession */}
-                <Text style={styles.label}>Profession</Text>
-                <Text style={styles.value}>
-                  {Array.isArray(mentor.careerField)
-                    ? mentor.careerField.join(', ')
-                    : mentor.careerField}
-                </Text>
+                {mentor.isHr ? (
+  <>
+    <Text style={styles.label}>Profession</Text>
+    <Text style={styles.value}>HR</Text>
+  </>
+) : (
+  <>
+    {mentor.roles && mentor.roles.length > 0 && mentor.roles[0] !== '' && (
+      <>
+        <Text style={styles.label}>Role</Text>
+        <Text style={styles.value}>
+          {Array.isArray(mentor.roles) ? mentor.roles.join(', ') : mentor.roles}
+        </Text>
+      </>
+    )}
 
-                {/* Company (only if exists) */}
-                {mentor.company && (
-                  <>
-                    <Text style={styles.label}>Company</Text>
-                    <Text style={styles.value}>{mentor.company}</Text>
-                  </>
-                )}
+    {mentor.careerField && (
+      <>
+        <Text style={styles.label}>Career Field</Text>
+        <Text style={styles.value}>
+          {Array.isArray(mentor.careerField)
+            ? mentor.careerField.join(', ')
+            : mentor.careerField}
+        </Text>
+      </>
+    )}
+  </>
+)}
+
+               {/* Company (only if exists and not empty) */}
+               {typeof mentor.company === 'string' && mentor.company.trim() !== '' && (
+                <>
+                  <Text style={styles.label}>Company</Text>
+                  <Text style={styles.value}>{mentor.company}</Text>
+                </>
+              )}
 
                 {/* Average Rank (Dummy) */}
                 <Text style={styles.label}>Average Rank</Text>
