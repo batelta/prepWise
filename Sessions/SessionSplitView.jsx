@@ -20,13 +20,14 @@ import { useRoute } from "@react-navigation/native";
 
 export default function SessionSplitView() {
     const route = useRoute();
-  const { jobseekerID, mentorID, matchID } = route.params;
+  const { jobseekerID, mentorID, JourneyID } = route.params;
   const { Loggeduser } = useContext(UserContext);
   const [sessions, setSessions] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
+const [selectedId, setSelectedId] = useState(null); // or whatever indicates no sessions exist
   const [loading, setLoading] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const apiUrlStart = "http://localhost:5062";
+const [showSessionForm, setShowSessionForm] = useState(false);
 
   useEffect(() => {
     if (Loggeduser?.id) {
@@ -98,30 +99,37 @@ export default function SessionSplitView() {
 
           {/* Right Pane */}
           <View style={styles.rightPane}>
-          {selectedId === "new" ? (
+       {!showSessionForm && selectedId === "new" ? (
   <View style={{ padding: 20 }}>
     <Text style={styles.subtitle}>
-      You haven’t had any sessions with this mentor yet.
+      You haven't had any sessions with this mentor yet.
     </Text>
     <TouchableOpacity
       style={styles.scheduleButton}
-      onPress={() => setSelectedId("create")}
+      onPress={() => {
+        console.log("Button pressed, showing session form");
+        setShowSessionForm(true);
+      }}
     >
       <Text style={styles.buttonText}>Schedule your first session</Text>
     </TouchableOpacity>
   </View>
-) : selectedId === "create" ? (
+) : showSessionForm || selectedId === "new" ? (
   <Session
     hideNavbar={true}
-    isNewSession={true}
+    sessionMode="new"  
     jobseekerID={jobseekerID}
     mentorID={mentorID}
-    matchID={matchID}
+    JourneyID={JourneyID}
   />
 ) : (
   <Session
     hideNavbar={true}
     sessionId={selectedId}
+    sessionMode="edit"
+    jobseekerID={jobseekerID}
+    mentorID={mentorID}
+    JourneyID={JourneyID}
   />
 )}
 

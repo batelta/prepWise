@@ -26,6 +26,7 @@ import CalendarScreen from './CalendarScreen'
 import MessagesScreen from './MessagesScreen'
 import ChatScreen from './ChatScreen'
 import Query from './Query'
+import AllUserMatches from './Matches/AllUserMatches'
 import AllUserSessions from './Sessions/AllUserSessions'
 import Session from './Sessions/Session'
 import SessionSplitView from './Sessions/SessionSplitView'
@@ -57,7 +58,7 @@ export default function App() {
 
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='AllUserSessions'>
+     <Stack.Navigator initialRouteName='AllUserMatches'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="GeminiChat" component={GeminiChat}/>
@@ -77,6 +78,7 @@ export default function App() {
       <Stack.Screen name="MatchRequestJobSeeker" component={MatchRequestJobSeeker}/>
       <Stack.Screen name="MentorMatches" component={MentorMatches}/>
       <Stack.Screen name="MentorOffer" component={MentorOffer}/>
+      <Stack.Screen name="AllUserMatches" component={AllUserMatches}/>
       <Stack.Screen name="CalendarScreen" component={CalendarScreen}/>
       <Stack.Screen name="MessagesScreen" component={MessagesScreen}/>
       <Stack.Screen name="ChatScreen" component={ChatScreen}/>

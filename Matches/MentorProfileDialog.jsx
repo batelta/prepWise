@@ -157,7 +157,7 @@ addNewMatch(Loggeduser?.id,mentor.userID);
   }}
   style={styles.button}
 >
-  Begin Chat
+  Choose This Mentor
                 </Button>
               </Dialog.Actions>
             </Dialog>

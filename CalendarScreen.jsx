@@ -11,7 +11,7 @@ import { Inter_400Regular, Inter_300Light, Inter_700Bold, Inter_100Thin, Inter_2
 import { Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-export default function CalendarScreen() {
+export default function CalendarScreen({ onMeetingSaved }) {
   const { Loggeduser } = useContext(UserContext);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -134,6 +134,16 @@ if (conflict) {
       // CREATE new meeting
       await addDoc(collection(db, 'meetings'), meetingData);
       Alert.alert('Success', 'The meeting was saved successfully!');
+      if (onMeetingSaved) {
+        console.log("inside!")
+  onMeetingSaved({
+    date: selectedDate,
+    time: selectedTime,
+    title,
+    participants,
+    duration
+  });
+}
     }
 
     // Reset fields

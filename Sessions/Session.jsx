@@ -19,17 +19,25 @@ import { useNavigation } from "@react-navigation/native";
 import CalendarScreen from '../CalendarScreen'
 import StarRating from 'react-native-star-rating-widget';
 import { FileUp } from 'lucide-react-native'; // optional icon
-import FileSelectorModal from './FileSelectorModal'; // Add this import
 
-export default function Session({ hideNavbar , sessionId, isNewSession, jobseekerID, mentorID, matchID }){
+export default function Session({ hideNavbar , sessionId, sessionMode, jobseekerID, mentorID, JourneyID }){
     const { Loggeduser } = useContext(UserContext);
     const apiUrlStart ="http://localhost:5062"
-console.log("navbar",hideNavbar ,"sessid" ,sessionId,"isnew", isNewSession, jobseekerID, mentorID, matchID);
+console.log("navbar",hideNavbar ,"sessid" ,sessionId,"isnew", sessionMode, jobseekerID, mentorID, JourneyID);
+  const navigation = useNavigation();
 
+    // Form state
+    const [selectedDateTime, setSelectedDateTime] = useState(null);
+    const [sessionLink, setSessionLink] = useState('');
+    const [attachedFiles, setAttachedFiles] = useState([]);
+    const [feedbackText, setFeedbackText] = useState('');
+    const [rating, setRating] = useState(0);
+    const [notes, setNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
 
     useEffect(() => {
-        if (!isNewSession && sessionId) {
+        if (sessionMode==="edit" && sessionId) {
           fetchSessionDetails();
         }
       }, []);
@@ -103,6 +111,138 @@ useEffect(() => {
   console.log(error)
     }
 }     
+
+ // Fetch existing session details for edit mode
+  const fetchSessionDetails = async () => {
+    try {
+      const response = await fetch(`${apiUrlStart}/api/Sessions/${sessionId}`);
+      if (response.ok) {
+        const sessionData = await response.json();
+        // Populate form fields with existing data
+        setSelectedDateTime(sessionData.dateTime);
+        setSessionLink(sessionData.link || '');
+        setFeedbackText(sessionData.feedback || '');
+        setRating(sessionData.rating || 0);
+        setNotes(sessionData.notes || '');
+        setAttachedFiles(sessionData.files || []);
+      }
+    } catch (error) {
+      console.error('Error fetching session details:', error);
+      Alert.alert('Error', 'Failed to load session details');
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Basic validation
+      if (!selectedDateTime) {
+        Alert.alert('Missing Information', 'Please select a date and time for the session');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Prepare session data
+      const sessionData = {
+        SessionID:0,
+        JourneyID: JourneyID,
+        ScheduledAt: selectedDateTime,
+        MeetingUrl: sessionLink,
+       // feedback: feedbackText,
+      //  rating: rating,
+      Status:'scheduled',
+        Notes: notes,
+      //  files: attachedFiles,
+      //  createdBy: Loggeduser.id,
+      };
+
+      let response;
+      let successMessage;
+
+      switch (sessionMode) {
+        case 'new':
+          // Create new session
+          console.log("session data:",sessionData)
+
+          response = await fetch(`${apiUrlStart}/api/Session/userAddSessions/${jobseekerID}/${mentorID}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(sessionData)
+          });
+          successMessage = 'Session created successfully!';
+          break;
+
+        case 'add':
+          // Add new session to existing relationship
+          response = await fetch(`${apiUrlStart}/api/Session/add`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(sessionData)
+          });
+          successMessage = 'New session added successfully!';
+          break;
+
+        case 'edit':
+          // Update existing session
+          response = await fetch(`${apiUrlStart}/api/Session/update/${sessionId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              ...sessionData,
+            })
+          });
+          successMessage = 'Session updated successfully!';
+          break;
+
+        default:
+          throw new Error('Invalid session mode');
+      }
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Session operation successful:', result);
+        
+        Alert.alert(
+          'Success', 
+          successMessage,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Navigate back or to sessions list
+                navigation.goBack();
+              }
+            }
+          ]
+        );
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to process session');
+      }
+
+    } catch (error) {
+      console.error('Error submitting session:', error);
+      Alert.alert(
+        'Error', 
+        error.message || 'Failed to submit session. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+
   const [showChat, setShowChat] = useState(false);
     const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
     const LogoImage = () => {
@@ -111,20 +251,27 @@ useEffect(() => {
         }
     };
 
-///for the feedback
-    const [rating, setRating] = useState(0);
-
-  
-      console.log("rate:",rating)
-    
-
-        const pageTitle = userType === 'mentor'
-        ? 'Help Us Understand Your Mentoring Style 🫱🏼‍🫲🏼'
-        : 'To Find Your Perfect Mentor, Tell Us a Bit About You 🙂';
-    
-      const pageSubtitle = userType === 'mentor'
-        ? 'Your answers will help us match you with mentees who benefit from your unique strengths.'
-        : 'Your answers will help us connect you with a mentor who truly fits your learning and communication style.';
+ // Get button text based on session mode
+    const getSubmitButtonText = () => {
+      switch (sessionMode) {
+        case 'new':
+          return 'CREATE SESSION';
+        case 'add':
+          return 'ADD SESSION';
+        case 'edit':
+          return 'UPDATE SESSION';
+        default:
+          return 'SUBMIT';
+      }
+    };
+  const handleMeetingSaved = (meetingDetails) => {
+  console.log('Meeting set to:', meetingDetails);
+const dateObj = new Date(`${meetingDetails.date}T${String(meetingDetails.time.hours).padStart(2, '0')}:${String(meetingDetails.time.minutes).padStart(2, '0')}:00`);
+setSelectedDateTime(dateObj.toISOString()); // Perfect ISO format
+console.log(selectedDateTime)
+  // You can now use this data (e.g., navigate, show confirmation, etc.)
+};
+     
   return(<>
 <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
 <ScrollView
@@ -144,7 +291,7 @@ useEffect(() => {
            />
              <Text style={appliedStyles.subtitle}>Date&Time 🗓️</Text>
              <Text style={appliedStyles.subtitlesmall}>Pick a time that works for you. We’ll send reminders and let your mentor know too!</Text>
-                         <CalendarScreen/>
+                         <CalendarScreen onMeetingSaved={handleMeetingSaved} />
 
                <View style={appliedStyles.inputBlock}>
 <Text style={appliedStyles.subtitle}>Link 🔗</Text>
@@ -154,18 +301,23 @@ useEffect(() => {
                     style={appliedStyles.halfInput} 
                     placeholder="Paste your Zoom, Meet, or Teams link here"
                     placeholderTextColor="#888"
+                     value={sessionLink}
+                     onChangeText={setSessionLink}
                     contentStyle={{backgroundColor:"#FFF"
                     }}
                     mode="outlined"
                      />
-      </View>            
+</View>            
 {/**FILES SECTION */}
       <Text style={appliedStyles.subtitle}>Attach Files 📂</Text>
       <Text style={appliedStyles.subtitlesmall}>Want to share a resume, portfolio, or notes before the session? Upload here — you can always add more later.</Text>
 
 
       <Card style={{ padding: 20, alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#ccc', borderRadius: 12 }}>
-      <FileUp size={32} color="#BFB4FF" style={{ alignSelf: 'center' }}/>
+   
+<View style={{ alignSelf: 'center' }}>
+  <FileUp size={32} color="#BFB4FF" />
+</View>
       <Text style={{ marginTop: 10, color: '#555', fontWeight: '600',textAlign: 'center' }}>Upload a file</Text>
       <Text style={{ fontSize: 12, color: '#999',textAlign: 'center' }}>(PDF, Image, or Docs — optional)</Text>
       <Button  mode="contained" style={{ marginTop: 10 }}>Choose File</Button>
@@ -188,6 +340,8 @@ useEffect(() => {
                     style={appliedStyles.halfInput} 
                     placeholder="The session was really helpful because..."
                     placeholderTextColor="#888"
+                     value={feedbackText}
+                     onChangeText={setFeedbackText}
                     contentStyle={{backgroundColor:"#FFF"
                     }}
                     mode="outlined"
@@ -205,6 +359,23 @@ useEffect(() => {
         onChange={setRating}
       />
 
+
+           <View style={appliedStyles.inputBlock}>
+<Text style={appliedStyles.subtitle}>Notes 📝</Text>
+<Text style={appliedStyles.subtitlesmall}>Here you can add your notes , if you have any.</Text>
+
+<TextInput 
+                    style={appliedStyles.halfInput} 
+                    placeholder="Notes"
+                    placeholderTextColor="#888"
+                    value={notes}
+                    onChangeText={setNotes}
+                    contentStyle={{backgroundColor:"#FFF"
+                    }}
+                    mode="outlined"
+                     />
+</View>   
+
 <Text style={appliedStyles.subtitlesmall}>This is your space to reflect or shout out something awesome. Your feedback helps us and your mentor grow — but no pressure, you can always come back later.😊</Text>
 
 
@@ -217,12 +388,19 @@ useEffect(() => {
         
 
 
-
-      <TouchableOpacity   style={appliedStyles.loginButton}
-  onPress={() =>  console.log('pressed')}
->
-      <Text style={appliedStyles.loginText}>SUBMIT</Text>
+ <TouchableOpacity   
+        style={[
+          appliedStyles.loginButton,
+          isSubmitting && { backgroundColor: '#ccc' }
+        ]}
+        onPress={handleSubmit}
+        disabled={isSubmitting}
+      >
+      <Text style={appliedStyles.loginText}>
+        {isSubmitting ? 'SUBMITTING...' : getSubmitButtonText()}
+      </Text>
         </TouchableOpacity>
+
           </Card.Content>
         </Card>
 

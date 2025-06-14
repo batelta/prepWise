@@ -50,8 +50,8 @@ console.log("inside chatscreen:",'loggeduser:',user,'otheruser:',otherUser)
   };
 
   const otherUserFixed = {
-    _id: otherUser.userID||otherUser._id,
-    name:otherUser.email,
+    _id: otherUser.userID||otherUser._id||otherUser.MentorID,
+    name:otherUser.email||otherUser.FirstName,
     ////name: otherUser.name ,
     //email: otherUser.email
   };
@@ -113,7 +113,7 @@ console.log("👤 otherUserFixed._id:", otherUserFixed._id);
         createdAt: Timestamp.now(),
         user: {
           _id: currentUserFixed._id,
-          name: user.name || user.email,
+          name: currentUserFixed.name || user.email,
         },
         read: false
       });
@@ -131,8 +131,8 @@ console.log("👤 otherUserFixed._id:", otherUserFixed._id);
           },
           [otherUserFixed._id]: {
             id: otherUserFixed._id,
-            name: otherUser.name || otherUser.email,
-            email: otherUser.email
+            name: otherUserFixed.name || otherUser.email,
+            email: otherUser.email||otherUser.Email
           }
         },
         lastMessage: {
