@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, Button, Alert, Platform } from "react-native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
-const AdminScreen = () => {
+const apiUrlStart = "https://localhost:7137";
+
+const AdminScreen = ({ navigation }) => {
   const API_URL =
     Platform.OS === "web"
-      ? "https://localhost:7137/api/MentorMatching/export-feature-data"
-      : "https://192.168.30.157:7137/api/MentorMatching/export-feature-data";
+      ? `${apiUrlStart}/api/MentorMatching/export-feature-data`
+      : `${apiUrlStart}/api/MentorMatching/export-feature-data`;
 
   const handleDownload = async () => {
     if (Platform.OS === "web") {
@@ -55,11 +57,28 @@ const AdminScreen = () => {
     }
   };
 
+  const handleNavigateAllUsers = () => {
+    navigation.navigate("AdminAllUsers");
+  };
+
+  const handleNavigateAllApplications = () => {
+    navigation.navigate("AdminAllApplication");
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🎛️ Admin Dashboard</Text>
       <View style={styles.buttonContainer}>
-        <Button title="📥 הורד קובץ פיצ'רים" onPress={handleDownload} />
+        <Button title="📥Download Feature table" onPress={handleDownload} />
+      </View>
+      <View style={styles.buttonContainer}>
+        <Button title="View All Users" onPress={handleNavigateAllUsers} />
+      </View>
+      <View style={styles.buttonContainer}>
+        <Button
+          title="View All Applications"
+          onPress={handleNavigateAllApplications}
+        />
       </View>
     </View>
   );

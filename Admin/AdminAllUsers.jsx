@@ -5,15 +5,13 @@ import {
   ActivityIndicator,
   Text,
   Platform,
+  Button,
 } from "react-native";
 import axios from "axios";
 import { DataTable } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 
-const baseURL =
-  Platform.OS === "web"
-    ? "https://localhost:7137"
-    : "https://192.168.30.157:7137";
+const apiUrlStart = "https://localhost:7137";
 
 const AdminAllUsers = () => {
   const [users, setUsers] = useState([]);
@@ -23,7 +21,7 @@ const AdminAllUsers = () => {
 
   useEffect(() => {
     axios
-      .get(`${baseURL}/api/users/all`)
+      .get(`${apiUrlStart}/api/users/all`)
       .then((response) => {
         console.log("DATA FROM SERVER:", response.data);
         setUsers(response.data);
@@ -35,6 +33,21 @@ const AdminAllUsers = () => {
         setLoading(false);
       });
   }, []);
+
+  const handleDeleteUser = (userID) => {
+    axios
+      .delete(`${apiUrlStart}/api/Mentors/${userID}`)
+      .then((response) => {
+        console.log("Deleted user:", response.data);
+        // עדכון הרשימה לאחר מחיקה
+        setUsers(users.filter((user) => user.userID !== userID));
+        alert("המשתמש נמחק בהצלחה");
+      })
+      .catch((error) => {
+        console.error("Error deleting user:", error);
+        alert("אירעה שגיאה בניסיון למחוק את המשתמש");
+      });
+  };
 
   if (loading) return <ActivityIndicator size="large" color="#0000ff" />;
   if (error) return <Text style={{ color: "red", padding: 16 }}>{error}</Text>;
@@ -58,9 +71,9 @@ const AdminAllUsers = () => {
             borderRadius: 4,
           }}
         >
-          <Picker.Item label="הצג הכול" value="all" />
-          <Picker.Item label="מנטורים" value="mentor" />
-          <Picker.Item label="מחפשי עבודה" value="jobseeker" />
+          <Picker.Item label="See All" value="all" />
+          <Picker.Item label="Mentors" value="mentor" />
+          <Picker.Item label="Job Seekers" value="jobseeker" />
         </Picker>
       </View>
       <DataTable>
@@ -69,6 +82,7 @@ const AdminAllUsers = () => {
           <DataTable.Title>Email</DataTable.Title>
           <DataTable.Title>ID</DataTable.Title>
           <DataTable.Title>Name</DataTable.Title>
+          <DataTable.Title>Actions</DataTable.Title>
         </DataTable.Header>
 
         {filteredUsers.map((user, index) => (
@@ -80,6 +94,13 @@ const AdminAllUsers = () => {
             <DataTable.Cell>{user.userID}</DataTable.Cell>
             <DataTable.Cell>
               {user.firstName} {user.lastName}
+            </DataTable.Cell>
+            <DataTable.Cell>
+              <Button
+                title="Delete"
+                color="red"
+                onPress={() => handleDeleteUser(user.userID)}
+              />
             </DataTable.Cell>
           </DataTable.Row>
         ))}

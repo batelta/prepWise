@@ -54,7 +54,7 @@ export default function App() {
       {/* Wrap everything inside this */}
       <NavigationContainer>
         <PaperProvider theme={theme}>
-          <Stack.Navigator initialRouteName="AdminScreen">
+          <Stack.Navigator initialRouteName="SignIn">
             <Stack.Screen name="SignIn" component={SignIn} />
             <Stack.Screen name="SignUp" component={SignUp} />
             <Stack.Screen name="GeminiChat" component={GeminiChat} />
