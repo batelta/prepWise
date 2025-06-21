@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView, Alert,TouchableOpacity } from 'react-native';
 import { Calendar } from 'react-native-calendars';
@@ -11,7 +12,8 @@ import { Inter_400Regular, Inter_300Light, Inter_700Bold, Inter_100Thin, Inter_2
 import { Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-export default function CalendarScreen({ onMeetingSaved }) {
+
+export default function CalendarScreen() {
   const { Loggeduser } = useContext(UserContext);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -23,7 +25,9 @@ export default function CalendarScreen({ onMeetingSaved }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [editingMeetingId, setEditingMeetingId] = useState(null);
   const [conflictModalVisible, setConflictModalVisible] = useState(false);
-  const [duration,setDuration]=useState(null)
+  const [duration,setDuration]=useState('')
+
+
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -120,6 +124,9 @@ if (conflict) {
     Datetime: Timestamp.fromDate(datetime),
     participants,
     duration: parseInt(duration), // ADD THIS LINE
+          createdBy: Loggeduser.email, // הוספנו את זה כדי לדעת מי יצר את הפגישה
+
+     
 
   };
 
@@ -134,16 +141,6 @@ if (conflict) {
       // CREATE new meeting
       await addDoc(collection(db, 'meetings'), meetingData);
       Alert.alert('Success', 'The meeting was saved successfully!');
-      if (onMeetingSaved) {
-        console.log("inside!")
-  onMeetingSaved({
-    date: selectedDate,
-    time: selectedTime,
-    title,
-    participants,
-    duration
-  });
-}
     }
 
     // Reset fields
@@ -151,6 +148,8 @@ if (conflict) {
     setSelectedTime(null);
     setEmailInput('');
     setEditingMeetingId(null);
+    setDuration('');
+
 
     setMarkedDates({
       ...markedDates,
@@ -177,6 +176,8 @@ if (conflict) {
   return (
     <PaperProvider>
       <ScrollView contentContainerStyle={styles.container}>
+           {/*<View style={{ flex: 1 }}>
+        <Header title="לוח פגישות" />*/}
         <Calendar
           onDayPress={handleDateSelect}
           markedDates={markedDates}

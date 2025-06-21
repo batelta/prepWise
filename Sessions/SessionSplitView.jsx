@@ -16,11 +16,13 @@ import GeminiChat from "../GeminiChat";
 import Session from "./Session"; // ✅ correct component
 import { Card } from "react-native-paper";
 import { useRoute } from "@react-navigation/native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 
 export default function SessionSplitView() {
     const route = useRoute();
-  const { jobseekerID, mentorID, JourneyID } = route.params;
+  const { jobseekerID, mentorID, JourneyID ,FirstName,LastName} = route.params;
   const { Loggeduser } = useContext(UserContext);
   const [sessions, setSessions] = useState([]);
 const [selectedId, setSelectedId] = useState(null); // or whatever indicates no sessions exist
@@ -37,7 +39,7 @@ const [showSessionForm, setShowSessionForm] = useState(false);
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch(`${apiUrlStart}/api/Users/userSessions/${jobseekerID}/${mentorID}`);
+      const response = await fetch(`${apiUrlStart}/api/Session/userSessions/${jobseekerID}/${mentorID}`);
       const data = await response.json();
       setSessions(data || []);
       console.log(data)
@@ -78,6 +80,8 @@ const [showSessionForm, setShowSessionForm] = useState(false);
           {/* Left Pane */}
           <View style={styles.leftPane}>
             <Text style={styles.header}>My Sessions</Text>
+                       <Text style={styles.title}>{`Your Sessions With ${FirstName}` || "Untitled"}</Text>
+
             {sessions.map((session) => (
               <TouchableOpacity
                 key={session.sessionID}
@@ -87,16 +91,40 @@ const [showSessionForm, setShowSessionForm] = useState(false);
                 ]}
                 onPress={() => setSelectedId(session.sessionID)}
               >
+
                 <Card style={{ padding: 12 }}>
-                  <Text style={styles.title}>{session.title || "Untitled"}</Text>
                   <Text style={styles.subtitle}>
-                    {session.scheduledAt || "No date set"}
+                     
+                    {session.scheduledAt  ? new Date(session.scheduledAt).toLocaleString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })
+                  : 'No date set'} 
                   </Text>
+                  <Ionicons name="trash-outline" size={24} color="#003D5B"></Ionicons>
                 </Card>
               </TouchableOpacity>
             ))}
+            <TouchableOpacity
+                onPress={() => {
+                  //setIsAddingNew(true);
+                 // setSelectedId(null);
+                }}
+                style={styles.addButton}
+              >
+                <MaterialIcons
+                  name="add-circle-outline"
+                  size={24}
+                  color="#b9a7f2"
+                />
+                <Text style={styles.addButtonText}>Add New Session</Text>
+              </TouchableOpacity>
           </View>
-
+  
           {/* Right Pane */}
           <View style={styles.rightPane}>
        {!showSessionForm && selectedId === "new" ? (
@@ -259,5 +287,24 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
   },
-  
+     addButton: {
+      marginTop: 20,
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 10,
+      borderWidth: 1,
+      borderColor: "#b9a7f2",
+      borderRadius: 6,
+      backgroundColor: "#fff",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+    },
+    addButtonText: {
+      marginLeft: 8,
+      color: "#b9a7f2",
+      fontWeight: "600",
+    },
 });

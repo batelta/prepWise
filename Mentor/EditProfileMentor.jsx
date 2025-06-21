@@ -1,10 +1,12 @@
+
+
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ScrollView,Platform  } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
-import { Button, Modal, Portal, Checkbox, Provider as PaperProvider } from 'react-native-paper';
+import { Button, Modal, Portal, Checkbox, Provider as PaperProvider,Switch,RadioButton } from 'react-native-paper';
 import LanguageSelector from '../LanguageSelector';
 import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
@@ -14,9 +16,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useContext } from 'react';
 import { UserContext } from '../UserContext'; // adjust the path
 import defaultProfile from '../assets/backgroundProfileImage2.jpg'; // make sure this path is correct
-
+import CareerFieldSelector from '../CareerFieldSelector';
+import RolesSelector from '../RolesSelector';
+import fields from '../CareerFields.json';
 
 const EditProfileMentor = () => {
+const apiUrlStart ="http://localhost:5062"
 const { Loggeduser ,setLoggedUser} = useContext(UserContext);
 const [popupVisible, setPopupVisible] = useState(false);
 const navigation = useNavigation();
@@ -40,8 +45,12 @@ const navigation = useNavigation();
     experience: "",
     language:[],
     careerField:[],
+    roles:[],
     company:"",
-    mentoringType:""
+    mentoringType:"",
+    gender:  "",
+    isMentor:true,
+    isHr:false,
   });
 
 
@@ -131,6 +140,7 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
   }
 };
 
+
 const [mentoringModalVisible, setMentoringModalVisible] = React.useState(false);
 const [selectedMentoring, setSelectedMentoring] = React.useState([]);
 const mentoringtypes = [
@@ -138,12 +148,14 @@ const mentoringtypes = [
          "One-time Session",
          "All-in-One"
        ];
-  const [fieldModalVisible, setFieldModalVisible] = React.useState(false);
-  const [selectedFields, setSelectedFields] = React.useState([]);
-  const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
+  //const [fieldModalVisible, setFieldModalVisible] = useState(false);
+  const [selectedField, setSelectedField] = useState(null);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  
+  //const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
   ///כל לחיצה על תחום = לבחור או לבטל בחירה
   const toggleField = (field) => {
-    setSelectedFields((prev) =>
+    setSelectedField((prev) =>
       prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
     );
   };
@@ -175,7 +187,7 @@ const mentoringtypes = [
     try {
     console.log("id",userID)
       // קריאה ל-API לפי ID כדי לקבל את כל הנתונים (כולל תחומים ושפות)
-      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Mentors/${userID}`);
+      const response = await fetch(`${apiUrlStart}/api/Mentors/${userID}`);
       if (!response.ok) {
         console.error("Failed to fetch full user data from API.");
         return;
@@ -198,14 +210,28 @@ const mentoringtypes = [
         experience: fullUserData.experience || "",
         language: fullUserData.language || [],
         careerField: fullUserData.careerField || [],
+        roles:fullUserData.roles||[],
         company:fullUserData.company||"",
-        mentoringType:fullUserData.mentoringType||""
-      });
+        mentoringType:fullUserData.mentoringType||"",
+        isMentor:true,
+        gender: fullUserData.gender || "",
+        isHr:fullUserData.isHr ?? false,
 
+      });
+console.log(fullUserData.isHr)
       // עדכון התחומים והשפות לתצוגה
       //נעשה להם set -עדכון התחומים והשפות לתצוגה
       //בנפרד מאחר ויש להם מספר ערכים שיכולים להישמר ונעדיף לשים אותם בstate נפרד
-      setSelectedFields(fullUserData.careerField || []);
+      //setSelectedField(fullUserData.careerField || []);
+      if (fullUserData.careerField && fullUserData.careerField.length > 0) {
+              // מציאת התחום הראשון במערך ה-fields על פי השם
+              const firstFieldName = fullUserData.careerField[0];
+              const fieldFromJson = fields.find(f => f.name === firstFieldName);
+              if (fieldFromJson) {
+                setSelectedField(fieldFromJson);
+              }
+            }
+      setSelectedRoles(fullUserData.roles||[]);
       setSelectedLanguages(fullUserData.language || []);
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -224,6 +250,20 @@ useEffect(() => {
     setSelectedLanguages(user.language);
   }
 }, [user.language]);
+useEffect(() => {
+  if (user.roles.length > 0) {
+    setSelectedRoles(user.roles);
+  }
+}, [user.roles]);
+
+useEffect(() => {
+  if (selectedField) {
+    setUser(prevUser => ({
+      ...prevUser,
+      careerField: [selectedField.name] // שמירת שם התחום במערך
+    }));
+  }
+}, [selectedField]);
 
 
 const [base64Image, setBase64Image] = useState(null);
@@ -258,17 +298,22 @@ const pickImage = async () => {
         experience: user.experience,
         facebookLink: user.facebookLink,
         linkedinLink: user.linkedinLink,
-        careerField: selectedFields,
+        careerField: user.careerField,
+        roles : selectedRoles,
         language: selectedLanguages,
         picture: base64Image || (user.picture.uri || user.picture),       
         company:user.company,
         mentoringType:user.mentoringType,
-        isMentor:true
+        isMentor:true,
+        gender: user.gender ?? "", 
+        isHr:user.isHr,
+
       };
       console.log('Sending updated user:', updatedUser); 
 
+
       //ביצוע קריאת PUT עם ה- userId מתוך AsyncStorage
-      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Mentors/${userID}`, {
+      const response = await fetch(`${apiUrlStart}/api/Mentors/${userID}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -299,6 +344,17 @@ const pickImage = async () => {
       console.error("Error:", error);
     }
   };
+ const handleSwitchChange = (val) => {
+  setUser((prevUser) => ({
+    ...prevUser,
+    isHr: val,
+  }));
+
+  if (val) {
+    setSelectedField([]); // clear career fields if switched to HR
+  }
+};
+
   
   const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
   return (
@@ -406,37 +462,41 @@ const pickImage = async () => {
               
             </View>
     
-           {/* Fields Modal */}
-           <View style={appliedStyles.inputContainer}>
-              <Text style={appliedStyles.label}>Career Fields</Text>
-              <Button
-                mode="contained"
-                onPress={() => setFieldModalVisible(true)}
-                style={appliedStyles.input}
-                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
-                contentStyle={{ justifyContent: 'flex-start'}}
-              >
-                {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
-              </Button>
-              <Portal>
-                <Modal visible={fieldModalVisible} onDismiss={() => setFieldModalVisible(false)} contentContainerStyle={appliedStyles.modalContent}>
-                  {Fields.map((field, index) => (
-                    <Checkbox.Item 
-                      key={index} 
-                      label={field} 
-                      status={selectedFields.includes(field) ? 'checked' : 'unchecked'} 
-                      onPress={() => toggleField(field)} 
-                       labelStyle={{ fontFamily: "Inter_400Regular" }}
-                       color="#d6cbff"
-                    />
-                  ))}
-                  <Button onPress={() => setFieldModalVisible(false)} 
-                  labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}} 
-                    >Done</Button>
-                </Modal>
-              </Portal>
-            </View>
-    
+   <View style={appliedStyles.inputContainer}>
+  {/* HR Switch */}
+  <Text style={appliedStyles.hrTitle}>Are you from HR?</Text>
+  <Switch
+    value={user.isHr}
+    onValueChange={handleSwitchChange}
+    color="#9FF9D5"
+  />
+
+  {/* Show career fields only if NOT HR */}
+  {!user.isHr && (
+    <View style={appliedStyles.inputContainer}>
+      <Text style={appliedStyles.label}>Career Fields</Text>
+
+      <CareerFieldSelector
+        selectedField={selectedField}
+        setSelectedField={setSelectedField}
+        style={{marginBottom:15}}
+      />
+      {selectedField?.id && (<>
+        <Text style={appliedStyles.label}>Roles</Text>
+        <RolesSelector
+        
+          careerFieldId={selectedField.id}
+          selectedRoles={selectedRoles}
+          setSelectedRoles={setSelectedRoles}
+        />
+      </>
+      )}
+    </View>
+ )} 
+</View>
+          
+
+
             {/* Experience */}
             <View style={appliedStyles.inputContainer}>
               <Text style={appliedStyles.label}>Years of Experience</Text>
@@ -458,32 +518,6 @@ const pickImage = async () => {
                   ))}
                   <Button onPress={() => setExperienceModalVisible(false)}
                       labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}} 
-                    >Done</Button>
-                </Modal>
-              </Portal>
-            </View>
-       {/* mentoringType Modal */}
-              <View style={appliedStyles.inputContainer}>
-              <Text style={appliedStyles.label}>Mentoring Type</Text>
-              <Button 
-                mode="contained"
-                onPress={() => setMentoringModalVisible(true)}
-                style={appliedStyles.input}
-                labelStyle={{ color: "#A9A9A9",fontFamily:'Inter_200ExtraLight', }}
-                contentStyle={{ justifyContent: 'flex-start'}}
-              >
-                {user.mentoringType || "Select Your Mentoring Type"}
-              </Button>
-              <Portal>
-                <Modal visible={mentoringModalVisible} onDismiss={() => setMentoringModalVisible(false)} contentContainerStyle={[appliedStyles.modalContent, { backgroundColor: 'white' }]}>
-                  {mentoringtypes.map((type, index) => (
-                    <Checkbox.Item key={index} label={type} status={user.mentoringType === type ? 'checked' : 'unchecked'} onPress={() => setUser({ ...user, mentoringType: type })} 
-                    labelStyle={{ fontFamily: "Inter_400Regular" }}
-                    color="#d6cbff"
-                    />
-                  ))}
-                  <Button onPress={() => setMentoringModalVisible(false)}
-                     labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}}
                     >Done</Button>
                 </Modal>
               </Portal>
@@ -569,6 +603,35 @@ const pickImage = async () => {
                 </Modal>
               </Portal>
             </View>
+
+<Text style={appliedStyles.inputTitle}>
+  What is your gender?
+      </Text>
+      <RadioButton.Group
+onValueChange={value =>
+  setUser(prev => ({
+    ...prev,
+    gender: value
+  }))
+}
+        value={user.gender}
+      >
+           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+          <RadioButton value="Female" color='#9FF9D5' />
+          <Text style={appliedStyles.subtitle}>Female</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+          <RadioButton value="Male" color='#9FF9D5' />
+          <Text style={appliedStyles.subtitle}>Male</Text>
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <RadioButton value="No Preference" color='#9FF9D5' />
+          <Text style={appliedStyles.subtitle}>I Prefer Not to say</Text>
+        </View>
+      </RadioButton.Group>
+
+
           {/* Save Button */}
           <View style={appliedStyles.footerContainer}>
             <TouchableOpacity style={appliedStyles.saveButton} onPress={saveChanges}>
@@ -611,6 +674,12 @@ const styles = StyleSheet.create({
   cardContainer:{width:"100%",marginLeft:95},
   overlay: {position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
   justifyContent: "center",alignItems: "center",zIndex: 9999,},
+  hrTitle:{
+  fontSize: 14,
+  marginBottom: 10,
+  color: '#003D5B',
+  width: '100%',
+},
 });
 
 const Webstyles = StyleSheet.create({
@@ -635,6 +704,12 @@ const Webstyles = StyleSheet.create({
   modalContent: {backgroundColor: "white",width:"35%",marginLeft:580,borderRadius:15},//חלונית מודל של התחומי קריירה
   cardContainer:{width:"35%",backgroundColor: "white",borderRadius: "12px",boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
   padding: "20px",alignItems:"center",position: "relative",zIndex:1,},
+  hrTitle:{
+  fontSize: 14,
+  marginBottom: 10,
+  color: '#003D5B',
+  width: '100%',
+},
 });
 
 

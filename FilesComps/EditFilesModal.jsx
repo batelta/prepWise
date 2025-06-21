@@ -30,8 +30,8 @@ const EditFilesModal = ({ visible, onClose, userId }) => {
     try {
       const url =
         Platform.OS === "web"
-          ? `https://localhost:7137/api/Users/get-user-files?userId=${userId}`
-          : `http://192.168.30.157:7137/api/Users/get-user-files?userId=${userId}`;
+          ? `${apiUrlStart}/api/Users/get-user-files?userId=${userId}`
+          : `${apiUrlStart}/api/Users/get-user-files?userId=${userId}`;
 
       const response = await fetch(url);
       const data = await response.json();

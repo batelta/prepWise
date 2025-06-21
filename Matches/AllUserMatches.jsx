@@ -57,12 +57,14 @@ const AllUserMatches = () => {
   }, [Loggeduser]);
 
   //////לסדר שאנחנו רוצים בלחיצה על מנטור ספציפי לעבור לסשנים שלו!
-  const handleMentorPress = (jobseekerID,mentorID,JourneyID) => {
+  const handleMentorPress = (jobseekerID,mentorID,JourneyID,FirstName,LastName) => {
     console.log("journeyID:",JourneyID)
     navigation.navigate("SessionSplitView", {
         jobseekerID: jobseekerID,
         mentorID: mentorID,
         JourneyID: JourneyID,
+        FirstName:FirstName,
+        LastName:LastName
       });  
     };
 
@@ -117,7 +119,7 @@ const AllUserMatches = () => {
           {/* Sessions Button */}
           <TouchableOpacity 
             style={appliedStyles.actionButton}
-            onPress={() => handleMentorPress(item.JobSeekerID, item.MentorID, item.JourneyID)}
+            onPress={() => handleMentorPress(item.JobSeekerID, item.MentorID, item.JourneyID,item.FirstName,item.LastName)}
           >
             <Ionicons name="calendar-outline" size={20} color="#4A90E2" />
             <Text style={appliedStyles.buttonText}>Sessions</Text>

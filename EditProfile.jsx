@@ -6,6 +6,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, Checkbox, Provider as PaperProvider } from 'react-native-paper';
 import LanguageSelector from './LanguageSelector';
+import CareerFieldSelector from './CareerFieldSelector';
+import RolesSelector from './RolesSelector';
 import { useFonts } from 'expo-font';
 import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
 import NavBar from "./NavBar";
@@ -15,9 +17,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; // adjust the path
 import defaultProfile from './assets/defaultProfileImage.jpg'; // make sure this path is correct
-
+import fields from './CareerFields.json';
 const { width,height } = Dimensions.get('window');
 const EditProfile = () => {
+
+const apiUrlStart ="http://localhost:5062"
+
 const { Loggeduser ,setLoggedUser } = useContext(UserContext);
 const [popupVisible, setPopupVisible] = useState(false);
 const navigation = useNavigation();
@@ -42,7 +47,13 @@ const navigation = useNavigation();
     experience: "",
     language:[],
     careerField:[],
-  });
+    roles:[],
+  isMentor: false, // ← תוודאי שיש לך את זה באובייקט
+  mentoringType:  "", // ← אם יש בחירה
+  company:  "", // ← מה שהמשתמש בחר
+  gender:  "", // ← אם יש בחירה של מגדר
+  
+});
 
 
 //בדיקות התאמה לתבנית של השדות
@@ -53,6 +64,7 @@ const [errors, setErrors] = useState({
   password: "",
   facebookLink: "",
   linkedinLink: "",
+
 });
 
 
@@ -119,18 +131,24 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
       setErrors(prevErrors => ({ ...prevErrors, linkedinLink: "" }));
     }
   }
+
 };
 
-  const [fieldModalVisible, setFieldModalVisible] = React.useState(false);
-  const [selectedFields, setSelectedFields] = React.useState([]);
-  const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
+  //const [fieldModalVisible, setFieldModalVisible] = React.useState(false);
+  const [selectedField, setSelectedField] = useState(null);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  
+  //const [selectedField, setSelectedField] = useState(null);
+
+  //const Fields = ["Software Engineering", "Data Science", "Product Management", "UI/UX Design"];
+  
 
   ///כל לחיצה על תחום = לבחור או לבטל בחירה
-  const toggleField = (field) => {
-    setSelectedFields((prev) =>
-    prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
-    );
-  };
+  /*const toggleField = (field) => {
+    setSelectedField((prev) =>/* פה שונה גם הs*/
+    //prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
+    //);
+  //}
   ////
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [experienceModalVisible, setExperienceModalVisible] = useState(false);
@@ -158,7 +176,7 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
     try {
 
       // קריאה ל-API לפי ID כדי לקבל את כל הנתונים (כולל תחומים ושפות)
-      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Users?userId=${userID}`);
+      const response = await fetch(`${apiUrlStart}/api/Users?userId=${userID}`);
       if (!response.ok) {
         console.error("Failed to fetch full user data from API.");
         return;
@@ -180,12 +198,28 @@ setUser(prevUser => ({ ...prevUser, [field]: value }));
     : { uri: fullUserData.picture },
         experience: fullUserData.experience || "",
         language: fullUserData.language || [],
-        careerField: fullUserData.careerField || [],
+        careerField: fullUserData.careerField|| [],
+        roles:fullUserData.roles||[],
+        isMentor: fullUserData.isMentor || false,
+  mentoringType: fullUserData.mentoringType || "",
+  company: fullUserData.company || "",
+  gender: fullUserData.gender || "",
+ 
+        
       });
-
+console.log(fullUserData.careerField ,fullUserData.roles);
       //נעשה להם set -עדכון התחומים והשפות לתצוגה
       //בנפרד מאחר ויש להם מספר ערכים שיכולים להישמר ונעדיף לשים אותם בstate נפרד
-      setSelectedFields(fullUserData.careerField || []);
+      //setSelectedField(fullUserData.careerField || []);
+      if (fullUserData.careerField && fullUserData.careerField.length > 0) {
+        // מציאת התחום הראשון במערך ה-fields על פי השם
+        const firstFieldName = fullUserData.careerField[0];
+        const fieldFromJson = fields.find(f => f.name === firstFieldName);
+        if (fieldFromJson) {
+          setSelectedField(fieldFromJson);
+        }
+      }
+      setSelectedRoles(fullUserData.roles||[]);
       setSelectedLanguages(fullUserData.language || []);
 
     } catch (error) {
@@ -205,6 +239,21 @@ useEffect(() => {
     setSelectedLanguages(user.language);
   }
 }, [user.language]);
+
+useEffect(() => {
+  if (user.roles.length > 0) {
+    setSelectedRoles(user.roles);
+  }
+}, [user.roles]);
+
+useEffect(() => {
+  if (selectedField) {
+    setUser(prevUser => ({
+      ...prevUser,
+      careerField: [selectedField.name] // שמירת שם התחום במערך
+    }));
+  }
+}, [selectedField]);
 
 
 const [base64Image, setBase64Image] = useState(null);
@@ -238,13 +287,17 @@ const pickImage = async () => {
         experience: user.experience,
         facebookLink: user.facebookLink,
         linkedinLink: user.linkedinLink,
-        careerField: selectedFields,
+        careerField: user.careerField,
+        roles : selectedRoles,
         language: selectedLanguages,
-        picture: base64Image || (user.picture.uri || user.picture),       
+        picture: base64Image || (user.picture.uri || user.picture), 
+        isMentor: user.isMentor ?? false,
+        mentoringType: user.mentoringType ?? "",
+       company: user.company ?? "",
+        gender: user.gender ?? "", 
       };
-  
       // ביצוע קריאת PUT עם ה- userId מתוך AsyncStorage
-      const response = await fetch(`https://proj.ruppin.ac.il/igroup11/prod/api/Users/${userID}`, 
+      const response = await fetch(`${apiUrlStart}/api/Users/${userID}`, 
         {
         method: "PUT",
         headers: {
@@ -274,6 +327,7 @@ const pickImage = async () => {
     } catch (error) {
       console.error("Error:", error);
     }
+
   };
   
   const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
@@ -385,7 +439,7 @@ const pickImage = async () => {
            {/* Fields Modal */}
            <View style={appliedStyles.inputContainer}>
               <Text style={appliedStyles.label}>Career Fields</Text>
-              <Button
+              {/*<Button
                 mode="contained"
                 onPress={() => setFieldModalVisible(true)}
                 style={appliedStyles.input}
@@ -393,8 +447,24 @@ const pickImage = async () => {
                 contentStyle={appliedStyles.modalText} 
                 >
                 {selectedFields.length ? selectedFields.join(', ') : 'Select Your Career Fields'}
-              </Button>
-               <ModalRN 
+              </Button>*/}
+              <CareerFieldSelector
+  selectedField={selectedField}
+  setSelectedField={setSelectedField}
+   style={{marginBottom:15}}
+      />
+      {selectedField?.id && (<>
+        <Text style={appliedStyles.label}>Roles</Text>
+        <RolesSelector
+        
+          careerFieldId={selectedField.id}
+          selectedRoles={selectedRoles}
+          setSelectedRoles={setSelectedRoles}
+        />
+      </>
+)}
+
+               {/*<ModalRN 
                   isVisible={fieldModalVisible} 
                   onBackdropPress={() => setFieldModalVisible(false)} 
                   onBackButtonPress={() => setFieldModalVisible(false)}
@@ -415,8 +485,9 @@ const pickImage = async () => {
                     labelStyle={{ fontFamily: "Inter_400Regular", color:"#d6cbff"}}
                        >Done</Button>
                   </View>
-                </ModalRN>
+                </ModalRN>*/}
             </View>
+            
     
             {/* Experience */}
             <View style={appliedStyles.inputContainer}>
