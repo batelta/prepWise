@@ -32,6 +32,13 @@ const FileSelectorModal = ({ visible, onClose, userId, onFileSelect }) => {
     Inter_300Light,
   });
 
+///batel added for check in session page
+  useEffect(() => {
+  if (!visible) {
+    setFiles([]); // reset when modal is closed
+  }
+}, [visible]);
+//////
   useEffect(() => {
     //fatch files evry time that the modal visible
     if (visible) fetchFiles();

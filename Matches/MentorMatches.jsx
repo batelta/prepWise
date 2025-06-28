@@ -130,19 +130,21 @@ const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: '#FFFFFF',
-      paddingTop: 60,
-    //  paddingHorizontal: 20,
+      //padding: 60,
+      paddingHorizontal: 20,
     },
     screenCard:{
         margin: 20,
          padding: 16 ,
-         width:'110%',
+         width:'100%',
          alignSelf:'center',
          elevation:2,
-         shadowColor:'#E4E0E1'
+         shadowColor:'#E4E0E1',
+           flex: 1, // add this
+
      },
     title: {
-        fontSize: 20,
+        fontSize: 15,
         marginTop: 8,
         fontFamily:"Inter_300Light",
       marginBottom: 30,
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
     },
     chatIcon: {
       position: "absolute",
-      bottom: 5,
+      bottom: -200,
       right: 45,
       backgroundColor: "#fff",
       borderRadius: 30,

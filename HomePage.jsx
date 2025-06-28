@@ -17,7 +17,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; 
-const progress = 0; // just for now
 
 export default function HomePage() {
     const { Loggeduser } = useContext(UserContext);
@@ -45,6 +44,8 @@ const[userID,setUserID]=useState(null);
   const [hasAnsweredQuery, setHasAnsweredQuery] = useState(false);
   const [queryLoading, setQueryLoading] = useState(true);
 
+  const [totalTasks, setTotalTasks] = useState(0);
+const [completedTasks, setCompletedTasks] = useState(0);
   // FIX 2: Remove the problematic useMemo and use the boolean state directly
   const hasMatchRequests = hasAnsweredQuery;
 
@@ -85,9 +86,26 @@ const[userID,setUserID]=useState(null);
  useEffect(() => {
   if (Loggeduser?.id && Loggeduser?.email && Loggeduser?.password ) {
       loginAsUser(Loggeduser.email, Loggeduser.password);
+          fetchTaskProgress(Loggeduser.id);
+
   }
 }, [Loggeduser?.id, Loggeduser?.email, Loggeduser?.password]);
   
+
+const fetchTaskProgress = async (jobSeekerId) => {
+  try {
+    const res = await fetch(`${apiUrlStart}/api/Session/TaskProgress/${jobSeekerId}`);
+    if (!res.ok) throw new Error("Failed to fetch task progress");
+
+    const data = await res.json();
+    setTotalTasks(data.total);
+    setCompletedTasks(data.completed);
+  } catch (err) {
+    console.error("Error fetching task progress:", err);
+  }
+};
+
+const progress = totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
   // This runs every time the screen is focused
    // FIX 7: Optimize the applications fetch
    const fetchApplications = useCallback(async () => {
@@ -251,7 +269,10 @@ useFocusEffect(
                           <View style={{flex:1}}>
      
                         <Text style={appliedStyles.title}>Welcome {firstname} , to your Home page!</Text>
-                        <Text style={appliedStyles.subtitle}>What to do next?</Text> <AnimatedArrow/>
+                        <Text style={appliedStyles.subtitle}>What to do next?</Text> 
+<View style={{ left:60}}>
+  <AnimatedArrow />
+</View>        
                     </View>
                     </View>
                 </View>
@@ -270,11 +291,15 @@ useFocusEffect(
                                 tintColor="#9FF9D5"
                                 backgroundColor="#e0e0e0"
                             />
-                            <Text style={appliedStyles.toDoText}>0/0</Text>
-                            <Text style={appliedStyles.toDoLabel}>Weekly Wins</Text>
+                            <Text style={appliedStyles.toDoText}>
+                                {completedTasks}/{totalTasks}
+
+                            </Text>
+                            <Text style={appliedStyles.toDoLabel}>Sessions Goals</Text>
                         </View>
                         </Card.Content>
                         </Card>
+                  {/** 
                         <Card style={appliedStyles.ToDocard}>
                         <Card.Content style={appliedStyles.Cardcontent}>
                         <View style={appliedStyles.toDoItem}>
@@ -290,6 +315,7 @@ useFocusEffect(
                         </View>
                         </Card.Content>
                         </Card>
+                        */}
                     </View>
                 </View>
        

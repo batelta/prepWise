@@ -13,12 +13,14 @@ import NavBar from '../NavBar';
 import GeminiChat from '../GeminiChat';
 import { UserContext } from '../UserContext';
 import { useNavigation } from "@react-navigation/native";
-
+import NavBarMentor from '../Mentor/NavBarMentor'
 const AllUserMatches = () => {
   const { Loggeduser } = useContext(UserContext);
   const [showChat, setShowChat] = useState(false);
   const [mentors, setMentors] = useState(null);
   const navigation = useNavigation();
+    const [userType, setUserType] = useState('');
+    const apiUrlStart ="http://localhost:5062"
 
 //FONTS
    const [fontsLoaded] = useFonts({
@@ -32,12 +34,72 @@ const AllUserMatches = () => {
   
   const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
 
+  // This runs only once when Loggeduser is first set
+useEffect(() => {
+    if (Loggeduser?.id) {
+      loginAsUser(Loggeduser.email, Loggeduser.password);
+    }
+  }, [Loggeduser?.id]);
+
+  const loginAsUser=async (email,password )=>{
+    console.log(email,password,Loggeduser.password)
+
+    try{
+      console.log("Sending request to API...");
+  const API_URL = `${apiUrlStart}/api/Users/SearchUser` 
+      const response =await fetch (API_URL, { 
+        method: 'POST', // Specify that this is a POST request
+        headers: {
+          'Content-Type': 'application/json' // Indicate that you're sending JSON data
+        },
+        body: JSON.stringify({ // Convert the user data into a JSON string
+            UserId: 0,
+            FirstName: "String",
+            LastName: "String",
+            Email: email,
+            Password: password,
+            CareerField: ["String"], // Convert to an array
+            Roles: ["String"], // Convert to an array
+            Company: ["String"], // Convert to an array
+            Experience: "String",
+            Picture: "String",
+            Language: ["String"], // Convert to an array
+            FacebookLink: "String",
+            LinkedInLink: "String",
+            IsMentor:false
+        })
+      });
+
+      console.log("response ok?", response.ok);
+
+      if(response.ok)
+       {
+        console.log('user found ')
+        
+          // Convert response JSON to an object
+        const userData = await response.json();
+        console.log(userData)
+        console.log('IsMentor value:', userData?.isMentor);
+
+        const type = userData?.isMentor ? 'mentor' : 'jobSeeker';
+        setUserType(type)
+        console.log('user type:',type )
+       }
+  
+  if(!response.ok){
+    throw new Error('failed to find user')
+  }
+    }catch(error){
+  console.log(error)
+    }
+} 
+
   useEffect(() => {
     const fetchMatchesFromServer = async () => {
       try {
-        if (!Loggeduser) return;
+      if (!Loggeduser?.id || !userType) return;
 
-        const response = await fetch(`http://localhost:5062/api/MentorMatching/UserMatches/${Loggeduser.id}`);
+        const response = await fetch(`${apiUrlStart}/api/MentorMatching/UserMatches/${Loggeduser.id}?userType=${userType}`);
         console.log("loggeduser",Loggeduser.id)
         if (!response.ok) {
           console.error('Failed to fetch sessions');
@@ -54,7 +116,7 @@ const AllUserMatches = () => {
     };
 
     fetchMatchesFromServer();
-  }, [Loggeduser]);
+  }, [Loggeduser,userType]);
 
   //////לסדר שאנחנו רוצים בלחיצה על מנטור ספציפי לעבור לסשנים שלו!
   const handleMentorPress = (jobseekerID,mentorID,JourneyID,FirstName,LastName) => {
@@ -93,10 +155,10 @@ const AllUserMatches = () => {
     <View style={appliedStyles.card}>
       <Image 
         source={{ uri: item.Picture }} 
-        style={{ width: 60, height: 60, borderRadius: 30, marginBottom: 8,marginRight: 20,marginLeft:40 }} 
+        style={appliedStyles.picture} 
       />
-      <Text style={appliedStyles.mentorText}>
-     {item.FirstName} {/*{item.LastName}*/}
+      <Text style={appliedStyles.nameText}>
+     {item.FirstName} {item.LastName}
       </Text>
 
 
@@ -108,8 +170,14 @@ const AllUserMatches = () => {
   onPress={() => 
     navigation.navigate("ChatScreen", {
       user: Loggeduser,
-      otherUser: item
-    })
+     otherUser : {
+    id: userType === 'mentor' ? item.JobSeekerID : item.MentorID,
+    FirstName: item.FirstName,
+    LastName: item.LastName,
+    Picture: item.Picture,
+  }
+}
+  )
   }
 >
             <Ionicons name="chatbubble-outline" size={20} color="#4A90E2" />
@@ -150,7 +218,8 @@ const AllUserMatches = () => {
           </Card>
 
           {/* תפריט תחתון */}
-          <NavBar />
+          
+{userType === 'mentor' ? <NavBarMentor /> : <NavBar />}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -162,15 +231,18 @@ const styles = StyleSheet.create({
       flex: 1,
       backgroundColor: '#FFFFFF',
       paddingTop: 60,
-    //  paddingHorizontal: 20,
+      paddingHorizontal: 20,
     },
+  
     screenCard:{
-        margin: 20,
+      //  margin: 20,
          padding: 16 ,
-         width:'110%',
+         width:'120%',
          alignSelf:'center',
          elevation:2,
-         shadowColor:'#E4E0E1'
+         shadowColor:'#E4E0E1',
+         flex: 1, // add this
+
      },
     title: {
       fontSize: 20,
@@ -190,9 +262,8 @@ const styles = StyleSheet.create({
       padding: 15,
       marginBottom: 15,
       alignItems: 'center',
-    
-        elevation:0,
-          shadowColor:'#E4E0E1'
+       elevation:0,
+       shadowColor:'#E4E0E1'
     },
     avatar: {
       width: 50,
@@ -200,15 +271,25 @@ const styles = StyleSheet.create({
       borderRadius: 25,
       marginRight: 15,
     },
-    name: {
+    nameText: {
       fontWeight: '600',
       fontSize: 16,
       color: '#333',
     },
+    picture:{
+      width: 80, 
+      height: 80, 
+      borderRadius: 40, 
+      marginBottom: 8,
+      marginRight: 20,
+      marginLeft:40 
+    }
+    ,
     role: {
       color: '#777',
       fontSize: 14,
     },
+    
     chatButton: {
       position: 'absolute',
       bottom: 80,
@@ -233,7 +314,7 @@ const styles = StyleSheet.create({
     },
     chatIcon: {
       position: "absolute",
-      bottom: 5,
+      bottom: -200,
       right: 45,
       backgroundColor: "#fff",
       borderRadius: 30,
@@ -250,10 +331,10 @@ const styles = StyleSheet.create({
     },
     chatModal:{
       position: 'absolute',
-      bottom: 0,
+      bottom: -150,
       right: 10,
-      width: '30%',
-      height: 480,
+      width: '50%',
+      height: 400,
       backgroundColor: 'white',
       borderRadius: 10,
       padding: 10,
@@ -267,9 +348,55 @@ const styles = StyleSheet.create({
   justifyContent: "center",alignItems: "center",zIndex: 9999,
   },
   itemRow:{
-      width:"50%",
+      width:"120%",
+      margin:40,
   alignSelf:'center',
   },
+ card: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF', // recommended light color for contrast
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+    //alignContent:'space-around',
+    gap: 5, // ✅ adds spacing between items
+    shadowColor: '#E4E0E1',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  
+    // ✅ Shadow for Android
+    elevation: 4,
+  },
+  buttonContainer:{
+//marginLeft:10,
+    gap: 10, // ← cleaner spacing between buttons
+
+},
+  actionButton: {
+  flexDirection: 'row',
+left:0,
+ // backgroundColor: '#9FF9D5',
+  paddingVertical: 10,
+  paddingHorizontal: 40,
+  borderRadius: 10,
+  //marginRight: 10,
+  shadowColor: '#E4E0E1',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.2,
+  shadowRadius: 2,
+  elevation: 2,
+
+},
+
+buttonText: {
+  fontSize: 14,
+  color: '#003D5B',
+  fontWeight: '500',
+ paddingHorizontal: 10
+
+},
   });
 const Webstyles = StyleSheet.create({
   container: {
@@ -277,16 +404,17 @@ const Webstyles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingTop: 60,
     paddingHorizontal: 20,
+alignContent:'space-around'
   },
   screenCard:{
     margin: 20,
-     padding: 16 
+     padding: 16 ,
  },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#1F1F1F',
+  fontSize: 20,
+        marginTop: 8,
+        fontFamily:"Inter_300Light" ,  
+         textAlign: 'center',
     marginBottom: 30,
   },
   list: {
@@ -299,7 +427,8 @@ const Webstyles = StyleSheet.create({
     padding: 15,
     marginBottom: 15,
     alignItems: 'center',
-  
+    alignContent:'space-around',
+    gap: 30, // ✅ adds spacing between items
     // ✅ Shadow for iOS
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
@@ -315,11 +444,20 @@ const Webstyles = StyleSheet.create({
     borderRadius: 25,
     marginRight: 15,
   },
-  /*name: {
-    fontWeight: '600',
-    fontSize: 16,
-    color: '#333',
+  nameText: {
+     fontSize: 15,
+      margin: 8,
+      fontFamily:"Inter_300Light",
   },
+  picture:{
+      width: 100, 
+      height: 100, 
+      borderRadius: 50, 
+      marginBottom: 8,
+     // marginRight: 20,
+     // marginLeft:40 
+    },
+  /*,
   role: {
     color: '#777',
     fontSize: 14,
@@ -378,8 +516,15 @@ const Webstyles = StyleSheet.create({
     elevation: 5,
 },
 overlay: {
-  position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
-justifyContent: "center",alignItems: "center",zIndex: 9999,
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: "rgba(0, 0, 0, 0.5)",
+justifyContent: "center",
+alignItems: "center",
+zIndex: 9999,
 },
 itemRow:{
     width:"50%",
@@ -395,25 +540,33 @@ buttonRow: {
   gap: 10, // works in RN 0.71+
 },
 
+buttonContainer:{
+marginLeft:50,
+  gap: 10, // ← cleaner spacing between buttons
+
+},
 actionButton: {
   flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#9FF9D5',
-  paddingVertical: 6,
-  paddingHorizontal: 10,
+left:0,
+ // backgroundColor: '#9FF9D5',
+  paddingVertical: 10,
+  paddingHorizontal: 40,
   borderRadius: 10,
-  marginRight: 10,
+  //marginRight: 10,
   shadowColor: '#000',
   shadowOffset: { width: 0, height: 1 },
   shadowOpacity: 0.2,
   shadowRadius: 2,
   elevation: 2,
+
 },
 
 buttonText: {
   fontSize: 14,
   color: '#003D5B',
   fontWeight: '500',
+ paddingHorizontal: 10
+
 },
 
 });

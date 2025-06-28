@@ -166,7 +166,10 @@ if (!response.ok) {
   const handleLogOut = async () => {
     await AsyncStorage.removeItem("user"); //מחיקת המשתמש מהלוקל סטורג
     setLoggedUser(null);
+     setTimeout(() => {
     navigation.navigate("SignIn");
+  }, 50); // short delay to prevent race condition
+   // navigation.navigate("SignIn");
   };
 
   return (

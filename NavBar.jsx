@@ -59,7 +59,7 @@ const MobileNavBar = () => {
           if (route.name === "Home") iconName = isActive ? "home" : "home-outline";
           else if (route.name === "Messenger") iconName = isActive ? "chatbubble" : "chatbubble-outline";
           else if (route.name === "Add Job") iconName = isActive ? "add-circle" : "add-circle-outline";
-          else if (route.name === "My Matches") iconName = isActive ? "calendar" : "calendar-outline";
+          else if (route.name === "My Matches") iconName = isActive ? "magnet" : "magent-outline";
           else if (route.name === "Profile") iconName = isActive ? "person" : "person-outline";
           else if (route.name === "Menu") iconName = isActive ? "menu" : "menu-outline";
           

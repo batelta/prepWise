@@ -1,248 +1,228 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Image,TouchableOpacity  } from 'react-native';
-import { GiftedChat, Bubble,Send } from 'react-native-gifted-chat';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
+import { GiftedChat, Bubble, Send } from 'react-native-gifted-chat';
 import { db } from './firebaseConfig';
-import {collection,addDoc,onSnapshot,query,orderBy,Timestamp, doc, updateDoc,getDoc, setDoc} from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  Timestamp,
+  doc,
+  updateDoc,
+  setDoc,
+} from 'firebase/firestore';
 import { useFonts } from 'expo-font';
-import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
-import Icon from 'react-native-vector-icons/MaterialIcons'; 
-//import * as ImagePicker from 'expo-image-picker';
-
+import {
+  Inter_400Regular,
+  Inter_300Light,
+  Inter_700Bold,
+  Inter_100Thin,
+  Inter_200ExtraLight,
+} from '@expo-google-fonts/inter';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const getChatId = (id1, id2) => {
-    return [id1, id2].sort().join('_');
-  };
-  
+  return [id1, id2].sort().join('_');
+};
 
 export default function ChatScreen({ route }) {
-    const { user,otherUser } = route.params;
+  const { user, otherUser } = route.params;
 
-console.log("inside chatscreen:",'loggeduser:',user,'otheruser:',otherUser)
-  //FONTS
-   const [fontsLoaded] = useFonts({
-       Inter_400Regular,
-       Inter_700Bold,
-       Inter_100Thin,
-       Inter_200ExtraLight,
-       Inter_300Light
-     });
-     const renderActions = (props) => (
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <TouchableOpacity onPress={() => console.log('Attach file')}>
-          <Icon name="attach-file" size={24} color="#555" style={{ marginHorizontal: 5 }} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => console.log('Open camera')}>
-          <Icon name="photo-camera" size={24} color="#555" style={{ marginHorizontal: 5 }} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => console.log('Record voice')}>
-          <Icon name="mic" size={24} color="#555" style={{ marginHorizontal: 5 }} />
-        </TouchableOpacity>
-      </View>
-    );
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+    Inter_100Thin,
+    Inter_200ExtraLight,
+    Inter_300Light,
+  });
 
-  // נוודא ש־_id תמיד קיים ונשתמש בו
+  // 🧠 נבנה את האובייקטים בבטיחות:
   const currentUserFixed = {
-    _id: user.id,
-    name: user.email,
-    //name: currentUser.name , 
-    //email: currentUser.email,
-
+    _id: user?.id || user?._id,
+    name: user?.name || user?.email || 'You',
+    email: user?.email,
   };
 
   const otherUserFixed = {
-    _id: otherUser.userID||otherUser._id||otherUser.MentorID,
-    name:otherUser.email||otherUser.FirstName,
-    ////name: otherUser.name ,
-    //email: otherUser.email
+    _id:
+      otherUser?._id ||
+      otherUser?.userID ||
+      otherUser?.MentorID ||
+      otherUser?.JobSeekerID ||
+      otherUser?.id ||
+      'unknown',
+    name:
+      otherUser?.name ||
+      [otherUser?.FirstName, otherUser?.LastName].filter(Boolean).join(' ') ||
+      otherUser?.email ||
+      otherUser?.Email ||
+      'Unknown',
+    image:
+      otherUser?.image ||
+      otherUser?.Picture ||
+      null,
+    email: otherUser?.email || otherUser?.Email || '',
   };
 
   const chatId = getChatId(currentUserFixed._id, otherUserFixed._id);
-  console.log("👤 currentUserFixed._id:", currentUserFixed._id);
-console.log("👤 otherUserFixed._id:", otherUserFixed._id);
-  console.log("📌 chatId is:", chatId);
-
   const [messages, setMessages] = useState([]);
+
   useEffect(() => {
     const q = query(
       collection(db, 'chats', chatId, 'messages'),
       orderBy('createdAt', 'desc')
     );
-  
+
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const messagesFirestore = snapshot.docs.map(doc => {
+      const messagesFirestore = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           _id: doc.id,
           text: data.text,
-          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(), 
+          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
           user: data.user,
           read: data.read || false,
         };
       });
-  
+
       setMessages(messagesFirestore);
-  
-      // נעדכן את ההודעות שהן לא נקראו ונשלחו על ידי המשתמש השני
-      const unreadMessages = snapshot.docs.filter(doc => {
+
+      const unreadMessages = snapshot.docs.filter((doc) => {
         const data = doc.data();
-        return (
-          data.user._id !== currentUserFixed._id &&
-          !data.read
-        );
+        return data.user._id !== currentUserFixed._id && !data.read;
       });
-  
+
       for (const msg of unreadMessages) {
         const msgRef = doc(db, 'chats', chatId, 'messages', msg.id);
         await updateDoc(msgRef, { read: true });
       }
     });
-  
+
     return () => unsubscribe();
   }, [chatId]);
-  
 
-  const onSend = useCallback(async (messages = []) => {
-    console.log('🚀 onSend called');
-
-    try {
+  const onSend = useCallback(
+    async (messages = []) => {
       const msg = messages[0];
-  
-      // Save the message
+
       await addDoc(collection(db, 'chats', chatId, 'messages'), {
         text: msg.text,
         createdAt: Timestamp.now(),
         user: {
           _id: currentUserFixed._id,
-          name: currentUserFixed.name || user.email,
+          name: currentUserFixed.name,
         },
-        read: false
+        read: false,
       });
 
-      console.log("📌 chatId is:", chatId);
-
-      // Save or update the chat metadata
-      await setDoc(doc(db, 'chats', chatId), {
-        participants: [currentUserFixed._id, otherUserFixed._id], // 🔥 array for querying
-        participantsMeta: {
-          [currentUserFixed._id]: {
-            id: currentUserFixed._id,
-            name: user.name || user.email,
-            email: user.email
+      await setDoc(
+        doc(db, 'chats', chatId),
+        {
+          participants: [currentUserFixed._id, otherUserFixed._id],
+          participantsMeta: {
+            [currentUserFixed._id]: {
+              id: currentUserFixed._id,
+              name: currentUserFixed.name,
+              email: currentUserFixed.email,
+            },
+            [otherUserFixed._id]: {
+              id: otherUserFixed._id,
+              name: otherUserFixed.name,
+              email: otherUserFixed.email,
+            },
           },
-          [otherUserFixed._id]: {
-            id: otherUserFixed._id,
-            name: otherUserFixed.name || otherUser.email,
-            email: otherUser.email||otherUser.Email
-          }
+          lastMessage: {
+            text: msg.text,
+            createdAt: Timestamp.now(),
+          },
+          updatedAt: Timestamp.now(),
         },
-        lastMessage: {
-          text: msg.text,
-          createdAt: Timestamp.now()
-        },
-        updatedAt: Timestamp.now()
-      }, { merge: true });
-      
-  
-      console.log('✅ Chat metadata saved or updated');
-  
-    } catch (error) {
-      console.error('❌ Failed to save chat metadata:', error);
-    }
-  }, [chatId]);
-  
-  
+        { merge: true }
+      );
+    },
+    [chatId]
+  );
 
-const renderSend = (props) => {
-  return (
+  const renderBubble = (props) => {
+    const isCurrentUser = props.currentMessage.user._id === currentUserFixed._id;
+
+    return (
+      <Bubble
+        {...props}
+        wrapperStyle={{
+          left: { backgroundColor: '#9FF9D5' },
+          right: { backgroundColor: '#FFFFFF' },
+        }}
+        textStyle={{
+          left: { color: '#000' },
+          right: { color: '#000' },
+        }}
+        timeTextStyle={{
+          left: { color: 'gray' },
+          right: { color: 'gray' },
+        }}
+      />
+    );
+  };
+
+  const renderSend = (props) => (
     <Send {...props}>
       <View style={{ marginRight: 10, marginBottom: 5 }}>
-        <Text style={{
-          color: '#9FF9D5', 
-          fontSize: 14,
-          fontFamily: 'Inter_400Regular', 
-        }}>
+        <Text style={{ color: '#9FF9D5', fontSize: 14, fontFamily: 'Inter_400Regular' }}>
           Send
         </Text>
       </View>
     </Send>
   );
-};
 
-
-  const renderBubble = (props) => {
-    const isCurrentUser = props.currentMessage.user._id === currentUserFixed._id;
-
-   
-    
-
-    return (
-      /*<Bubble
-        {...props}
-        wrapperStyle={{
-          right: {
-            backgroundColor: isCurrentUser ? '#9FF9D5' : '#F5F5F5',
-          },
-          left: {
-            backgroundColor: isCurrentUser ? '#F5F5F5' : '#9FF9D5',
-          },
-        }}
-        textStyle={{
-          right: {
-            color: isCurrentUser ? '#fff' : '#000',
-          },
-          left: {
-            color: isCurrentUser ? '#000' : '#fff',
-          },
-        }}
-      />*/
-      <Bubble
-  {...props}
-  wrapperStyle={{
-    left: { backgroundColor: '#9FF9D5' },
-    right: { backgroundColor: '#FFFFFF' },
-  }}
-  textStyle={{
-    left: { color: '#000' },
-    right: { color: '#000' },
-  }}
-
-     timeTextStyle={{
-        right: {
-          color: isCurrentUser ? 'gray' : 'gray', // ← תעדכני לצבע שייראה ברור
-        },
-        left: {
-          color: isCurrentUser ? 'gray' : 'gray',
-        },
-      }}
-/>
-
-    );
-  };
+  const renderActions = (props) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <TouchableOpacity onPress={() => console.log('Attach file')}>
+        <Icon name="attach-file" size={24} color="#555" style={{ marginHorizontal: 5 }} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => console.log('Open camera')}>
+        <Icon name="photo-camera" size={24} color="#555" style={{ marginHorizontal: 5 }} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => console.log('Record voice')}>
+        <Icon name="mic" size={24} color="#555" style={{ marginHorizontal: 5 }} />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <View style={{ flex: 1 }}>
       {/* Header with name and image */}
       <View style={styles.header}>
         <Image
-          source={{ uri: otherUser.image || 'https://via.placeholder.com/40' }}
+          source={
+            otherUserFixed.image
+              ? { uri: otherUserFixed.image }
+              : require('./assets/defaultProfileImage.jpg')
+          }
           style={styles.avatar}
         />
-        <Text style={styles.name}>{otherUser.name || otherUser.email}</Text>
+        <Text style={styles.name}>{otherUserFixed.name}</Text>
       </View>
-  
+
       <GiftedChat
         messages={messages}
-        onSend={messages => onSend(messages)}
+        onSend={onSend}
         user={currentUserFixed}
         renderUsernameOnMessage
         renderBubble={renderBubble}
-        renderActions={renderActions}
         renderSend={renderSend}
-
-
+        renderActions={renderActions}
       />
-    </View> // ← סוגר את ה־<View style={{ flex: 1 }}>
-  ); 
+    </View>
+  );
 }
 const styles = StyleSheet.create({
   header: {

@@ -19,7 +19,7 @@ const mobileNavItems = [
   { name: "Home", screen: "HomePageMentor" },
   { name: "Messenger", screen: "MessagesScreen"},
   { name: "Add Offer", screen: "MentorOffer" },
-  { name: "Calendar", screen: "ComingSoonCalendar", disabled: true },
+  { name: "My Matches", screen: "AllUserMatches" },
   { name: "Profile", screen: "Profile" },
   { name: "Menu", screen: "ComingSoonMenu", disabled: true },
 ];
@@ -59,7 +59,7 @@ const MobileNavBar = () => {
           if (route.name === "Home") iconName = isActive ? "home" : "home-outline";
           else if (route.name === "Messenger") iconName = isActive ? "chatbubble" : "chatbubble-outline";
           else if (route.name === "Add Offer") iconName = isActive ? "add-circle" : "add-circle-outline";
-          else if (route.name === "Calendar") iconName = isActive ? "calendar" : "calendar-outline";
+          else if (route.name === "My Matches") iconName = isActive ? "magnet" : "magent-outline";
           else if (route.name === "Profile") iconName = isActive ? "person" : "person-outline";
           else if (route.name === "Menu") iconName = isActive ? "menu" : "menu-outline";
           
@@ -114,7 +114,7 @@ const WebNavBar = () => {
     { name: "Home", screen: "HomePageMentor" },
     { name: "Messenger", screen: "MessagesScreen" },
     { name: "Add Offer", screen: "MentorOffer" },
-    { name: "Calendar", screen: "ComingSoonCalendar" , disabled: true},
+    { name: "My Matches", screen: "AllUserMatches"},
     { name: "Profile", screen: "Profile" },
     { name: "Menu", screen: "ComingSoonMenu" , disabled: true},
   ];

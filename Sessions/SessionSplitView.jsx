@@ -18,24 +18,43 @@ import { Card } from "react-native-paper";
 import { useRoute } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
-
+import NavBarMentor from "../Mentor/NavBarMentor";
+import CustomPopup from "../CustomPopup";
 
 export default function SessionSplitView() {
-    const route = useRoute();
-  const { jobseekerID, mentorID, JourneyID ,FirstName,LastName} = route.params;
+  const route = useRoute();
+  const { jobseekerID, mentorID, JourneyID ,FirstName,LastName,initialSessionId} = route.params;
+
+  console.log("🔍 route params:", route.params);
+
   const { Loggeduser } = useContext(UserContext);
   const [sessions, setSessions] = useState([]);
-const [selectedId, setSelectedId] = useState(null); // or whatever indicates no sessions exist
+  const [selectedId, setSelectedId] = useState(null); // or whatever indicates no sessions exist
   const [loading, setLoading] = useState(true);
   const [showChat, setShowChat] = useState(false);
-  const apiUrlStart = "http://localhost:5062";
-const [showSessionForm, setShowSessionForm] = useState(false);
+const apiUrlStart = Platform.OS === 'android'
+  ? "http://172.20.10.9:5062"
+  : "http://localhost:5062";
+    const [showSessionForm, setShowSessionForm] = useState(false);
+    const [userType, setUserType] = useState('');
+
+const [successPopupVisible, setSuccessPopupVisible] = useState(false);
+const [popupMessage, setPopupMessage] = useState('');
+
+const [errorPopupVisible, setErrorPopupVisible] = useState(false);
+const [errpopupMessage, setErrPopupMessage] = useState('');
 
   useEffect(() => {
     if (Loggeduser?.id) {
       fetchSessions();
+      if(Loggeduser?.id===mentorID)
+        setUserType('mentor')
+      else setUserType('jobSeeker')
     }
   }, [Loggeduser]);
+
+  
+
 
   const fetchSessions = async () => {
     try {
@@ -43,16 +62,87 @@ const [showSessionForm, setShowSessionForm] = useState(false);
       const data = await response.json();
       setSessions(data || []);
       console.log(data)
-      if (data.length > 0) setSelectedId(data[0].sessionID);
+      /*if (data.length > 0) setSelectedId(data[0].sessionID);
       else {
         console.log("no sessions yet!")
         setSelectedId("new"); // ⬅️ flag to trigger empty session
       }    } catch (err) {
-      console.error("Error fetching sessions", err);
+      console.error("Error fetching sessions", err);*/
+      if (data.length > 0) {
+  if (initialSessionId) {
+    setSelectedId(initialSessionId);
+  } else {
+    setSelectedId(data[0].sessionID);
+  }
+}
+
     } finally {
       setLoading(false);
     }
   };
+// Add this function to your SessionSplitView component
+
+const handleSessionArchive = async (sessionId) => {
+  try {
+    console.log("🗄️ Archiving session:", sessionId);
+    
+    // Show loading state (optional)
+    // setLoading(true);
+    
+    const response = await fetch(`${apiUrlStart}/api/Session/archive/${sessionId}`, {
+      method: 'PUT', // or 'PATCH' depending on your API
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // If you need to send additional data:
+      // body: JSON.stringify({ 
+      //   archivedBy: Loggeduser?.id,
+      //   archivedAt: new Date().toISOString()
+      // })
+    });
+
+    if (response.ok) {
+      console.log("✅ Session archived successfully");
+         // Show success popup
+        setPopupMessage("Session archived successfully");
+        setSuccessPopupVisible(true);
+      // If the archived session was currently selected, clear selection
+      if (selectedId === sessionId) {
+        setSelectedId(sessions.length > 1 ? sessions[0].sessionID : "new");
+      }
+      
+      // Refresh the sessions list to remove the archived session
+      await refreshSessions();
+      
+      // Optional: Show success message
+      // You could add a toast/alert here if you have a notification system
+      
+    } else {
+      const errorData = await response.json();
+      console.error("❌ Failed to archive session:", errorData);
+      // Handle error - show error message to user
+       setErrPopupMessage("Failed to archive session. Please try again.");
+            setErrorPopupVisible(true);
+    }
+    
+  } catch (error) {
+    console.error("❌ Error archiving session:", error);
+    // Handle network/other errors
+    alert("Error archiving session. Please check your connection.");
+  } finally {
+    // setLoading(false);
+  }
+};
+const refreshSessions = async (newSessionId = null) => {
+  console.log("🔄 refreshSessions called with:", newSessionId);
+  await fetchSessions(); // reload cards
+  console.log("🔄 fetchSessions completed, sessions length:", sessions.length);
+  
+  if (newSessionId) {
+    console.log("🔄 Setting selectedId to:", newSessionId);
+    setSelectedId(newSessionId);
+  }
+};
 
   if (Platform.OS !== "web") {
     return (
@@ -70,17 +160,46 @@ const [showSessionForm, setShowSessionForm] = useState(false);
       </View>
     );
   }
-
+// Add this right before your return statement
+console.log("🎨 Render - selectedId:", selectedId);
+console.log("🎨 Render - sessions:", sessions.map(s => s.sessionID));
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
+
+ {successPopupVisible && (
+  <View style={styles.overlay}>
+    <CustomPopup 
+      visible={successPopupVisible}
+      onDismiss={() => {
+        setSuccessPopupVisible(false);
+      }}
+      icon="check-circle"
+      message={popupMessage || "Action completed successfully!"}
+    />
+  </View>
+)}
+
+{errorPopupVisible && (
+  <View style={styles.overlay}>
+    <CustomPopup 
+      visible={errorPopupVisible}
+      onDismiss={() => {
+        setErrorPopupVisible(false);
+      }}
+      icon="alert-circle-outline"
+      message={errpopupMessage || "Action Failed!"}
+    />
+  </View>
+)}
+
         <View style={styles.splitView}>
-          <NavBar />
+{userType === 'mentor' ? <NavBarMentor /> : <NavBar />}
 
           {/* Left Pane */}
           <View style={styles.leftPane}>
             <Text style={styles.header}>My Sessions</Text>
-                       <Text style={styles.title}>{`Your Sessions With ${FirstName}` || "Untitled"}</Text>
+                       <Text style={styles.title}>{`Your Sessions With ${FirstName} ${LastName}` || "Untitled"}</Text>
 
             {sessions.map((session) => (
               <TouchableOpacity
@@ -92,9 +211,14 @@ const [showSessionForm, setShowSessionForm] = useState(false);
                 onPress={() => setSelectedId(session.sessionID)}
               >
 
-                <Card style={{ padding: 12 }}>
+                <Card style={styles.sessionCard}>
                   <Text style={styles.subtitle}>
-                     
+                  <TouchableOpacity 
+                    style={styles.archiveIcon}
+                    onPress={() => handleSessionArchive(session.sessionID)}
+                  >
+                    <Ionicons name="archive-outline" size={20} />
+                  </TouchableOpacity>
                     {session.scheduledAt  ? new Date(session.scheduledAt).toLocaleString('en-US', {
                       year: 'numeric',
                       month: 'long',
@@ -105,14 +229,12 @@ const [showSessionForm, setShowSessionForm] = useState(false);
                     })
                   : 'No date set'} 
                   </Text>
-                  <Ionicons name="trash-outline" size={24} color="#003D5B"></Ionicons>
                 </Card>
               </TouchableOpacity>
             ))}
             <TouchableOpacity
                 onPress={() => {
-                  //setIsAddingNew(true);
-                 // setSelectedId(null);
+                 setSelectedId("add"); // ⬅️ flag to trigger empty session
                 }}
                 style={styles.addButton}
               >
@@ -126,42 +248,47 @@ const [showSessionForm, setShowSessionForm] = useState(false);
           </View>
   
           {/* Right Pane */}
-          <View style={styles.rightPane}>
-       {!showSessionForm && selectedId === "new" ? (
-  <View style={{ padding: 20 }}>
-    <Text style={styles.subtitle}>
-      You haven't had any sessions with this mentor yet.
-    </Text>
-    <TouchableOpacity
-      style={styles.scheduleButton}
-      onPress={() => {
-        console.log("Button pressed, showing session form");
-        setShowSessionForm(true);
+       <View style={styles.rightPane}>
+  {selectedId === "new" && !showSessionForm ? (
+    <View style={{ padding: 20 }}>
+      <Text style={styles.subtitle}>You haven't had any sessions with this mentor yet.</Text>
+      <TouchableOpacity
+        style={styles.scheduleButton}
+        onPress={() => setShowSessionForm(true)}
+      >
+        <Text style={styles.buttonText}>Schedule your first session</Text>
+      </TouchableOpacity>
+    </View>
+  ) : ((selectedId === "new" && showSessionForm) || selectedId === "add") ? (
+    <Session
+      hideNavbar={true}
+      sessionMode={selectedId === "new" ? "new" : "add"}
+      setSessionId={setSelectedId}
+      onSessionCreated={(id) => {
+        console.log("New session created with ID:", id);
+        refreshSessions(id);
       }}
-    >
-      <Text style={styles.buttonText}>Schedule your first session</Text>
-    </TouchableOpacity>
-  </View>
-) : showSessionForm || selectedId === "new" ? (
-  <Session
-    hideNavbar={true}
-    sessionMode="new"  
-    jobseekerID={jobseekerID}
-    mentorID={mentorID}
-    JourneyID={JourneyID}
-  />
-) : (
-  <Session
-    hideNavbar={true}
-    sessionId={selectedId}
-    sessionMode="edit"
-    jobseekerID={jobseekerID}
-    mentorID={mentorID}
-    JourneyID={JourneyID}
-  />
-)}
+      jobseekerID={jobseekerID}
+      mentorID={mentorID}
+      JourneyID={JourneyID}
+      OtherUserName={FirstName}
+    />
+) : selectedId && selectedId !== "add" && selectedId !== "new" ? (
+      <Session
+      hideNavbar={true}
+      sessionId={selectedId}
+      sessionMode="edit"
+      jobseekerID={jobseekerID}
+      mentorID={mentorID}
+      JourneyID={JourneyID}
+      OtherUserName={FirstName}
+    />
+  ) : null}
+</View>
 
-          </View>
+
+
+
         </View>
       </ScrollView>
 
@@ -307,4 +434,12 @@ const styles = StyleSheet.create({
       color: "#b9a7f2",
       fontWeight: "600",
     },
+    sessionCard:{
+      padding: 12 ,
+      flexDirection:'row',
+      alignContent:'space-evenly'
+    },
+    archiveIcon:{
+      margin:10
+    }
 });

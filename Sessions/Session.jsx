@@ -1,4 +1,4 @@
-import { View, Text,Dimensions, ScrollView, Image,Button, TouchableOpacity, Platform, StyleSheet, SafeAreaView, Alert } from "react-native";
+import { View, Text,Dimensions, ScrollView, Image,Button,Modal, TouchableOpacity, Platform, StyleSheet, SafeAreaView, Alert } from "react-native";
 import NavBar from "../NavBar";
 import { useEffect, useState } from "react";
 import { useFonts } from 'expo-font';
@@ -9,26 +9,58 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import GeminiChat from '../GeminiChat';
 import { useContext } from 'react';
 import { UserContext } from '../UserContext'; 
-import { Card ,RadioButton,TextInput,Appbar,Icon } from 'react-native-paper';
+import { Card ,RadioButton,TextInput,Appbar,Icon,Checkbox,HelperText } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import ModalRN  from 'react-native-modal';
   const { width } = Dimensions.get('window');
   import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Dropdown } from 'react-native-element-dropdown';
 import { useNavigation } from "@react-navigation/native";
 import CalendarScreen from '../CalendarScreen'
 import StarRating from 'react-native-star-rating-widget';
 import { FileUp } from 'lucide-react-native'; // optional icon
 import FileSelectorModal from "../FilesComps/FileSelectorModal";
+import NavBarMentor from "../Mentor/NavBarMentor";
+import SessionFiles from "../FilesComps/SessionFiles";
+import CustomPopup from "../CustomPopup";
+import { db } from "../firebaseConfig"; // או איפה שהגדרת את החיבור ל־firebase
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useRoute } from '@react-navigation/native';
 
-export default function Session({ hideNavbar , sessionId, sessionMode, jobseekerID, mentorID, JourneyID }){
-    const { Loggeduser } = useContext(UserContext);
-    const apiUrlStart ="http://localhost:5062"
-console.log("navbar",hideNavbar ,"sessid" ,sessionId,"isnew", sessionMode, jobseekerID, mentorID, JourneyID);
+export default function Session(props){
+    const route = useRoute();
+
+   // Merge props from route (mobile) and direct props (web)
+  const {
+    hideNavbar,
+    sessionId,
+    sessionMode,
+    jobseekerID,
+    mentorID,
+    JourneyID,
+    setSessionId,
+    OtherUserName,
+    onSessionCreated,
+  } = {
+    ...props,
+    ...(route.params || {}),
+  };  
+  const { Loggeduser } = useContext(UserContext);
+
+const apiUrlStart = Platform.OS === 'android'
+  ? "http://172.20.10.9:5062"
+  : "http://localhost:5062";
+  console.log("navbar", hideNavbar, "sessid", sessionId, "isnew", sessionMode, jobseekerID, mentorID, JourneyID, OtherUserName, onSessionCreated);
   const navigation = useNavigation();
 
 
+ // Optional: If you need to track files in parent component
+  const [sessionFileCount, setSessionFileCount] = useState(0);
 
+  // Optional callback to track file changes in parent
+  const handleFilesChange = (files) => {
+    setSessionFileCount(files.length);
+    // You can do other things here like updating a badge, etc.
+  };
     // Form state
     const [selectedDateTime, setSelectedDateTime] = useState(null);
     const [selectedDateTimeForView, setSelectedDateTimeForView] = useState(null);
@@ -43,8 +75,34 @@ console.log("navbar",hideNavbar ,"sessid" ,sessionId,"isnew", sessionMode, jobse
     const [isSubmitting, setIsSubmitting] = useState(false);
 const [fileSelectorVisible, setFileSelectorVisible] = useState(false);
 
+
+const [wasManuallyChanged, setWasManuallyChanged] = useState(false);
+
 // NEW: Add a state to track the current session being displayed
 const [currentSessionId, setCurrentSessionId] = useState(sessionId);
+
+const [tasks, setTasks] = useState([]);
+const [newTaskTitle, setNewTaskTitle] = useState('');
+const [newTaskDesc, setNewTaskDesc] = useState('');
+const [selectedTask, setSelectedTask] = useState(null);
+const [isTaskModalVisible, setIsTaskModalVisible] = useState(false);
+const [completedTasks, setCompletedTasks] = useState([]);
+const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+
+const [successPopupVisible, setSuccessPopupVisible] = useState(false);
+const [popupMessage, setPopupMessage] = useState('');
+
+const [errorPopupVisible, setErrorPopupVisible] = useState(false);
+const [errpopupMessage, setErrPopupMessage] = useState('');
+
+useEffect(() => {
+    setWasManuallyChanged(false); // reset when session changes
+
+  if (sessionId) {
+    getTasks(sessionId);
+  }
+}, [sessionId]);
+
 
 // FIXED: Reset all form states when sessionId changes
 useEffect(() => {
@@ -69,96 +127,17 @@ useEffect(() => {
     }
 }, [sessionId, currentSessionId]);
 
-const handleFileSelect = async (selectedFile) => {
-    try {
-      let fileId;
-
-      if (selectedFile.file) {
-        // קובץ חדש – נעלה אותו עם FormData
-        fileId = await uploadSessionFile(selectedFile, true);
-      } else if (selectedFile.fileIdFromDB) {
-        // קובץ קיים – רק קישור לסשן
-        const res = await fetch(
-          `${apiUrlStart}/api/Users/UploadSessionFile?sessionId=${sessionId}&saveToFileList=false`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              fileID: selectedFile.fileIdFromDB,
-              fileName: selectedFile.fileName,
-              filePath: selectedFile.filePath,
-              fileType: "Resume",
-              userID: Loggeduser.id,
-            }),
-          }
-        );
-
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || "Link failed");
-
-        fileId = result.fileID;
-      }
-
-      // הוספה לרשימה המוצגת
-      setAttachedFiles((prev) => [
-        ...prev,
-        {
-          fileID: fileId,
-          fileName: selectedFile.fileName || selectedFile.name,
-        },
-      ]);
-    } catch (err) {
-      Alert.alert("Error", "Failed to attach file.");
-    } finally {
-      setFileSelectorVisible(false);
-    }
-  };
-
-  const uploadSessionFile = async (file, saveToProfile = true) => {
-    try {
-      const formData = new FormData();
-
-      // 🧠 טיפול ב־Web לעומת Mobile
-      if (Platform.OS === "web") {
-        formData.append("file", file.file, file.name);
-      } else {
-        formData.append("file", {
-          uri: file.uri,
-          name: file.name,
-          type: file.mimeType || "application/pdf",
-        });
-      }
-
-      // מוסיפים פרטים לשאילתה
-      const uploadUrl = `${apiUrlStart}/api/Users/upload-file?userId=${Loggeduser.id}&sessionId=${sessionId}&saveToFileList=${saveToProfile}`;
-
-      const response = await fetch(uploadUrl, {
-        method: "POST",
-        body: formData,
-      });
-
-      const resultText = await response.text();
-      if (!response.ok) throw new Error(resultText);
-
-      const result = JSON.parse(resultText);
-      return result.fileId;
-    } catch (err) {
-      console.error("uploadSessionFile error:", err);
-      throw err;
-    }
-  };
-
     // FIXED: Separate useEffect for fetching data after sessionId and states are reset
     useEffect(() => {
         if (sessionMode==="edit" && sessionId && sessionId === currentSessionId) {
             console.log('Fetching data for session:', sessionId);
             fetchSessionDetails();
             fetchFeedbackDetails();
+                fetchCompletedTasks(); // 👈 Add this
+
         }
-    }, [sessionId, sessionMode, currentSessionId]);
-    
+    }, [sessionId, sessionMode, currentSessionId,Loggeduser.id]);
+
     const [userType, setUserType] = useState('');
 
     const [fontsLoaded] = useFonts({
@@ -228,11 +207,30 @@ useEffect(() => {
   console.log(error)
     }
 }     
+//fetch completed tasks 
+const fetchCompletedTasks = async () => {
+  try {
+    const res = await fetch(
+      `${apiUrlStart}/api/Session/CompletedTasks?sessionId=${sessionId}&jobSeekerId=${Loggeduser.id}`
+    );
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Failed to fetch completed tasks: ${errorText}`);
+    }
+
+    const taskIds = await res.json(); // Expected: array of task IDs
+    setCompletedTasks(taskIds || []);
+  } catch (err) {
+    console.error("Error fetching completed tasks:", err);
+  }
+};
+
 
 //fetch existing feedback details for edit mode
 const fetchFeedbackDetails = async () => {
   try {
-    const response = await fetch(`${apiUrlStart}/api/Session/feedback/${sessionId}`);
+    const response = await fetch(`${apiUrlStart}/api/Session/feedback/${sessionId}/${Loggeduser.id}`);
     if (response.ok) {
       const data = await response.json();
       setFeedbackText(data.comment);
@@ -259,14 +257,20 @@ const handleAddFeedback = async (sessionId, submittedBy, rating, comment) => {
         if (response.ok) {
             const result = await response.json();
             console.log("Feedback submitted successfully:", result.message);
+            setPopupMessage("Feedback submitted successfully!");
+            setSuccessPopupVisible(true);
             return true;
         } else {
             const errorData = await response.json();
             console.error("Error submitting feedback:", errorData);
+              setErrPopupMessage("Feedback Submission Failed!");
+            setErrorPopupVisible(true);
             return false;
         }
     } catch (err) {
         console.error("Error submitting feedback:", err);
+           setErrPopupMessage("Something went wrong while submitting feedback.");
+    setErrorPopupVisible(true);
         return false;
     }
 };
@@ -288,19 +292,33 @@ const handleAddFeedback = async (sessionId, submittedBy, rating, comment) => {
 });
 
 setSelectedDateTimeForView(formattedDate);
+if (!wasManuallyChanged) {
+  setSelectedDateTime(sessionData.scheduledAt);
+}
 
-        setSelectedDateTime(sessionData.scheduledAt);
         setSessionLink(sessionData.meetingUrl || '');
-        setNotes(sessionData.notes || '');
+try {
+  const parsedNotes = sessionData.notes ? JSON.parse(sessionData.notes) : {};
+  const userNote = parsedNotes[userType] || '';
+  setNotes(userNote);
+} catch (error) {
+  console.warn('Failed to parse notes JSON:', error);
+  setNotes('');
+}
         setAttachedFiles(sessionData.files || []);
         console.log('session data:',sessionData,sessionLink,selectedDateTime)
 
       }
     } catch (error) {
       console.error('Error fetching session details:', error);
-      Alert.alert('Error', 'Failed to load session details');
+         setErrPopupMessage("Failed to load session details");
+    setErrorPopupVisible(true);
     }
   };
+
+  useEffect(() => {
+  console.log("🔁 selectedDateTime state updated:", selectedDateTime);
+}, [selectedDateTime]);
 
   // Handle form submission
  // Fixed handleSubmit function - focus only on session data
@@ -312,14 +330,38 @@ const handleSubmit = async () => {
   try {
     // Basic validation
     if (!selectedDateTime) {
+        console.log('⛔ selectedDateTime is missing!');
+
       Alert.alert('Missing Information', 'Please select a date and time for the session');
       setIsSubmitting(false);
       return;
     }
+if (!isValidMeetingLink(sessionLink)) {
+  Alert.alert("Invalid Meeting Link", "Please enter a valid URL for the meeting link.");
+  setIsSubmitting(false);
+  return;
+}
 
+
+      // Check required parameters for new/add sessions
+    if ((sessionMode === 'new' || sessionMode === 'add') && (!jobseekerID || !mentorID)) {
+      console.log('❌ Missing jobseekerID or mentorID for new session');
+      console.log('jobseekerID:', jobseekerID, 'mentorID:', mentorID);
+      Alert.alert('Missing Information', 'Jobseeker ID and Mentor ID are required for new sessions');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Check JourneyID
+    if (!JourneyID) {
+      console.log('❌ Missing JourneyID');
+      Alert.alert('Missing Information', 'Journey ID is required');
+      setIsSubmitting(false);
+      return;
+    }
     // Prepare session data - simplified and consistent
     let sessionData = {
-      sessionID: sessionId, // Make sure this matches your API expectation
+      sessionID: (sessionMode === 'edit') ? sessionId : 0,
       JourneyID: JourneyID,
       scheduledAt: selectedDateTime, // Ensure this is ISO string format
       meetingUrl: sessionLink || null,
@@ -330,11 +372,12 @@ const handleSubmit = async () => {
     let response;
     let successMessage;
 
-    switch (sessionMode) {
+   switch (sessionMode) {
       case 'new':
+      case 'add':
         // Create new session with mentor-jobseeker relationship
-        console.log("Creating new session:", sessionData);
-        response = await fetch(`${apiUrlStart}/api/Session/userAddSessions/${jobseekerID}/${mentorID}`, {
+        console.log("Creating or adding a new session:", sessionData);
+        response = await fetch(`${apiUrlStart}/api/Session/userAddSessions/${jobseekerID}/${mentorID}?userType=${userType}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -344,27 +387,15 @@ const handleSubmit = async () => {
         successMessage = 'Session created successfully!';
         break;
 
-      case 'add':
-        // Add new session to existing relationship
-        console.log("Adding session to existing relationship:", sessionData);
-        response = await fetch(`${apiUrlStart}/api/Session/add`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(sessionData)
-        });
-        successMessage = 'New session added successfully!';
-        break;
-
       case 'edit':
         // Update existing session
         console.log("Updating existing session:", sessionData);
-        response = await fetch(`${apiUrlStart}/api/Session/update/${sessionId}`, {
+        response = await fetch(`${apiUrlStart}/api/Session/update/${sessionId}?userType=${userType}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
           },
+  
           body: JSON.stringify(sessionData)
         });
         successMessage = 'Session updated successfully!';
@@ -374,65 +405,107 @@ const handleSubmit = async () => {
         throw new Error('Invalid session mode');
     }
 
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
+
 
     if (response.ok) {
-      const result = await response.text(); // Get response as text first
-      console.log('Success response:', result);
+      const result = await response.text();
+      console.log('✅ Response text:', result);
       
-      Alert.alert(
-        'Success', 
-        successMessage,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              navigation.goBack();
-            }
-          }
-        ]
-      );
+      // Try to parse response for session ID
+      let newSessionId = null;
+      if (result) {
+        try {
+          const parsedResult = JSON.parse(result);
+          console.log('✅ Parsed response:', parsedResult);
+          newSessionId = parsedResult.sessionID || parsedResult.sessionId || parsedResult.id;
+          console.log('✅ Extracted session ID:', newSessionId);
+        } catch (parseError) {
+          console.warn('⚠️ Failed to parse session ID from response:', parseError);
+          console.warn('⚠️ Raw response:', result);
+        }
+      }
+
+      console.log('✅ Showing success - executing callback immediately');
+
+      // Execute the callback immediately instead of waiting for alert
+      if (newSessionId && (sessionMode === 'new' || sessionMode === 'add')) {
+        console.log('✅ Setting new session ID:', newSessionId);
+        setCurrentSessionId(newSessionId);
+
+        if (typeof onSessionCreated === 'function') {
+          onSessionCreated(newSessionId);
+          console.log('✅ onSessionCreated called successfully');
+        } else if (typeof setSessionId === 'function') {
+          console.log('✅ Calling setSessionId instead...');
+          setSessionId(newSessionId);
+        }
+      }
+
+      // Show success popup
+setPopupMessage(successMessage);
+setSuccessPopupVisible(true);
     } else {
       // Get error details
       const errorText = await response.text();
-      console.log('Error response:', errorText);
-      console.log('Request data sent:', sessionData);
+      console.error('❌ Error response text:', errorText);
+      console.error('❌ Request data sent:', JSON.stringify(sessionData, null, 2));
       
       throw new Error(errorText || `HTTP ${response.status}: Failed to process session`);
     }
 
   } catch (error) {
-    console.error('Error submitting session:', error);
-    console.error('Error details:', error.message);
+    console.error('💥 Error in handleSubmit message:', error.message);
     
-    Alert.alert(
-      'Error', 
-      `Failed to submit session: ${error.message}`
-    );
+      setErrPopupMessage("Session Submission Failed!");
+            setErrorPopupVisible(true);
   } finally {
+    console.log('🏁 Setting isSubmitting to false');
     setIsSubmitting(false);
   }
 };
 
-// Also fix the date handling in handleMeetingSaved
+// Enhanced handleMeetingSaved with more logging
 const handleMeetingSaved = (meetingDetails) => {
-  console.log('Meeting set to:', meetingDetails);
+  console.log('📅 handleMeetingSaved called with:', meetingDetails);
   
-  // Create proper ISO date string
-  const dateObj = new Date(`${meetingDetails.date}T${String(meetingDetails.time.hours).padStart(2, '0')}:${String(meetingDetails.time.minutes).padStart(2, '0')}:00`);
-  
-  // Make sure it's a valid date
-  if (isNaN(dateObj.getTime())) {
-    Alert.alert('Error', 'Invalid date selected');
+  if (!meetingDetails) {
+    console.error('❌ No meeting details provided');
     return;
   }
   
-  const isoString = dateObj.toISOString();
-  setSelectedDateTime(isoString);
-  console.log('Selected DateTime set to:', isoString);
-};
+  if (!meetingDetails.date || !meetingDetails.time) {
+    console.error('❌ Invalid meeting details structure:', meetingDetails);
+    Alert.alert('Error', 'Invalid meeting details');
+    return;
+  }
+  
+  try {
+    // Create proper ISO date string
+    const dateString = `${meetingDetails.date}T${String(meetingDetails.time.hours).padStart(2, '0')}:${String(meetingDetails.time.minutes).padStart(2, '0')}:00`;
+    console.log('📅 Created date string:', dateString);
+    
+    const dateObj = new Date(dateString);
+    console.log('📅 Created date object:', dateObj);
+    
+    // Make sure it's a valid date
+    if (isNaN(dateObj.getTime())) {
+      console.error('❌ Invalid date created from:', dateString);
+      Alert.alert('Error', 'Invalid date selected');
+      return;
+    }
+    
+    const isoString = dateObj.toISOString();
+    console.log('📅 ISO string created:', isoString);
+    
+    setSelectedDateTime(isoString);
+    setWasManuallyChanged(true); // ✅ indicate manual change
 
+    console.log('✅ selectedDateTime updated to:', isoString);
+  } catch (error) {
+    console.error('❌ Error in handleMeetingSaved:', error);
+    Alert.alert('Error', 'Failed to set meeting time');
+  }
+};
 
   const [showChat, setShowChat] = useState(false);
     const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
@@ -441,6 +514,157 @@ const handleMeetingSaved = (meetingDetails) => {
             return <Image source={require('../assets/prepWise Logo.png')} style={appliedStyles.logo} />;
         }
     };
+
+const canShowFeedback = () => {
+  return sessionMode === "edit" && sessionId; // only show feedback and tasks for mentor for existing sessions
+};
+
+
+const getTasks = async (sessionId) => {
+  try {
+    const res = await fetch(`${apiUrlStart}/api/Session/${sessionId}/tasks`);
+    if (!res.ok) throw new Error("Failed to load tasks");
+    
+    const data = await res.json();
+
+    // 🛠️ Normalize field names for React:
+    const formattedTasks = data.map(task => ({
+      id: task.TaskID,                      // 👈 Fix here
+      title: task.Title,
+      desc: task.Description,
+      isArchived: task.IsArchived,
+      createdAt: task.CreatedAt,
+      sessionID: task.SessionID,
+    }));
+
+    setTasks(formattedTasks);
+    console.log("tasks:", formattedTasks);
+  } catch (err) {
+    console.error("Error fetching tasks:", err);
+  }
+};
+
+const addTask = async () => {
+  if (newTaskTitle.trim() === "") return;
+
+  try {
+    const res = await fetch(`${apiUrlStart}/api/Session/${sessionId}/tasks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        title: newTaskTitle, 
+        description: newTaskDesc,
+        jobSeekerID:jobseekerID
+       })
+    });
+
+    if (!res.ok) throw new Error("Failed to add task");
+    const data = await res.json(); // תקבלי פה את ה-taskID החדש מהשרת
+
+    // 🔥 שמירה בפיירבייס
+    await addDoc(collection(db, "tasks"), {
+      taskID: data.taskID,         // מתוך השרת שלך
+      sessionID: Number(sessionId), // ודאי שזה מספר
+      createdAt: serverTimestamp() // או new Date() אם את רוצה תאריך מקומי
+    });
+
+    // 🚀 טען משימות מחדש
+    getTasks(sessionId);
+
+    // נקה שדות
+    setNewTaskTitle("");
+    setNewTaskDesc("");
+  } catch (err) {
+    console.error("Error adding task:", err);
+  }
+};
+
+const toggleTaskCompletion = async (taskId) => {
+  const alreadyCompleted = completedTasks.includes(taskId);
+  const newStatus = !alreadyCompleted;
+
+  try {
+    const res = await fetch(`${apiUrlStart}/api/Session/TaskCompletion`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        taskID: taskId,
+        jobSeekerID: Loggeduser.id,
+        isCompleted: newStatus
+      })
+    });
+
+   if (!res.ok) {
+  const errorText = await res.text(); // try parsing
+  throw new Error(`Failed to update task completion: ${errorText}`);
+}
+
+
+    setCompletedTasks(prev =>
+      newStatus
+        ? [...prev, taskId]
+        : prev.filter(id => id !== taskId)
+    );
+  } catch (err) {
+    console.error("Error updating completion:", err);
+  }
+};
+
+// EDIT button handler
+const handleEditTask = (taskId, currentTitle, currentDesc) => {
+  setSelectedTask({ id: taskId, title: currentTitle, desc: currentDesc });
+  setIsEditModalVisible(true);
+};
+
+// Call backend to update task
+const confirmEditTask = async (taskId, updatedTitle, updatedDesc) => {
+  try {
+    const res = await fetch(`${apiUrlStart}/api/Session/${sessionId}/tasks/${taskId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: updatedTitle, description: updatedDesc }),
+    });
+
+    if (res.ok) {
+      setTasks(prev =>
+        prev.map(task =>
+          task.id === taskId ? { ...task, title: updatedTitle, desc: updatedDesc } : task
+        )
+      );
+    } else {
+      Alert.alert('Error', 'Failed to update task');
+    }
+  } catch (err) {
+    console.error('Update task error:', err);
+  }
+};
+
+// DELETE button handler
+const handleDeleteTask = async (taskId) => {
+  try {
+    const res = await fetch(`${apiUrlStart}/api/Session/${sessionId}/tasks/${taskId}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) {
+      setTasks(prev => prev.filter(task => task.id !== taskId));
+    } else {
+      Alert.alert('Error', 'Failed to delete task');
+    }
+  } catch (err) {
+    console.error('Delete task error:', err);
+  }
+};
+
+
+const isValidMeetingLink = (link) => {
+  if (!link) return true; // Allow empty — it's optional
+
+  // General URL validation regex
+  const urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(:\d+)?(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
+
+  return urlRegex.test(link);
+};
 
  // Get button text based on session mode
     const getSubmitButtonText = () => {
@@ -464,27 +688,78 @@ const handleMeetingSaved = (meetingDetails) => {
     style={{ flex: 1 }}
   >
 
+
                 {/** logo component is here only for mobile*/}
                 <LogoImage />
   
+  {successPopupVisible && (
+  <View style={styles.overlay}>
+    <CustomPopup 
+      visible={successPopupVisible}
+      onDismiss={() => {
+        setSuccessPopupVisible(false);
+      }}
+      icon="check-circle"
+      message={popupMessage || "Action completed successfully!"}
+    />
+  </View>
+)}
+
+{errorPopupVisible && (
+  <View style={styles.overlay}>
+    <CustomPopup 
+      visible={errorPopupVisible}
+      onDismiss={() => {
+        setErrorPopupVisible(false);
+      }}
+      icon="alert-circle-outline"
+      message={errpopupMessage || "Action Failed!"}
+    />
+  </View>
+)}
                 <View style={appliedStyles.Topview}>
               
         <Card style={appliedStyles.screenCard}>
         <Text style={appliedStyles.title}>Your Session Space</Text>
-          <Card.Title 
-            title={<Text style={appliedStyles.subtitle}>Schedule, share, prep, reflect —all in one place. </Text>}
-           />
-          <Card.Title 
-            title={<Text style={appliedStyles.subtitle}> Come back anytime to update! </Text>}
-           />
-
+            <Text style={[appliedStyles.subtitle, { flexWrap: 'wrap',marginBottom:6  }]}>
+    Schedule, share, prep, reflect — all in one place.
+  </Text>
+   <Text style={[appliedStyles.subtitle, { flexWrap: 'wrap',marginBottom:10 }]}>
+    Come back anytime to update!
+  </Text>
              <Text style={appliedStyles.subtitle}>Date&Time 🗓️</Text>
-             <Text style={appliedStyles.subtitlesmall}>Pick a time that works for you. We’ll send reminders and let your mentor know too!</Text>
+             {sessionMode === 'edit' && selectedDateTimeForView && (
+              <Card>
+  <View style={appliedStyles.meetingInfo}>
+    <Text style={appliedStyles.subtitle}>
+      A meeting for this session was scheduled for:
+    </Text>
+    <View style={appliedStyles.HighlightedText}>
+    <Text >
+      {selectedDateTimeForView}
+    </Text>
+    </View>
+    <View >
+    <Text style={[appliedStyles.subtitlesmall, { color: '#555' }]}>
+      If you'd like to change it, you can pick a new time below or talk to {OtherUserName} first.
+    </Text>
+    </View>
+  </View>
+  </Card>
+)}
+
+             <Text style={appliedStyles.subtitlesmall}>Pick a time that works for you. We’ll send reminders and let {OtherUserName} know too!</Text>
+           <Text style={[appliedStyles.subtitlesmall, { color: '#888', fontStyle: 'italic', marginBottom: 8 }]}>
+  Both sides can view and update the meeting date&time.
+</Text>
                          <CalendarScreen onMeetingSaved={handleMeetingSaved} />
 
                <View style={appliedStyles.inputBlock}>
 <Text style={appliedStyles.subtitle}>Link 🔗</Text>
 <Text style={appliedStyles.subtitlesmall}>Got the link already? Drop it here. If not — you can come back and add it anytime.</Text>
+<Text style={[appliedStyles.subtitlesmall, { color: '#888', fontStyle: 'italic', marginBottom: 8 }]}>
+  Both sides can view and update the meeting link.
+</Text>
 
 <TextInput 
                     style={appliedStyles.halfInput} 
@@ -496,52 +771,34 @@ const handleMeetingSaved = (meetingDetails) => {
                     }}
                     mode="outlined"
                      />
-</View>            
-{/**FILES SECTION */}
-      <Text style={appliedStyles.subtitle}>Attach Files 📂</Text>
-      <Text style={appliedStyles.subtitlesmall}>Want to share a resume, portfolio, or notes before the session? Upload here — you can always add more later.</Text>
-
-
-      <Card style={{ padding: 20, alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#ccc', borderRadius: 12 }}>
-   
-<View style={{ alignSelf: 'center' }}>
-  <FileUp size={32} color="#BFB4FF" />
-</View>
-      <Text style={{ marginTop: 10, color: '#555', fontWeight: '600',textAlign: 'center' }}>Upload a file</Text>
-      <Text style={{ fontSize: 12, color: '#999',textAlign: 'center' }}>(PDF, Image, or Docs — optional)</Text>
-<TouchableOpacity
-                  style={appliedStyles.loginButton}
-                  onPress={() => setFileSelectorVisible(true)}
-                >
-                 <Text style={appliedStyles.loginText}> Choose File </Text>
-                </TouchableOpacity>
-
-                {Loggeduser?.id && (
-                  <FileSelectorModal
-                    visible={fileSelectorVisible}
-                    onClose={() => setFileSelectorVisible(false)}
-                    userId={Loggeduser.id}
-                    onFileSelect={handleFileSelect}
-                  />
-                )}    </Card>
+                       <HelperText type="error" visible={!isValidMeetingLink(sessionLink)}>
+        Please Enter A Valid Meeting Link
+      </HelperText>
+</View>    
 
 
 
-
-
-
-{/** */}
+ <SessionFiles
+        sessionId={sessionId}
+        Loggeduser={Loggeduser}
+        apiUrlStart={apiUrlStart}
+        appliedStyles={appliedStyles}
+        onFilesChange={handleFilesChange} // Optional callback
+      />
 
 {/**FEEDBACK SECTION */}
+{canShowFeedback() && (
+  <>
 <Text style={appliedStyles.subtitle}>Give Feedback 📃</Text>
       <Text style={appliedStyles.subtitlesmall}>How was the session? </Text>
- 
-       <Card style={{ padding: 20, alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#ccc', borderRadius: 12 }}>
-
-<Text style={appliedStyles.subtitlesmall}>Anything you'd like to share?</Text>
-
+ <Text style={[appliedStyles.subtitlesmall,{color: '#888', fontStyle: 'italic'}]}>
+   Your Feedback is private.
+</Text>
+<View style={{flex: 1}}>
+       <Card style={appliedStyles.feedbackCard}>
+<Text style={[appliedStyles.subtitlesmall,{alignSelf:'center'}]}>Anything you'd like to share?</Text>
 <TextInput 
-                    style={appliedStyles.halfInput} 
+                    style={[appliedStyles.halfInput,{alignSelf:'center'}]} 
                     placeholder="The session was really helpful because..."
                     placeholderTextColor="#888"
                      value={feedbackText}
@@ -551,7 +808,7 @@ const handleMeetingSaved = (meetingDetails) => {
                     mode="outlined"
                      />
 
-<Text style={appliedStyles.subtitlesmall}>Slide through the stars to rate(
+<Text style={[appliedStyles.subtitlesmall,{alignSelf:'center'}]}>Slide through the stars to rate(
         1 – Needs work,
         2 – Okay,
         3 – Good,
@@ -561,18 +818,195 @@ const handleMeetingSaved = (meetingDetails) => {
       <StarRating
         rating={rating}
         onChange={setRating}
+        style={{alignSelf:'center'}}
       />
     <TouchableOpacity onPress={()=>handleAddFeedback(sessionId,Loggeduser.id,rating,feedbackText)} style={appliedStyles.loginButton}>
   <Text style={appliedStyles.loginText}>
     {existingFeedback ? 'Update Feedback' : 'Add Feedback'}
   </Text>
 </TouchableOpacity>
-
 </Card>
+</View>
+  </>
+)}
+
+{/** TASKS SECTION */}
+<>
+  <Text style={appliedStyles.subtitle}>Tasks 📌</Text>
+  <Text style={appliedStyles.subtitlesmall}>
+    {userType === 'mentor'
+      ? 'Add tasks for your mentee to work on between sessions.'
+      : 'Here are your tasks – mark them as done when completed!'}
+  </Text>
+
+  <Card style={appliedStyles.taskCard}>
+    {/* Mentor: Add New Task */}
+    {userType === 'mentor' && (
+      <>
+      <View style={appliedStyles.newTaskContainer}>
+        <TextInput
+          style={[appliedStyles.halfInput, appliedStyles.taskTitleArea]}
+          placeholder="Task Title"
+          placeholderTextColor="#888"
+          value={newTaskTitle}
+          onChangeText={setNewTaskTitle}
+          mode="outlined"
+          contentStyle={appliedStyles.inputContent}
+        />
+        <TextInput
+          style={[appliedStyles.halfInput, appliedStyles.taskTextArea]}
+          placeholder="Task Description"
+          placeholderTextColor="#888"
+          value={newTaskDesc}
+          onChangeText={setNewTaskDesc}
+          mode="outlined"
+          multiline
+          contentStyle={appliedStyles.inputContent}
+        />
+        <TouchableOpacity onPress={addTask} style={appliedStyles.loginButton}>
+          <Text style={appliedStyles.loginText}>Add Task</Text>
+        </TouchableOpacity>
+        </View>
+      </>
+    )}
+
+ {/* Task List */}
+{tasks.length === 0 ? (
+  <Text style={appliedStyles.subtitlesmall}>No tasks yet.</Text>
+) : (
+  <>
+    {/* Title for mentors */}
+    {userType === 'mentor' && (
+      <Text style={[appliedStyles.subtitlesmall, { marginTop: 16 }]}>
+        Existing Tasks 👇🏼
+      </Text>
+    )}
+
+    {/* Mentor layout - 2 per row */}
+   <View style={{
+  flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+  flexWrap: 'wrap',
+  justifyContent: Platform.OS === 'web' ? 'space-between' : 'flex-start'
+}}>
+  {tasks.map(task => (
+    <View
+      key={task.id}
+      style={{
+        width: Platform.OS === 'web' && userType === 'mentor' ? '48%' : '100%',
+        marginBottom: 12
+      }}
+    >
+
+          {userType === 'jobSeeker' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+              <Checkbox
+                status={completedTasks.includes(task.id) ? 'checked' : 'unchecked'}
+                onPress={() => toggleTaskCompletion(task.id)}
+                color="#BFB4FF"
+              />
+              <TouchableOpacity onPress={() => {
+                setSelectedTask(task);
+                setIsTaskModalVisible(true);
+              }}>
+                <Text style={appliedStyles.taskTitleLink}>{task.title}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Card style={appliedStyles.mentorTaskCard}>
+              {/* 📌 icon top right */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between'}}>
+                <Text style={appliedStyles.taskTitle}>{task.title}</Text>
+<Text style={{ fontSize: 10, color: '#BFB4FF', marginTop: 4 }}>●</Text>
+              </View>
+
+              <Text style={appliedStyles.taskDesc}>{task.desc}</Text>
+              <View style={appliedStyles.taskActions}>
+                <TouchableOpacity
+                  onPress={() => handleDeleteTask(task.id)}
+                  style={appliedStyles.deleteButton}
+                >
+                  <Text style={appliedStyles.deleteButtonText}>🗑 Delete</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleEditTask(task.id, task.title, task.desc)}
+                  style={appliedStyles.deleteButton}
+                >
+                  <Text style={appliedStyles.deleteButtonText}>✏️ Edit</Text>
+                </TouchableOpacity>
+              </View>
+            </Card>
+          )}
+        </View>
+      ))}
+    </View>
+  </>
+)}
+</Card>
+
+  {/* JOB SEEKER: View Task Details Modal */}
+  <Modal
+    visible={isTaskModalVisible}
+    animationType="slide"
+    transparent={true}
+    onRequestClose={() => setIsTaskModalVisible(false)}
+  >
+    <View style={appliedStyles.modalOverlay}>
+      <View style={appliedStyles.modalContent}>
+        <Text style={appliedStyles.subtitle}>Task Details</Text>
+        <Text style={appliedStyles.subtitlesmall}>{selectedTask?.title}</Text>
+        <Text style={appliedStyles.subtitlesmall}>{selectedTask?.desc}</Text>
+
+        <TouchableOpacity onPress={() => setIsTaskModalVisible(false)} style={appliedStyles.loginButton}>
+          <Text style={appliedStyles.loginText}>Close</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+
+  {/* MENTOR: Edit Task Modal */}
+  <Modal
+    visible={isEditModalVisible}
+    animationType="slide"
+    transparent={true}
+    onRequestClose={() => setIsEditModalVisible(false)}
+  >
+    <View style={appliedStyles.modalOverlay}>
+      <View style={appliedStyles.modalContent}>
+        <Text style={appliedStyles.subtitle}>Edit Task</Text>
+        <TextInput
+          value={selectedTask?.title}
+          onChangeText={(text) => setSelectedTask({ ...selectedTask, title: text })}
+          placeholder="Task Title"
+          style={[appliedStyles.halfInput, appliedStyles.taskTitleArea]}
+        />
+        <TextInput
+          value={selectedTask?.desc}
+          onChangeText={(text) => setSelectedTask({ ...selectedTask, desc: text })}
+          placeholder="Task Description"
+          multiline
+          style={[appliedStyles.halfInput, appliedStyles.taskTextArea]}
+        />
+        <TouchableOpacity
+          onPress={async () => {
+            await confirmEditTask(selectedTask.id, selectedTask.title, selectedTask.desc);
+            setIsEditModalVisible(false);
+          }}
+          style={appliedStyles.loginButton}
+        >
+          <Text style={appliedStyles.loginText}>Save Changes</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+</>
+
 
            <View style={appliedStyles.inputBlock}>
 <Text style={appliedStyles.subtitle}>Notes 📝</Text>
 <Text style={appliedStyles.subtitlesmall}>Here you can add your notes , if you have any.</Text>
+<Text style={[appliedStyles.subtitlesmall,{color: '#888', fontStyle: 'italic'}]}>
+  These notes are private — only you can see them.
+</Text>
 
 <TextInput 
                     style={appliedStyles.halfInput} 
@@ -625,7 +1059,7 @@ const handleMeetingSaved = (meetingDetails) => {
 >
 <FontAwesome6 name="robot" size={24} color="#9FF9D5" />
 </TouchableOpacity>}
-{!hideNavbar && <NavBar/>}
+{!hideNavbar && (userType === 'mentor' ? <NavBarMentor /> : <NavBar />)}
 {console.log('hideNavbar:', hideNavbar)}
 {console.log('showChat:', showChat)}
 { showChat && (
@@ -648,6 +1082,7 @@ const handleMeetingSaved = (meetingDetails) => {
 
 }
 
+
 const styles = StyleSheet.create({
   
     title: {
@@ -657,9 +1092,15 @@ const styles = StyleSheet.create({
     },
     subtitle:{
       fontSize: 15,
-      //  marginTop: 8,
+       marginTop: 8,
         fontFamily:"Inter_300Light",
 
+  },
+  logo:{
+     position: 'relative',
+        width: '23%',
+        resizeMode: 'contain',
+        height: 100,
   },
 subtitlesmall:{
   fontSize: 13,
@@ -731,11 +1172,13 @@ subtitlesmall:{
     justifyContent: "center",alignItems: "center",zIndex: 9999,
       },
       loginButton: {
-        backgroundColor: '#BFB4FF',
+            backgroundColor: '#BFB4FF',
         padding: 12,
         borderRadius: 5,
-        width: '100%',
+        width: '70%',
         alignItems: 'center',
+        alignSelf:'center',
+        marginTop:15
       },
       loginText: {
         color: 'white',
@@ -743,46 +1186,137 @@ subtitlesmall:{
       },
       screenCard:{
          margin: 20,
-          padding: 16 ,
-          width:'110%',
+          padding: 36 ,
+          width:'120%',
           alignSelf:'center',
           elevation:2,
           shadowColor:'#E4E0E1',
       },
       Topview:{
          paddingHorizontal: 20, 
-         paddingTop:20,
          paddingBottom:40
       },
-      Dropcontainer: {
-        width: '100%',
-      },
-      dropdown: {
-        height: 50,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        backgroundColor: '#fff',
-        marginBottom:15
+    newTaskContainer:{
+      marginTop: 16,
+  width: '100%',
+  paddingHorizontal: 0,
+    },
+   taskCard: {
+ marginTop: 10,
+  padding: 16,
+  borderRadius: 16,
+  backgroundColor: '#fff',
+    marginHorizontal: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
 
-      },
-      placeholderStyle: {
-        color: '#888',
-        fontSize: 13,
-        fontFamily: 'Inter_200ExtraLight',
-      },
-      selectedTextStyle: {
-        color: '#888',
-        fontSize: 13,
-        fontFamily: 'Inter_200ExtraLight',
-      },
-      itemTextStyle: {
-        fontFamily: 'Inter_200ExtraLight',
-        fontSize: 13,
-        color: '#888',
-      },
-   
+},
+taskTitleArea: {
+  height: 30,
+  width:'100%'
+},
+taskTextArea: {
+  height: 80,
+  width:'100%'
+},
+
+checkbox: {
+  width: 20,
+  height: 20,
+  borderRadius: 4,
+  borderWidth: 1,
+  borderColor: '#888',
+  marginRight: 10,
+},
+
+checkboxChecked: {
+  backgroundColor: '#BFB4FF',
+},
+
+taskTitleLink: {
+  textDecorationLine: 'underline',
+  color: '#003D5B',
+  fontSize: 14,
+},
+
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  justifyContent: 'center',
+  alignItems: 'center'
+},
+
+modalContent: {
+  backgroundColor: 'white',
+  padding: 20,
+  borderRadius: 12,
+  width: '80%',
+},
+
+inputContent: {
+  backgroundColor: '#FFF',
+},
+mentorTaskCard: {
+   padding: 14,
+  borderRadius: 12,
+  backgroundColor: '#f9f9f9',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+},
+taskActions: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  marginTop: 10,
+},
+deleteButton: {
+   paddingVertical: 4,
+  paddingHorizontal: 8,
+  borderRadius: 8,
+  backgroundColor: 'transparent',
+},
+deleteButtonText: {
+  color: '#003D5B',
+  fontSize: 13,
+  textDecorationLine: 'underline',
+  fontWeight: '500',
+},
+HighlightedText:{
+  backgroundColor: '#9FF9D5', 
+  paddingHorizontal: 4,
+  paddingVertical: 2,
+  borderRadius: 4,
+  alignSelf: 'flex-start', // 💡 this ensures the background hugs the text
+  shadowColor: '#87E1C1',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.5,
+  shadowRadius: 3,
+  elevation: 3, // for Android shadow
+  transform: [{ rotate: '-1deg' }], // ✨ subtle tilt for marker feel
+        fontFamily:'Inter_400Regular',
+},
+meetingInfo:{
+    flexWrap: 'wrap' 
+    ,marginVertical: 10, 
+    padding: 10,
+     backgroundColor: '#F9F9F9', 
+     borderRadius: 10 ,
+
+},
+feedbackCard:{
+   padding: 20, 
+   alignItems: 'center',
+   alignContent:'center',
+    borderStyle: 'dashed',
+     borderWidth: 1,
+      borderColor: '#ccc', 
+      borderRadius: 12 ,
+       shadowColor:'#E4E0E1',
+
+}
 });
 const Webstyles = StyleSheet.create({
    
@@ -874,6 +1408,7 @@ const Webstyles = StyleSheet.create({
         position: "absolute",top: 0,left: 0,right: 0,bottom: 0,backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",alignItems: "center",zIndex: 9999,
       },
+   
       loginButton: {
         backgroundColor: '#BFB4FF',
         padding: 12,
@@ -890,7 +1425,7 @@ const Webstyles = StyleSheet.create({
       },
       Topview:{
         paddingHorizontal: 20, 
-        paddingTop: 100 
+        paddingTop: 10 
      },
      Dropcontainer: {
         width: '100%',
@@ -918,5 +1453,121 @@ const Webstyles = StyleSheet.create({
         fontSize: 13,
         color: '#888',
       },
-       
+       taskCard: {
+  padding: 20,
+  alignItems: 'center',
+  borderStyle: 'dashed',
+  borderWidth: 1,
+  borderColor: '#ccc',
+  borderRadius: 12,
+  marginTop: 10,
+},
+
+taskTextArea: {
+  height: 80,
+},
+
+taskRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginTop: 10,
+},
+
+checkbox: {
+  width: 20,
+  height: 20,
+  borderRadius: 4,
+  borderWidth: 1,
+  borderColor: '#888',
+  marginRight: 10,
+},
+
+checkboxChecked: {
+  backgroundColor: '#BFB4FF',
+},
+
+taskTitleLink: {
+  textDecorationLine: 'underline',
+  color: '#003D5B',
+  fontSize: 14,
+},
+
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  justifyContent: 'center',
+  alignItems: 'center'
+},
+
+modalContent: {
+  backgroundColor: 'white',
+  padding: 20,
+  borderRadius: 12,
+  width: '80%',
+},
+
+inputContent: {
+  backgroundColor: '#FFF',
+},
+mentorTaskCard: {
+  backgroundColor: '#FFFFFF',
+  borderRadius: 12,
+  padding: 16,
+  marginVertical: 8,
+  borderWidth: 1,
+  borderColor: '#E4E4E4',
+  shadowColor: '#BFB4FF',  // soft purple glow
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.15,
+  shadowRadius: 4,
+  elevation: 3
+},
+taskActions: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  marginTop: 12,
+  gap: 16,
+},
+deleteButton: {
+  paddingVertical: 4,
+  paddingHorizontal: 8,
+  borderRadius: 8,
+  backgroundColor: 'transparent',
+},
+deleteButtonText: {
+  color: '#003D5B',
+  fontSize: 13,
+  textDecorationLine: 'underline',
+  fontWeight: '500',
+},
+HighlightedText:{
+  backgroundColor: '#9FF9D5', // soft yellow like a highlighter
+  paddingHorizontal: 4,
+  paddingVertical: 2,
+  borderRadius: 4,
+  alignSelf: 'flex-start', // 💡 this ensures the background hugs the text
+  shadowColor: '#87E1C1',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.5,
+  shadowRadius: 3,
+  elevation: 3, // for Android shadow
+  transform: [{ rotate: '-1deg' }], // ✨ subtle tilt for marker feel
+        fontFamily:'Inter_400Regular',
+},
+meetingInfo:{
+    flexWrap: 'wrap' 
+    ,marginVertical: 10, 
+    padding: 10,
+     backgroundColor: '#F9F9F9', 
+     borderRadius: 10 
+},
+feedbackCard:{
+   padding: 20, 
+   alignItems: 'center',
+  justifyContent: 'center',    // vertical centering (in column direction)
+    borderStyle: 'dashed',
+     borderWidth: 1,
+      borderColor: '#ccc', 
+      borderRadius: 12 
+}
 });

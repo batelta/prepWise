@@ -1,16 +1,30 @@
 import React, { useEffect, useState, useContext } from 'react';
-import {View,Text,FlatList,TouchableOpacity,ActivityIndicator,TextInput,StyleSheet,} from 'react-native';
-import { collection,query, orderBy,onSnapshot,where  } from 'firebase/firestore';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  TextInput,
+  StyleSheet,
+  Image,
+} from 'react-native';
+import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { UserContext } from './UserContext';
 import Icon from 'react-native-vector-icons/Feather';
 import { useFonts } from 'expo-font';
-import {Inter_400Regular,Inter_300Light, Inter_700Bold,Inter_100Thin,Inter_200ExtraLight } from '@expo-google-fonts/inter';
+import {
+  Inter_400Regular,
+  Inter_300Light,
+  Inter_700Bold,
+  Inter_100Thin,
+  Inter_200ExtraLight,
+} from '@expo-google-fonts/inter';
 import { useNavigation } from '@react-navigation/native';
 
 export default function UsersListScreen() {
-    const navigation = useNavigation();  // 💡 Get the navigation object
-
+  const navigation = useNavigation();
   const { Loggeduser, loadingUser } = useContext(UserContext);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -18,124 +32,128 @@ export default function UsersListScreen() {
   const [loadingChats, setLoadingChats] = useState(true);
   const [messageListeners, setMessageListeners] = useState([]);
 
-  //FONTS
-   const [fontsLoaded] = useFonts({
-       Inter_400Regular,
-       Inter_700Bold,
-       Inter_100Thin,
-       Inter_200ExtraLight,
-       Inter_300Light
-     });
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+    Inter_100Thin,
+    Inter_200ExtraLight,
+    Inter_300Light,
+  });
+
+  // ✅ פונקציה שמביאה פרטי משתמש לפי ID
+  const fetchUserDetailsById = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5062/api/Users?userId=${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch user details');
+      const userData = await response.json();
+        // בודקת אם המחרוזת כבר כוללת את ה-data:image
+    const imageBase64 = userData.picture?.startsWith('data:image')
+      ? userData.picture
+      : `data:image/jpeg;base64,${userData.picture}`;
+
+    return {
+      name: `${userData.firstName} ${userData.lastName}`,
+      image: imageBase64 || null,
+      
+    };
+    } catch (error) {
+      console.error('❌ Error fetching user details:', error);
+      return { name: 'Unknown', image: null };
+    }
+  };
 
   useEffect(() => {
     if (!loadingUser && Loggeduser) {
       const unsubscribe = setupChatsListener();
-      return () => unsubscribe(); // ניקוי מאזינים בזמן מעבר מסך
+      return () => unsubscribe();
     }
   }, [loadingUser, Loggeduser]);
-  
 
   const setupChatsListener = () => {
     const q = query(collection(db, 'chats'), where('participants', 'array-contains', Loggeduser.id));
-    console.log('sending to firebase :',Loggeduser.id)
     const unsubscribeChats = onSnapshot(q, (chatsSnapshot) => {
-        console.log('🔥 Snapshot size:', chatsSnapshot.size);
-
       const listeners = [];
       const foundUsers = new Map();
-  
-      chatsSnapshot.docs.forEach((docSnap) => {
 
+      chatsSnapshot.docs.forEach((docSnap) => {
         const chatId = docSnap.id;
         const chatData = docSnap.data();
-  
-        console.log('📦 Found chat ID:', chatId);
-        
         const otherUserId = chatData.participants.find((id) => id !== Loggeduser.id);
-        const otherUserMeta = chatData.participantsMeta[otherUserId];
-        const otherUserEmail = otherUserMeta?.email;
-        console.log('✅ Matched chat, logged user is:', Loggeduser.id);
 
-        console.log('✅ Matched chat, other user is:', otherUserId);
-console.log('other user data:',otherUserEmail,otherUserMeta)
-   
         if (!foundUsers.has(otherUserId)) {
           const messagesRef = collection(db, `chats/${chatId}/messages`);
-          const q = query(messagesRef, orderBy('createdAt', 'desc'));
-  
-          const unsubscribeMessages = onSnapshot(q, async (messagesSnapshot) => {
-            try {
-              const messages = messagesSnapshot.docs.map((doc) => {
-                const data = doc.data();
-                return {
-                  text: data.text || '',
-                  createdAt: data.createdAt?.toDate?.() || null,
-                  sender: data.user?._id || '',
-                  read: data.read,
-                };
-              }).filter((msg) => msg.createdAt !== null);
-  
-              const lastMessage = messages.length > 0 ? messages[0].text : '';
-              const lastMessageTime = messages.length > 0 ? messages[0].createdAt : new Date(0);
-              
-  
-              const unreadCount = messages.filter(
-                (msg) => msg.sender !== Loggeduser._id && !msg.read
-              ).length;
-  
-              foundUsers.set(otherUserId, {
-                _id: otherUserId,
-                name: otherUserEmail, // You can improve this by fetching user name later
-                email:otherUserEmail,
-                lastMessage,
-                lastMessageTime,
-                unreadCount,
-              });
-  
-              const updatedUsers = Array.from(foundUsers.values()).sort(
-                (a, b) => (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0)
-              );
-  
-              setUsers(updatedUsers);
-              setFilteredUsers(updatedUsers);
-              setLoadingChats(false);
-            } catch (error) {
-              console.log('❌ Error loading messages:', error);
-            }
-          });
-  
+          const qMessages = query(messagesRef, orderBy('createdAt', 'desc'));
+
+const unsubscribeMessages = onSnapshot(qMessages, async (messagesSnapshot) => {
+  try {
+    const messages = messagesSnapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          text: data.text || '',
+          createdAt: data.createdAt?.toDate?.() || null,
+          sender: data.user?._id || '',
+          read: data.read,
+        };
+      })
+      .filter((msg) => msg.createdAt !== null);
+
+    const lastMessage = messages.length > 0 ? messages[0].text : '';
+    const lastMessageTime = messages.length > 0 ? messages[0].createdAt : new Date(0);
+    
+    // 🔥 התיקון כאן - השווה נכון את ה-ID
+    const unreadCount = messages.filter(
+      (msg) => String(msg.sender) !== String(Loggeduser.id) && !msg.read
+    ).length;
+
+    // ✅ שליפת שם ותמונה מהשרת
+    const { name, image } = await fetchUserDetailsById(otherUserId);
+
+    foundUsers.set(otherUserId, {
+      _id: otherUserId,
+      name,
+      image,
+      lastMessage,
+      lastMessageTime,
+      unreadCount,
+    });
+
+    const updatedUsers = Array.from(foundUsers.values()).sort(
+      (a, b) => (b.lastMessageTime?.getTime() || 0) - (a.lastMessageTime?.getTime() || 0)
+    );
+
+    setUsers(updatedUsers);
+    setFilteredUsers(updatedUsers);
+    setLoadingChats(false);
+  } catch (error) {
+    console.log('❌ Error loading messages:', error);
+  }
+});
+
           listeners.push(unsubscribeMessages);
         }
       });
-  
+
       setMessageListeners(listeners);
     });
-  
+
     return () => {
       unsubscribeChats();
       messageListeners.forEach((unsub) => unsub());
     };
   };
-  
-  
-
-  // בתוך UsersListComponent.jsx (שימי לב: יצירת קובץ נפרד או שינוי הקיים)
 
   const openChat = (otherUser) => {
     navigation.navigate('ChatScreen', {
-        user: Loggeduser,
-        otherUser: {
-          _id: otherUser._id,
-          name: otherUser.name,
-          email: otherUser.email,
-          image: otherUser.image || null,
-        }
-      });
+      user: Loggeduser,
+      otherUser: {
+        _id: otherUser._id,
+        name: otherUser.name,
+        email: otherUser.email,
+        image: otherUser.image || null,
+      },
+    });
   };
-
-
-
-
 
   const handleSearch = (text) => {
     setSearchText(text);
@@ -149,7 +167,7 @@ console.log('other user data:',otherUserEmail,otherUserMeta)
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" />
-        <Text style={styles.textMessages}> Loading...</Text>
+        <Text style={styles.textMessages}>Loading...</Text>
       </View>
     );
   }
@@ -176,19 +194,31 @@ console.log('other user data:',otherUserEmail,otherUserMeta)
         />
       </View>
 
+
+
       <FlatList
         data={filteredUsers}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
+            console.log('🖼️ item.image:', item.image?.substring(0, 100)),// נראה מה יש שם
+
           <TouchableOpacity style={styles.chatItem} onPress={() => openChat(item)}>
-            <View style={styles.avatarPlaceholder} />
+            {item.image ? (
+              <Image source={{ uri: item.image }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder} />
+            )}
             <View style={styles.chatContent}>
               <View style={styles.chatHeader}>
                 <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.date}>
                   {item.lastMessageTime
-    ? `${item.lastMessageTime.toLocaleDateString('he-IL')} ${item.lastMessageTime.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}`
-    : ''}</Text>
+                    ? `${item.lastMessageTime.toLocaleDateString('he-IL')} ${item.lastMessageTime.toLocaleTimeString('he-IL', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}`
+                    : ''}
+                </Text>
               </View>
               <View style={styles.chatFooter}>
                 <Text style={styles.message} numberOfLines={1}>
@@ -203,7 +233,7 @@ console.log('other user data:',otherUserEmail,otherUserMeta)
             </View>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.textMessages}> No previous conversations found</Text>}
+        ListEmptyComponent={<Text style={styles.textMessages}>No previous conversations found</Text>}
       />
     </View>
   );
@@ -250,6 +280,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#eee',
   },
+  avatar: {
+  width: 48,
+  height: 48,
+  borderRadius: 24,
+  marginRight: 12,
+  backgroundColor: '#eee',
+},
+
   avatarPlaceholder: {
     width: 48,
     height: 48,

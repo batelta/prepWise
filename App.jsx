@@ -58,7 +58,7 @@ export default function App() {
 
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='AllUserMatches'>
+     <Stack.Navigator initialRouteName='SignIn'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="GeminiChat" component={GeminiChat}/>

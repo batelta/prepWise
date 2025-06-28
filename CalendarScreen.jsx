@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView, Alert,TouchableOpacity } from 'react-native';
 import { Calendar } from 'react-native-calendars';
@@ -13,7 +12,7 @@ import { Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 
-export default function CalendarScreen() {
+export default function CalendarScreen({ onMeetingSaved }) {
   const { Loggeduser } = useContext(UserContext);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -109,10 +108,13 @@ export default function CalendarScreen() {
   const participants = [Loggeduser.email, ...extraParticipants];
 // Check for time conflicts (within 30 minutes)
 const conflict = meetings.some(meeting => {
+  if (editingMeetingId && meeting.id === editingMeetingId) return false; // דלג על הפגישה שנערכת
+
   const existingDate = new Date(`${meeting.date}T${meeting.time}:00`);
   const timeDiff = Math.abs(existingDate.getTime() - datetime.getTime());
-  return timeDiff < 30 * 60 * 1000; // 30 minutes in milliseconds
+  return timeDiff < 30 * 60 * 1000;
 });
+
 
 if (conflict) {
   setConflictModalVisible(true);
@@ -142,6 +144,14 @@ if (conflict) {
       await addDoc(collection(db, 'meetings'), meetingData);
       Alert.alert('Success', 'The meeting was saved successfully!');
     }
+
+    // ✅ Notify parent with date + time
+if (typeof onMeetingSaved === 'function') {
+  onMeetingSaved({
+    date: selectedDate,
+    time: selectedTime
+  });
+}
 
     // Reset fields
     setTitle('');
