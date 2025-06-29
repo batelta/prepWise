@@ -17,10 +17,10 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { useContext } from 'react';
 import { UserContext } from './UserContext'; 
+import {apiUrlStart} from './api';
 
 export default function HomePage() {
     const { Loggeduser } = useContext(UserContext);
-    const apiUrlStart ="http://localhost:5062"
 
     const appliedStyles = Platform.OS === 'web' ? Webstyles : styles;
   const navigation = useNavigation();

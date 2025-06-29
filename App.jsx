@@ -33,7 +33,7 @@ import SessionSplitView from './Sessions/SessionSplitView'
 import AdminScreen from "./Admin/AdminScreen";
 import AdminAllUsers from "./Admin/AdminAllUsers";
 import AdminAllApplications from "./Admin/AdminAllApplications";
-
+import WeightAnalytics from './Admin/WeightAnalytics'
 // Define your custom theme
 const theme = {
   colors: {
@@ -58,7 +58,7 @@ export default function App() {
 
     <NavigationContainer>
     <PaperProvider theme={theme}>
-     <Stack.Navigator initialRouteName='SignIn'>
+     <Stack.Navigator initialRouteName='AdminScreen'>
       <Stack.Screen name="SignIn" component={SignIn}/>
       <Stack.Screen name="SignUp" component={SignUp}/>
       <Stack.Screen name="GeminiChat" component={GeminiChat}/>
@@ -90,6 +90,7 @@ export default function App() {
       <Stack.Screen name="AdminScreen" component={AdminScreen} />
       <Stack.Screen name="AdminAllUsers" component={AdminAllUsers} />
      <Stack.Screen name="AdminAllApplications" component={AdminAllApplications} />
+     <Stack.Screen name="WeightAnalytics" component={WeightAnalytics} />
 
       <Stack.Screen name="ComingSoon" component={ComingSoonScreen} />
       <Stack.Screen name="ComingSoonCalendar" component={ComingSoonScreen} />

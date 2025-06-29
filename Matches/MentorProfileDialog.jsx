@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useContext } from 'react';
 import { UserContext } from '../UserContext'; 
+import {apiUrlStart} from '../api';
 
 const { width } = Dimensions.get("window");
 
@@ -13,7 +14,6 @@ const MentorProfileDialog = ({ visible, onClose, mentor }) => {
   if (!mentor) return null;
   const navigation = useNavigation();
     const { Loggeduser } = useContext(UserContext);
-    const apiUrlStart ="http://localhost:5062"
 
 
 

@@ -3,6 +3,7 @@ import { View, Text, ActivityIndicator, Platform, SafeAreaView } from "react-nat
 import SessionListPane from "./SessionListPane";
 import { UserContext } from "../UserContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import {apiUrlStart} from '../api';
 
 export default function SessionListMobile() {
   const { Loggeduser } = useContext(UserContext);
@@ -13,7 +14,6 @@ export default function SessionListMobile() {
   const navigation = useNavigation();
 
   const { jobseekerID, mentorID, JourneyID, FirstName, LastName } = route.params;
-  const apiUrlStart = "http://172.20.10.9:5062"; // update IP if needed
 
   useEffect(() => {
     if (Loggeduser?.id) {

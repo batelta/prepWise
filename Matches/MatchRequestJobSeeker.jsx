@@ -17,12 +17,12 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
   import CustomPopup from "../CustomPopup"; 
 import { Navigation } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import {apiUrlStart} from '../api';
 
 
 
 export default function MatchRequestJobSeeker(){
     const { Loggeduser } = useContext(UserContext);
-    const apiUrlStart ="http://localhost:5062"
 
     const navigation = useNavigation();
 

@@ -17,13 +17,13 @@ import { Button, Checkbox } from 'react-native-paper';
  import { useContext } from 'react';
  import { UserContext } from './UserContext'; // adjust the path
  import * as DocumentPicker from "expo-document-picker";
+import {apiUrlStart} from './api';
 
   const { width } = Dimensions.get('window');
 
 
 const SignUpJobSeeker = ({navigation}) => {
   const { setLoggedUser} = useContext(UserContext);
-  const apiUrlStart ="http://localhost:5062"
 
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
   const [errorPopupVisible, setErrorPopupVisible] = useState(false);

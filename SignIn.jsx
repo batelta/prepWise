@@ -11,12 +11,12 @@ import { Inter_400Regular,
   import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Or any other icon set
   import { useContext } from 'react';
   import { UserContext } from './UserContext'; // adjust the path
+import {apiUrlStart} from './api';
 
   const { height,width } = Dimensions.get('window');
 
 const SignIn = ({navigation}) => {
     const { setLoggedUser} = useContext(UserContext);
-    const apiUrlStart ="http://localhost:5062"
 
   const [isMentor, setIsMentor]=useState(false)
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);

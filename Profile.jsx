@@ -33,9 +33,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useContext } from "react";
 import { UserContext } from "./UserContext"; // adjust the path
+import {apiUrlStart} from './api';
 
 const Profile = () => {
-  const apiUrlStart ="http://localhost:5062"
   const { Loggeduser, setLoggedUser } = useContext(UserContext);
   const [IsMentor, setIsMentor] = useState(false);
   const [firstName, setFirstName] = useState("");

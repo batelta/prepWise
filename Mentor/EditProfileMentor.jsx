@@ -19,9 +19,9 @@ import defaultProfile from '../assets/backgroundProfileImage2.jpg'; // make sure
 import CareerFieldSelector from '../CareerFieldSelector';
 import RolesSelector from '../RolesSelector';
 import fields from '../CareerFields.json';
+import {apiUrlStart} from '../api';
 
 const EditProfileMentor = () => {
-const apiUrlStart ="http://localhost:5062"
 const { Loggeduser ,setLoggedUser} = useContext(UserContext);
 const [popupVisible, setPopupVisible] = useState(false);
 const navigation = useNavigation();

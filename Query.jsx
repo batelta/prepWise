@@ -16,13 +16,13 @@ import ModalRN  from 'react-native-modal';
   import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useRoute,useNavigation } from "@react-navigation/native";
+import {apiUrlStart} from './api';
 
 
 export default function Query(){
     const navigation = useNavigation();
     const route = useRoute();
     const { userType ,userID} = route.params;
-    const apiUrlStart ="http://localhost:5062"
 
 
     const [fontsLoaded] = useFonts({

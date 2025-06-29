@@ -22,6 +22,7 @@ import {
   Inter_200ExtraLight,
 } from '@expo-google-fonts/inter';
 import { useNavigation } from '@react-navigation/native';
+import {apiUrlStart} from './api';
 
 export default function UsersListScreen() {
   const navigation = useNavigation();
@@ -43,7 +44,7 @@ export default function UsersListScreen() {
   // ✅ פונקציה שמביאה פרטי משתמש לפי ID
   const fetchUserDetailsById = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5062/api/Users?userId=${userId}`);
+      const response = await fetch(`${apiUrlStart}/api/Users?userId=${userId}`);
       if (!response.ok) throw new Error('Failed to fetch user details');
       const userData = await response.json();
         // בודקת אם המחרוזת כבר כוללת את ה-data:image

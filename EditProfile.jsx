@@ -18,10 +18,11 @@ import { useContext } from 'react';
 import { UserContext } from './UserContext'; // adjust the path
 import defaultProfile from './assets/defaultProfileImage.jpg'; // make sure this path is correct
 import fields from './CareerFields.json';
+import {apiUrlStart} from './api';
+
 const { width,height } = Dimensions.get('window');
 const EditProfile = () => {
 
-const apiUrlStart ="http://localhost:5062"
 
 const { Loggeduser ,setLoggedUser } = useContext(UserContext);
 const [popupVisible, setPopupVisible] = useState(false);

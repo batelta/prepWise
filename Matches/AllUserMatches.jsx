@@ -14,13 +14,14 @@ import GeminiChat from '../GeminiChat';
 import { UserContext } from '../UserContext';
 import { useNavigation } from "@react-navigation/native";
 import NavBarMentor from '../Mentor/NavBarMentor'
+import {apiUrlStart} from '../api';
+
 const AllUserMatches = () => {
   const { Loggeduser } = useContext(UserContext);
   const [showChat, setShowChat] = useState(false);
   const [mentors, setMentors] = useState(null);
   const navigation = useNavigation();
     const [userType, setUserType] = useState('');
-    const apiUrlStart ="http://localhost:5062"
 
 //FONTS
    const [fontsLoaded] = useFonts({

@@ -17,13 +17,13 @@ import { Button, Checkbox,Switch,RadioButton } from 'react-native-paper';
  import { useContext } from 'react';
  import { UserContext } from '../UserContext'; // adjust the path
 import CompanySelector from '../CompanySelector';
+import {apiUrlStart} from '../api';
 
   const { width } = Dimensions.get('window');
 
 
 const SignUpMentor = ({navigation}) => {
   const { setLoggedUser} = useContext(UserContext);
-  const apiUrlStart ="http://localhost:5062"
 
   const [successPopupVisible, setSuccessPopupVisible] = useState(false);
   const [errorPopupVisible, setErrorPopupVisible] = useState(false);

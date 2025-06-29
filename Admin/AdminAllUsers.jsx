@@ -4,13 +4,19 @@ import {
   ScrollView,
   ActivityIndicator,
   Text,
-  Platform,
+  TouchableOpacity,
+  StyleSheet,
 } from "react-native";
 import axios from "axios";
 import { DataTable } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
-
-const apiUrlStart ="http://localhost:5062"
+import { useFonts } from "expo-font";
+import {
+  Inter_400Regular,
+  Inter_300Light,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
+import {apiUrlStart} from '../api';
 
 
 const AdminAllUsers = () => {
@@ -19,11 +25,16 @@ const AdminAllUsers = () => {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
 
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_300Light,
+    Inter_700Bold,
+  });
+
   useEffect(() => {
     axios
       .get(`${apiUrlStart}/api/users/all`)
       .then((response) => {
-        console.log("DATA FROM SERVER:", response.data);
         setUsers(response.data);
         setLoading(false);
       })
@@ -34,8 +45,25 @@ const AdminAllUsers = () => {
       });
   }, []);
 
-  if (loading) return <ActivityIndicator size="large" color="#0000ff" />;
-  if (error) return <Text style={{ color: "red", padding: 16 }}>{error}</Text>;
+  const handleDeleteUser = (userID) => {
+    axios
+      .delete(`${apiUrlStart}/api/Mentors/${userID}`)
+      .then(() => {
+        setUsers(users.filter((user) => user.userID !== userID));
+        alert("המשתמש נמחק בהצלחה");
+      })
+      .catch((error) => {
+        console.error("Error deleting user:", error);
+        alert("אירעה שגיאה במחיקה");
+      });
+  };
+
+  if (!fontsLoaded) return null;
+  if (loading) return <ActivityIndicator size="large" color="#b9a7f2" />;
+  if (error)
+    return (
+      <Text style={{ color: "red", padding: 16, fontSize: 16 }}>{error}</Text>
+    );
 
   const filteredUsers = users.filter((user) => {
     if (filter === "all") return true;
@@ -44,29 +72,28 @@ const AdminAllUsers = () => {
   });
 
   return (
-    <ScrollView style={{ padding: 16, direction: "rtl" }}>
-      <View style={{ marginBottom: 16 }}>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>👥 All Users</Text>
+
+      <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={filter}
           onValueChange={(value) => setFilter(value)}
-          style={{
-            height: 50,
-            width: "100%",
-            backgroundColor: "#f0f0f0",
-            borderRadius: 4,
-          }}
+          style={styles.picker}
         >
-          <Picker.Item label="See All"value="all" />
+          <Picker.Item label="See All" value="all" />
           <Picker.Item label="Mentors" value="mentor" />
           <Picker.Item label="Job Seekers" value="jobseeker" />
         </Picker>
       </View>
+
       <DataTable>
         <DataTable.Header>
           <DataTable.Title>Type</DataTable.Title>
           <DataTable.Title>Email</DataTable.Title>
           <DataTable.Title>ID</DataTable.Title>
           <DataTable.Title>Name</DataTable.Title>
+          <DataTable.Title>Actions</DataTable.Title>
         </DataTable.Header>
 
         {filteredUsers.map((user, index) => (
@@ -79,6 +106,14 @@ const AdminAllUsers = () => {
             <DataTable.Cell>
               {user.firstName} {user.lastName}
             </DataTable.Cell>
+            <DataTable.Cell>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDeleteUser(user.userID)}
+              >
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </DataTable.Cell>
           </DataTable.Row>
         ))}
       </DataTable>
@@ -87,3 +122,39 @@ const AdminAllUsers = () => {
 };
 
 export default AdminAllUsers;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 16,
+  },
+  title: {
+    fontSize: 22,
+    fontFamily: "Inter_700Bold",
+    color: "#163349",
+    marginBottom: 16,
+  },
+  pickerWrapper: {
+    backgroundColor: "#f0f0f0",
+    borderRadius: 6,
+    marginBottom: 20,
+  },
+  picker: {
+    height: 50,
+    width: "100%",
+  },
+  deleteButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
+    borderColor: "#BFB4FF",
+    borderWidth: 1,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    color: "red",
+    fontWeight: "bold",
+  },
+});

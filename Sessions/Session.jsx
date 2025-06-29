@@ -25,7 +25,7 @@ import CustomPopup from "../CustomPopup";
 import { db } from "../firebaseConfig"; // או איפה שהגדרת את החיבור ל־firebase
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useRoute } from '@react-navigation/native';
-
+import {apiUrlStart} from '../api';
 export default function Session(props){
     const route = useRoute();
 
@@ -46,9 +46,7 @@ export default function Session(props){
   };  
   const { Loggeduser } = useContext(UserContext);
 
-const apiUrlStart = Platform.OS === 'android'
-  ? "http://172.20.10.9:5062"
-  : "http://localhost:5062";
+
   console.log("navbar", hideNavbar, "sessid", sessionId, "isnew", sessionMode, jobseekerID, mentorID, JourneyID, OtherUserName, onSessionCreated);
   const navigation = useNavigation();
 
@@ -129,7 +127,8 @@ useEffect(() => {
 
     // FIXED: Separate useEffect for fetching data after sessionId and states are reset
     useEffect(() => {
-        if (sessionMode==="edit" && sessionId && sessionId === currentSessionId) {
+        if (sessionMode==="edit" && sessionId && sessionId === currentSessionId)
+   {
             console.log('Fetching data for session:', sessionId);
             fetchSessionDetails();
             fetchFeedbackDetails();
@@ -298,9 +297,23 @@ if (!wasManuallyChanged) {
 
         setSessionLink(sessionData.meetingUrl || '');
 try {
-  const parsedNotes = sessionData.notes ? JSON.parse(sessionData.notes) : {};
-  const userNote = parsedNotes[userType] || '';
-  setNotes(userNote);
+let parsedNotes = {};
+if (sessionData.notes) {
+  try {
+    const firstParse = JSON.parse(sessionData.notes);
+    parsedNotes = typeof firstParse === 'string'
+      ? JSON.parse(firstParse)
+      : firstParse;
+      console.log('parsedNotes:', parsedNotes, 'userType:', userType);
+
+  } catch (error) {
+    console.warn('Failed to parse notes JSON:', error);
+    parsedNotes = {};
+  }
+}
+const userNote = parsedNotes[userType] || '';
+setNotes(userNote);
+
 } catch (error) {
   console.warn('Failed to parse notes JSON:', error);
   setNotes('');

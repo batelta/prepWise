@@ -13,6 +13,7 @@ import {
 import { FontAwesome } from "@expo/vector-icons";
 import CustomPopup from "../CustomPopup";
 import * as DocumentPicker from "expo-document-picker";
+import {apiUrlStart} from '../api';
 
 const EditFilesModal = ({ visible, onClose, userId }) => {
   const [files, setFiles] = useState([]);
@@ -23,7 +24,6 @@ const EditFilesModal = ({ visible, onClose, userId }) => {
     fileId: null,
     fileName: "",
   });
-  const apiUrlStart ="http://localhost:5062"
 
   const fetchFiles = async () => {
     if (!userId) return;

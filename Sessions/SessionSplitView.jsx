@@ -20,6 +20,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
 import NavBarMentor from "../Mentor/NavBarMentor";
 import CustomPopup from "../CustomPopup";
+import {apiUrlStart} from '../api';
 
 export default function SessionSplitView() {
   const route = useRoute();
@@ -32,9 +33,7 @@ export default function SessionSplitView() {
   const [selectedId, setSelectedId] = useState(null); // or whatever indicates no sessions exist
   const [loading, setLoading] = useState(true);
   const [showChat, setShowChat] = useState(false);
-const apiUrlStart = Platform.OS === 'android'
-  ? "http://172.20.10.9:5062"
-  : "http://localhost:5062";
+
     const [showSessionForm, setShowSessionForm] = useState(false);
     const [userType, setUserType] = useState('');
 

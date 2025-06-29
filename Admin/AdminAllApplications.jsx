@@ -9,7 +9,7 @@ import {
 import axios from "axios";
 import { DataTable } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
-const apiUrlStart ="http://localhost:5062"
+import {apiUrlStart} from '../api';
 
 
 const AdminAllApplications = () => {

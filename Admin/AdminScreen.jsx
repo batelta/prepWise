@@ -1,25 +1,38 @@
 import React from "react";
-import { View, Text, StyleSheet, Button, Alert, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Platform,
+  ScrollView,
+} from "react-native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
+import NavBar from "../NavBar";
+import { useFonts } from "expo-font";
+import {
+  Inter_400Regular,
+  Inter_300Light,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
+import {apiUrlStart} from '../api';
 
-const apiUrlStart ="http://localhost:5062"
 
+const AdminScreen = ({ navigation }) => {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+    Inter_300Light,
+  });
 
-const AdminScreen = () => {
-  const API_URL =
-    Platform.OS === "web"
-      ? `${apiUrlStart}/api/MentorMatching/export-feature-data`
-      : `${apiUrlStart}/api/MentorMatching/export-feature-data`;
+  const API_URL = `${apiUrlStart}/api/MentorMatching/export-feature-data`;
 
-  const handleDownload = async () => {
+  /*const handleDownload = async () => {
     if (Platform.OS === "web") {
       try {
         const response = await fetch(API_URL);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -35,35 +48,55 @@ const AdminScreen = () => {
         console.error(error);
         alert("ההורדה נכשלה ❌");
       }
-      return;
-    }
+    } else {
+      try {
+        const fileUri =
+          FileSystem.documentDirectory + `features_${Date.now()}.csv`;
+        const downloadRes = await FileSystem.downloadAsync(API_URL, fileUri);
+        Alert.alert("הצלחה", "הקובץ ירד בהצלחה ✅");
 
-    // למובייל
-    try {
-      const fileUri =
-        FileSystem.documentDirectory + `features_${Date.now()}.csv`;
-
-      const downloadRes = await FileSystem.downloadAsync(API_URL, fileUri);
-
-      Alert.alert("הצלחה", "הקובץ ירד בהצלחה ✅");
-
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(downloadRes.uri);
-      } else {
-        Alert.alert("הערה", "שיתוף לא זמין על המכשיר הזה");
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(downloadRes.uri);
+        } else {
+          Alert.alert("הערה", "שיתוף לא זמין על המכשיר הזה");
+        }
+      } catch (error) {
+        console.error(error);
+        Alert.alert("שגיאה", "ההורדה נכשלה ❌");
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert("שגיאה", "ההורדה נכשלה ❌");
     }
-  };
+  };*/
+
+  if (!fontsLoaded) return null;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🎛️ Admin Dashboard</Text>
-      <View style={styles.buttonContainer}>
-        <Button title="📥Download Feature table" onPress={handleDownload} />
-      </View>
+      <NavBar />
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>🎛️ Admin Dashboard</Text>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("WeightAnalytics")}
+        >
+          <Text style={styles.buttonText}>📊 Weights Analytics Page</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("AdminAllUsers")}
+        >
+          <Text style={styles.buttonText}>👤 View All Users</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("AdminAllApplications")}
+        >
+          <Text style={styles.buttonText}>📄 View All Applications</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 };
@@ -73,15 +106,37 @@ export default AdminScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#fff",
+  },
+  scrollContent: {
+    padding: 20,
+    alignItems: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
+    fontFamily: "Inter_700Bold",
+    color: "#163349",
+    marginBottom: 30,
   },
-  buttonContainer: {
-    marginTop: 30,
+  button: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#b9a7f2",
+    borderRadius: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginVertical: 10,
+    width: "80%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  buttonText: {
+    fontSize: 16,
+    color: "#b9a7f2",
+    fontFamily: "Inter_400Regular",
   },
 });

@@ -18,11 +18,11 @@ import {
   Inter_100Thin,
   Inter_200ExtraLight,
 } from "@expo-google-fonts/inter";
+import {apiUrlStart} from '../api';
 
 const FileSelectorModal = ({ visible, onClose, userId, onFileSelect }) => {
   const [files, setFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const apiUrlStart ="http://localhost:5062"
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,

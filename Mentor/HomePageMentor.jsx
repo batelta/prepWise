@@ -13,6 +13,7 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useContext } from 'react';
 import { UserContext } from '../UserContext'; 
 import { useNavigation } from '@react-navigation/native';
+import {apiUrlStart} from '../api';
 
 
 
@@ -20,9 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 export default function HomePageMentor() {
     const navigation = useNavigation();
     const { Loggeduser } = useContext(UserContext);
-const apiUrlStart = Platform.OS === 'android'
-  ? "http://172.20.10.9:5062"
-  : "http://localhost:5062";
+
     const [showChat, setShowChat] = useState(false);
     const [user, setUser] = useState(null);
     const [profileImage, setProfileImage] = useState(null);

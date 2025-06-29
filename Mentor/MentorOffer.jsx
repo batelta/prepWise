@@ -16,10 +16,10 @@ import ModalRN  from 'react-native-modal';
   import {Calendar} from 'react-native-calendars';
   import Slider from '@react-native-community/slider';
 import CalendarScreen from '../CalendarScreen'
+import {apiUrlStart} from '../api';
 
 export default function MentorOffer(){
     const { Loggeduser } = useContext(UserContext);
-    const apiUrlStart ="http://localhost:5062"
 
 
     const [fontsLoaded] = useFonts({
